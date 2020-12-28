@@ -8,15 +8,15 @@
 
 void Topic::start()
 {
-  spdlog::info("[Topic] Start publisher");
   period_ms = 1000/request->sub_freq;
   timer = std::make_shared<boost::asio::deadline_timer>(*io_context, boost::posix_time::millisec(0));
   timer->async_wait(std::bind(&Topic::publish, this));
+  spdlog::info("[Topic] Start publisher");
 }
 void Topic::stop()
 {
-  spdlog::info("[Topic] Stop publisher");
   timer->cancel();
+  spdlog::info("[Topic] Stop publisher");
   period_ms = 0;
 }
 

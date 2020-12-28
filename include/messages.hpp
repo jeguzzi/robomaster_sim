@@ -55,270 +55,6 @@ struct SetSdkConnection : Proto<0x3f, 0xd4>
   };
 };
 
-struct SdkHeartBeat : Proto<0x3f, 0xd5>
-{
-  struct Request : RequestT {
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SdkHeartBeat::Request";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-struct SetSdkMode : Proto<0x3f, 0xd1>
-{
-  struct Request : RequestT {
-
-    uint8_t enable;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      enable = buffer[0];
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SetSdkMode::Request {"
-         << " enable=" << bool(r.enable)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-struct SubscribeAddNode : Proto<0x48, 0x01>
-{
-  struct Request : RequestT {
-
-    uint8_t node_id;
-    uint32_t sub_vision;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      node_id = buffer[0];
-      sub_vision = read<uint32_t>(buffer+1);
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SubscribeAddNode::Request {"
-         << " node_id=" << int(r.node_id)
-         << " sub_vision=" << unsigned(r.sub_vision)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    uint8_t pub_node_id;
-    std::vector<uint8_t> encode()
-    {
-      return {0, pub_node_id};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-
-struct SubNodeReset : Proto<0x48, 0x02>
-{
-  struct Request : RequestT {
-
-    uint8_t node_id;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      node_id = buffer[0];
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SubNodeReset::Request {"
-         << " node_id=" << int(r.node_id)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-struct DelMsg : Proto<0x48, 0x04>
-{
-  struct Request : RequestT {
-
-    uint8_t node_id;
-    uint8_t msg_id;
-    uint8_t sub_mode;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      sub_mode = buffer[0];
-      node_id = buffer[1];
-      msg_id = buffer[2];
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "DelMsg::Request {"
-         << " sub_mode=" << std::dec << int(r.sub_mode)
-         << " node_id=" << int(r.node_id)
-         << " msg_id=" << int(r.msg_id)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-
-struct SetRobotMode : Proto<0x3f, 0x46>
-{
-  struct Request : RequestT {
-
-    uint8_t mode;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      mode = buffer[0];
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SetRobotMode::Request {"
-         << " mode=" << int(r.mode)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-
-struct VisionDetectEnable : Proto<0xa, 0xa3>
-{
-  struct Request : RequestT {
-
-    uint16_t type;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      type = read<uint16_t>(buffer);
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SetRobotMode::Request {"
-         << " type=" << int(r.type)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-// TODO(Jerome):   _cmdtype = DUSS_MB_TYPE_PUSH
-struct ChassisSpeedMode : Proto<0x3f, 0x21>
-{
-  struct Request : RequestT {
-
-    float x_spd;
-    float y_spd;
-    float z_spd;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      x_spd = read<float>(buffer);
-      y_spd = read<float>(buffer+4);
-      z_spd = read<float>(buffer+8);
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "ChassisSpeedMode::Request {"
-         << " x=" << (r.x_spd)
-         << " y=" << (r.y_spd)
-         << " z=" << (r.z_spd)
-         << " }\n";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    std::vector<uint8_t> encode()
-    {
-      return {0};
-    };
-    using ResponseT::ResponseT;
-  };
-};
-
-
 struct AddSubMsg : Proto<0x48, 0x03>
 {
   struct Request : RequestT {
@@ -364,7 +100,7 @@ struct AddSubMsg : Proto<0x48, 0x03>
         os << "0x" << long(r.sub_uid_list[i]) << ", ";
       }
       os << "] sub_freq=" << std::dec << int(r.sub_freq)
-         << " }\n";
+         << " }";
       return os;
     }
   };
@@ -377,6 +113,36 @@ struct AddSubMsg : Proto<0x48, 0x03>
     };
     using ResponseT::ResponseT;
   };
+};
+
+struct DelMsg : Proto<0x48, 0x04>
+{
+  struct Request : RequestT {
+
+    uint8_t node_id;
+    uint8_t msg_id;
+    uint8_t sub_mode;
+
+    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
+    : RequestT(_sender, _receiver, _seq_id, _attri)
+    {
+      sub_mode = buffer[0];
+      node_id = buffer[1];
+      msg_id = buffer[2];
+    };
+
+    template<typename OStream>
+    friend OStream& operator<<(OStream& os, const Request& r)
+    {
+      os << "DelMsg::Request {"
+         << " sub_mode=" << std::dec << int(r.sub_mode)
+         << " node_id=" << int(r.node_id)
+         << " msg_id=" << int(r.msg_id)
+         << " }";
+      return os;
+    }
+  };
+
 };
 
 // DUSS_MB_TYPE_PUSH
@@ -408,6 +174,4 @@ struct PushPeriodMsg : Proto<0x48, 0x08>
     using ResponseT::ResponseT;
   };
 };
-
-
 #endif /* end of include guard: MESSAGES_H */

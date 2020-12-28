@@ -98,7 +98,7 @@ std::vector<uint8_t> ResponseT::encode_msg(uint8_t set, uint8_t id)
 {
   // TODO(jerome): do I need to treat differently the request/no-ack case?
   auto payload = encode();
-  spdlog::debug("Payload of size {}", payload.size());
+  // spdlog::debug("Payload of size {}", payload.size());
   short len = 13 + payload.size();
   std::vector<uint8_t> buffer(len, 0);
   buffer[0] = 0x55;
@@ -176,7 +176,7 @@ void Server::has_received_bytes(const uint8_t * raw_request, size_t length)
     spdlog::debug("Empty response");
   }
   else{
-    spdlog::debug("Send back {:n}", spdlog::to_hex(raw_response));
+    spdlog::debug("Send back {} bytes: {:n}", raw_response.size(), spdlog::to_hex(raw_response));
   }
   send(raw_response);
 }

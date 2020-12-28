@@ -33,13 +33,6 @@ void write(std::vector<uint8_t> & buffer, short index, T value)
 }
 unsigned key_from(uint8_t _set, uint8_t _cmd);
 
-template<uint8_t _set, uint8_t _cmd>
-struct Proto {
-  static inline uint8_t set = _set;
-  static inline uint8_t cmd = _cmd;
-  static inline int key = key_from(_set, _cmd);
-};
-
 struct RequestT
 {
   uint8_t attri;
@@ -88,10 +81,27 @@ struct ResponseT
 
   virtual std::vector<uint8_t> encode()
   {
-    return {};
-  }
+    return {0};
+  };
 
   std::vector<uint8_t> encode_msg(uint8_t set, uint8_t id);
+};
+
+template<uint8_t _set, uint8_t _cmd>
+struct Proto {
+  static inline uint8_t set = _set;
+  static inline uint8_t cmd = _cmd;
+  static inline int key = key_from(_set, _cmd);
+
+  struct Response : ResponseT{
+    using ResponseT::ResponseT;
+  };
+
+  struct Request : RequestT{
+    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
+    : RequestT(_sender, _receiver, _seq_id, _attri){};
+  };
+
 };
 
 
