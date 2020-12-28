@@ -1,59 +1,15 @@
-#ifndef MESSAGES_H
-#define MESSAGES_H
+#ifndef SUBSCRIBER_MESSAGES_H
+#define SUBSCRIBER_MESSAGES_H
 
 #include <iostream>
 #include <cstdint>
 
-#include "spdlog/fmt/bin_to_hex.h"
+#include <spdlog/spdlog.h>
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/fmt/bin_to_hex.h"
+#include "protocol.hpp"
 
-#include "server.hpp"
-
-struct SetSdkConnection : Proto<0x3f, 0xd4>
-{
-  struct Request : RequestT {
-    uint8_t control;
-    uint8_t host;
-    uint8_t connection;
-    uint8_t protocol;
-    uint8_t ip[4];
-    uint16_t port;
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-      control = buffer[0];
-      host = buffer[1];
-      connection = buffer[2];
-      protocol = buffer[3];
-      memcpy(ip, buffer + 4, 4);
-      port = read<uint16_t>(buffer + 8);
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "SetSdkConnection::Request {"
-         << " control=" << std::dec << int(r.control)
-         << " host=" << int(r.host)
-         << " connection=" << int(r.connection)
-         << " protocol=" << int(r.protocol)
-         << " ip=" << int(r.ip[0]) << "." << int(r.ip[1]) << "." << int(r.ip[2]) << "." << int(r.ip[3])
-         << " port=" << int(r.port)
-         << " }";
-      return os;
-    }
-  };
-
-  struct Response : ResponseT{
-    uint8_t ip[4];
-    std::vector<uint8_t> encode()
-    {
-      return {0, 2, ip[0], ip[1], ip[2], ip[3]};
-    };
-    using ResponseT::ResponseT;
-  };
-};
+class Commands;
 
 struct AddSubMsg : Proto<0x48, 0x03>
 {
@@ -113,6 +69,8 @@ struct AddSubMsg : Proto<0x48, 0x03>
     };
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * server);
 };
 
 struct DelMsg : Proto<0x48, 0x04>
@@ -143,6 +101,8 @@ struct DelMsg : Proto<0x48, 0x04>
     }
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * server);
+
 };
 
 // DUSS_MB_TYPE_PUSH
@@ -154,11 +114,11 @@ struct PushPeriodMsg : Proto<0x48, 0x08>
     uint8_t msg_id;
     std::vector<uint8_t> subject_data;
 
-    Response(std::shared_ptr<AddSubMsg::Request> request)
+    Response(AddSubMsg::Request &request)
     : ResponseT(request)
     {
-      msg_id = request->msg_id;
-      sub_mode = request->sub_mode;
+      msg_id = request.msg_id;
+      sub_mode = request.sub_mode;
       is_ack = 0;
       need_ack = 0;
     }
@@ -174,4 +134,4 @@ struct PushPeriodMsg : Proto<0x48, 0x08>
     using ResponseT::ResponseT;
   };
 };
-#endif /* end of include guard: MESSAGES_H */
+#endif /* end of include guard: SUBSCRIBER_MESSAGES_H */

@@ -3,8 +3,12 @@
 
 #include <iostream>
 #include <cstdint>
-#include "server.hpp"
-#include "messages.hpp"
+
+#include "protocol.hpp"
+#include "utils.hpp"
+
+#include <spdlog/spdlog.h>
+#include "spdlog/fmt/ostr.h"
 
 struct GetVersion : Proto<0x0, 0x1>
 {
@@ -37,6 +41,15 @@ struct GetVersion : Proto<0x0, 0x1>
     };
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    response.aa = 0;
+    response.bb = 1;
+    response.cc = 2;
+    response.dd = 3;
+    return true;
+  }
 };
 
 struct GetProductVersion : Proto<0x0, 0x4f>
@@ -74,6 +87,15 @@ struct GetProductVersion : Proto<0x0, 0x4f>
     }
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    response.aa = 0;
+    response.bb = 1;
+    response.cc = 2;
+    return true;
+  }
+
 };
 
 struct GetSn : Proto<0x0, 0x51>
@@ -112,10 +134,20 @@ struct GetSn : Proto<0x0, 0x51>
     };
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    response.serial_number = "serial_1234";
+    return true;
+  }
+
 };
 
+
+/* NOT USED
 struct ChassisWheelSpeed : Proto<0x3f, 0x26>
 {
+
   struct Request : RequestT {
 
     int8_t w1_speed;
@@ -143,15 +175,29 @@ struct ChassisWheelSpeed : Proto<0x3f, 0x26>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    float speed[4] = {angular_speed(request.w1_speed), angular_speed(request.w2_speed),
+                      angular_speed(request.w3_speed), angular_speed(request.w4_speed)};
+    robot->set_wheel_speed(speed);
+    return true;
+  }
+
 };
+*/
 
 struct SetWheelSpeed : Proto<0x3f, 0x20>
 {
   struct Request : RequestT {
 
+    // int:[-1000,1000] right front [rpm], front robot directio -> positiove speed
     int8_t w1_speed;
+    // int:[-1000,1000] left front [rpm], front robot directio -> positiove speed
     int8_t w2_speed;
+    // int:[-1000,1000] left rear [rpm], front robot directio -> positiove speed
     int8_t w3_speed;
+    // int:[-1000,1000] right rear [rpm], front robot directio -> positiove speed
     int8_t w4_speed;
 
     Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
@@ -174,12 +220,25 @@ struct SetWheelSpeed : Proto<0x3f, 0x20>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    robot->set_wheel_speeds(
+        angular_speed(request.w1_speed), angular_speed(request.w2_speed),
+        angular_speed(request.w3_speed), angular_speed(request.w4_speed));
+    return true;
+  }
+
 };
 
 struct SetSystemLed : Proto<0x3f, 0x33>
 {
   struct Request : RequestT {
-
+    // r int: [0~255]
+    // g int: [0~255]
+    // b int: [0~255]
+    // freq: int: [1, 10]
+    // t1, t2 [ms]
     uint32_t comp_mask;
     int16_t led_mask;
     uint8_t ctrl_mode;
@@ -220,6 +279,14 @@ struct SetSystemLed : Proto<0x3f, 0x33>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    uint8_t mask = (0xFF & request.led_mask & request.comp_mask);
+    robot->set_leds({request.r, request.g, request.b}, mask, Robot::LedEffect(request.effect_mode),
+                    request.t1, request.t2, request.loop);
+    return true;
+  }
 
 };
 
@@ -272,9 +339,16 @@ struct PlaySound : Proto<0x3f, 0xb3>
     using ResponseT::ResponseT;
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    spdlog::info("PlaySound ignored");
+    response.accept = true;
+    return true;
+  }
+
 };
 
-
+// Action
 struct PositionMove : Proto<0x3f, 0x25>
 {
   struct Request : RequestT {
@@ -332,6 +406,14 @@ struct PositionMove : Proto<0x3f, 0x25>
     };
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after actions are added
+    spdlog::warn("PositionMove answer not implemented");
+    // response.accept = true;
+    return false;
+  }
 
 };
 
@@ -394,6 +476,13 @@ struct PositionPush : Proto<0x3f, 0x2a>
     using ResponseT::ResponseT;
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after actions are added
+    spdlog::warn("PositionPush answer not implemented");
+    return false;
+  }
+
 };
 
 struct ChassisPwmPercent : Proto<0x3f, 0x3c>
@@ -401,6 +490,7 @@ struct ChassisPwmPercent : Proto<0x3f, 0x3c>
   struct Request : RequestT {
 
     uint8_t mask;
+    // [0,100], percentage
     int16_t pwm_1, pwm_2, pwm_3, pwm_4, pwm_5, pwm_6;
 
     Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
@@ -433,6 +523,12 @@ struct ChassisPwmPercent : Proto<0x3f, 0x3c>
   struct Response : ResponseT{
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    spdlog::info("ChassisPwmPercent ignored");
+    return true;
+  }
 
 };
 
@@ -474,6 +570,12 @@ struct ChassisPwmFreq : Proto<0x3f, 0x2b>
     using ResponseT::ResponseT;
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    spdlog::info("ChassisPwmFreq ignored");
+    return true;
+  }
+
 };
 
 struct SetRobotMode : Proto<0x3f, 0x46>
@@ -497,6 +599,12 @@ struct SetRobotMode : Proto<0x3f, 0x46>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    robot->set_mode(Robot::Mode(request.mode));
+    return true;
+  }
 
 };
 
@@ -526,6 +634,12 @@ struct GetRobotMode : Proto<0x3f, 0x47>
     using ResponseT::ResponseT;
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    response.mode = robot->get_mode();
+    return true;
+  }
+
 };
 
 
@@ -551,6 +665,12 @@ struct VisionDetectEnable : Proto<0xa, 0xa3>
     }
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    spdlog::warn("VisionDetectEnable not implemented yet");
+    return false;
+  }
+
 };
 
 // TODO(Jerome):   _cmdtype = DUSS_MB_TYPE_PUSH
@@ -558,8 +678,11 @@ struct ChassisSpeedMode : Proto<0x3f, 0x21>
 {
   struct Request : RequestT {
 
+    // [-3.5,3.5]，x-velocity m/s
     float x_spd;
+    // [-3.5,3.5]，y-velocity m/s
     float y_spd;
+    // [-600,600]，theta-velocity degrees/s
     float z_spd;
 
     Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
@@ -581,6 +704,12 @@ struct ChassisSpeedMode : Proto<0x3f, 0x21>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    robot->set_velocity(request.x_spd, request.y_spd, deg2rad(request.z_spd));
+    return true;
+  }
 };
 
 struct SdkHeartBeat : Proto<0x3f, 0xd5>
@@ -599,6 +728,11 @@ struct SdkHeartBeat : Proto<0x3f, 0xd5>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    return true;
+  }
 
 };
 
@@ -623,6 +757,12 @@ struct SetSdkMode : Proto<0x3f, 0xd1>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    robot->set_enable_sdk(request.enable);
+    return true;
+  }
 
 };
 
@@ -659,6 +799,13 @@ struct SubscribeAddNode : Proto<0x48, 0x01>
     };
     using ResponseT::ResponseT;
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after publishers are added
+    spdlog::warn("SubscribeAddNode answer not implemented");
+    return false;
+  }
 };
 
 
@@ -684,6 +831,14 @@ struct SubNodeReset : Proto<0x48, 0x02>
     }
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after publishers are added
+    // Are nodes just for subscribers?
+    spdlog::warn("SubNodeReset answer not implemented");
+    return false;
+  }
+
 };
 
 
@@ -692,7 +847,9 @@ struct GripperCtrl : Proto<0x33, 0x11>
   struct Request : RequestT {
 
     uint8_t id;
+    // 0 pause, 1 open, 2 close
     uint8_t control;
+    // [1, 100] percent of max power
     uint16_t power;
 
     Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
@@ -715,9 +872,16 @@ struct GripperCtrl : Proto<0x33, 0x11>
     }
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // id is ignored
+    robot->control_gripper(Robot::GripperStatus(request.control), (float) 100.0 / request.power);
+    return false;
+  }
+
 };
 
-
+/* Not used
 struct ChassisSetWorkMode : Proto<0x3f, 0x19>
 {
   struct Request : RequestT {
@@ -741,7 +905,7 @@ struct ChassisSetWorkMode : Proto<0x3f, 0x19>
   };
 
 };
-
+*/
 
 struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
 {
@@ -799,6 +963,13 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
     using ResponseT::ResponseT;
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after actions are added
+    spdlog::warn("RoboticArmMoveCtrl answer not implemented");
+    return false;
+  }
+
 };
 
 
@@ -840,6 +1011,13 @@ struct RoboticArmMovePush : Proto<0x3f, 0xb6>
     using ResponseT::ResponseT;
   };
 
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after actions are added
+    spdlog::warn("RoboticArmMovePush answer not implemented");
+    return false;
+  }
+
 };
 
 
@@ -880,6 +1058,13 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
       return os;
     }
   };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    // TODO(jerome): implement after video is added
+    spdlog::warn("StreamCtrl answer not implemented");
+    return false;
+  }
 
 };
 

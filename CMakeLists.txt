@@ -7,26 +7,74 @@ project(
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-parameter)
+add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-c99-extensions)
 
 find_package(Boost COMPONENTS system REQUIRED)
 find_package(spdlog REQUIRED)
+# find_package(libav REQUIRED avcodec REQUIRED)
+
+# if(libav)
+#   message("Found FFMPEG/LibAV libraries")
+#   include_directories(${LIBAV_INCLUDE_DIR})
+# else()
+#   message("Can't find libavcodec, libavformat or libavutil. Add them!")
+# endif()
+#
+
+find_path(AVCODEC_INCLUDE_DIR libavcodec/avcodec.h)
+find_library(AVCODEC_LIBRARY avcodec)
+
+find_path(AVFORMAT_INCLUDE_DIR libavformat/avformat.h)
+find_library(AVFORMAT_LIBRARY avformat)
+
+find_path(AVUTIL_INCLUDE_DIR libavutil/avutil.h)
+find_library(AVUTIL_LIBRARY avutil)
+
+find_path(AVDEVICE_INCLUDE_DIR libavdevice/avdevice.h)
+find_library(AVDEVICE_LIBRARY avdevice)
+
 
 # link_directories(${Boost_LIBRARY_DIRS})
-include_directories(${Boost_INCLUDE_DIRS} include)
+include_directories(
+  ${Boost_INCLUDE_DIRS}
+  ${AVCODEC_INCLUDE_DIR}
+  ${AVFORMAT_INCLUDE_DIR}
+  ${AVUTIL_INCLUDE_DIR}
+  ${AVDEVICE_INCLUDE_DIR}
+  include
+)
 
 add_library(robomaster
   src/robomaster.cpp
   src/server.cpp
   src/command.cpp
   src/connection.cpp
-  src/topics.cpp
+  src/dummy_robot.cpp
+  src/protocol.cpp
+  src/topic.cpp
+  src/rt_topic.cpp
+  # src/streamer.cpp
 )
 add_executable(test test.cpp)
 
+add_executable(test_encoder test_encoder.cpp)
+
 target_link_libraries(test PRIVATE
   robomaster
-  PRIVATE spdlog::spdlog
+  spdlog::spdlog
+  ${AVCODEC_LIBRARY}
+  ${AVFORMAT_LIBRARY}
+  ${AVUTIL_LIBRARY}
+  ${AVDEVICE_LIBRARY}
   # PRIVATE spdlog::spdlog_header_only
   # ${Boost_LIBRARIES}
+)
+
+message("${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY}")
+
+target_link_libraries(test_encoder
+  ${AVCODEC_LIBRARY}
+  ${AVFORMAT_LIBRARY}
+  ${AVUTIL_LIBRARY}
+  ${AVDEVICE_LIBRARY}
 )
