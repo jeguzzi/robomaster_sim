@@ -13,9 +13,10 @@ using boost::asio::ip::udp;
 
 class Commands : public Server {
 public:
-  Commands(Robot * robot, boost::asio::io_context& _io_context, short port = 20020);
+  Commands(boost::asio::io_context * _io_context, Robot * robot, short port = 20020);
   void create_publisher(uint64_t uid, AddSubMsg::Request &request);
   void stop_publisher(DelMsg::Request &request);
+  void do_step(float time_step);
 private:
 
   typedef std::function<std::shared_ptr<Subject>()> SubjectCreator;

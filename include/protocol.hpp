@@ -61,6 +61,8 @@ struct ResponseT
     return {0};
   };
 
+  virtual ~ResponseT(){};
+
   std::vector<uint8_t> encode_msg(uint8_t set, uint8_t id);
 };
 

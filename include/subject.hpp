@@ -12,6 +12,7 @@ struct Subject
   virtual void update(Robot *) = 0;
   Subject() { };
   virtual ~Subject() {}
+  virtual std::string name() = 0;
 };
 
 template <uint64_t _uid>

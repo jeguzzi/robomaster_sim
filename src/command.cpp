@@ -39,9 +39,10 @@ bool DelMsg::answer(Request &request, Response &response, Robot  * robot, Comman
   return true;
 }
 
-Commands::Commands(Robot * robot, boost::asio::io_context& _io_context, short port)
-: Server(robot, _io_context, port)
+Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, short port)
+: Server(_io_context, robot, port)
 {
+  robot->set_commands(this);
   register_message<SdkHeartBeat>();
   register_message<SetSdkMode>();
   register_message<SetRobotMode>();
@@ -57,15 +58,15 @@ Commands::Commands(Robot * robot, boost::asio::io_context& _io_context, short po
   register_message<GetSn>();
   register_message<SetSystemLed>();
   register_message<PlaySound>();
-  register_message<PositionMove>();
-  register_message<PositionPush>();
+  register_message<PositionMove, Commands *>(this);
+  // register_message<PositionPush>();
   register_message<SetWheelSpeed>();
   register_message<ChassisPwmPercent>();
   register_message<ChassisPwmFreq>();
   register_message<GripperCtrl>();
 
   register_message<RoboticArmMoveCtrl>();
-  register_message<RoboticArmMovePush>();
+  // register_message<RoboticArmMovePush>();
   register_message<StreamCtrl>();
 
   // Currently not used by the robomaster Python library
@@ -98,7 +99,7 @@ void Commands::create_publisher(uint64_t uid, AddSubMsg::Request &request)
     return;
   }
   auto subject = subjects[uid]();
-  auto topic= std::make_shared<RT_Topic>(this, robot, request, subject, io_context);
+  auto topic= std::make_shared<Topic>(this, robot, request, subject);
   publishers[key] = topic;
   topic->start();
 }
@@ -107,4 +108,14 @@ void Commands::stop_publisher(DelMsg::Request &request)
 {
   uint16_t key = key_from(request.node_id, request.msg_id);
   publishers.erase(key);
+}
+
+
+void Commands::do_step(float time_step)
+{
+  // spdlog::info("[Commands] do_step");
+  for (auto const& [key, pub] : publishers)
+  {
+    pub->do_step(time_step);
+  }
 }

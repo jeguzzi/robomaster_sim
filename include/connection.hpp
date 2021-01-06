@@ -6,7 +6,7 @@
 
 class Connection : public Server {
 public:
-  Connection(Robot * robot, boost::asio::io_context& io_context, short port = 30030);
+  Connection(boost::asio::io_context * io_context, Robot * robot, short port = 30030);
 };
 
 #endif /* end of include guard: _CONNECTION_HPP */

@@ -1,26 +1,99 @@
 #ifndef ROBOT_HPP
 #define ROBOT_HPP
 
+#include <math.h>
+#include <string.h>
+#include <stdexcept>
+#include <algorithm>
+#include <map>
+
+#include <spdlog/spdlog.h>
+#include "spdlog/fmt/ostr.h"
+
+#include "utils.hpp"
+
+struct Action;
+struct MoveAction;
+
+// static unsigned char multiply(unsigned char value, float factor)
+// {
+//   float v = (float) value * factor;
+//   if(v >= 255) return 255;
+//   if(v<=0) return 0;
+//   return (unsigned char) round(v * 255);
+// }
+
+// static float clamp(float value, float factor)
+// {
+//   float v = (float) value * factor;
+//   if(v >= 255) return 255;
+//   if(v<=0) return 0;
+//   return (unsigned char) round(v * 255);
+// }
+
 struct Color {
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
+  // [0, 1]
+  float r;
+  float g;
+  float b;
+
+  inline bool operator==(const Color& rhs) const {
+    return r == rhs.r && g == rhs.g && b == rhs.b;
+  };
+
+  inline Color operator*(float f) {
+    return {std::clamp(r * f, 0.0f, 1.0f), std::clamp(g * f, 0.0f, 1.0f), std::clamp(b * f, 0.0f, 1.0f)};
+  }
+
+  inline bool operator!=(const Color& rhs) {
+    return !(*this == rhs);
+  }
 };
 
-struct Pose2D {
-  float x, y, theta;
+template<typename OStream>
+OStream& operator<<(OStream& os, const Color& v)
+{
+  os << "Color <"
+     << int(v.r) << ", "
+     << int(v.g) << ", "
+     << int(v.b)
+     << ">";
+  return os;
+}
+
+
+class ActiveLED {
+
+public:
+
+  enum LedEffect {
+    off = 0,
+    on = 1,
+    breath = 2,
+    flash = 3,
+    scrolling = 4
+  };
+
+  ActiveLED();
+
+  void update(Color _color, LedEffect _effect, float _period_1, float _period_2, bool _loop);
+
+  void do_step(float time_step);
+  Color color;
+private:
+  bool active;
+  Color tcolor;
+  LedEffect effect;
+  float period_1;
+  float period_2;
+  float period;
+  bool loop;
+  float _time;
 };
 
-struct Twist2D {
-  float x, y, theta;
-};
 
 struct Attitude {
   float yaw, pitch, roll;
-};
-
-struct Vector3 {
-  float x, y, z;
 };
 
 struct IMU {
@@ -29,17 +102,20 @@ struct IMU {
   Vector3 acceleration;
 };
 
+struct Odometry {
+  Pose2D pose;
+  Twist2D twist;
+};
+
+
+
+typedef WheelValues<float> WheelSpeeds;
+
+class Commands;
 
 class Robot
 {
 public:
-  enum LedEffect {
-    off = 0,
-    on = 1,
-    breath = 2,
-    flash = 3,
-    scrolling = 4
-  };
 
   enum Led {
     ARMOR_BOTTOM_BACK = 0x1,
@@ -51,6 +127,24 @@ public:
   };
 
   typedef unsigned char LedMask;
+  typedef LEDValues<Color> LEDColors;
+
+  struct LED : LEDValues<ActiveLED> {
+
+    inline LEDColors desired_colors()
+    {
+      return {front.color, left.color, rear.color, right.color};
+    }
+
+    void do_step(float time_step) {
+      rear.do_step(time_step);
+      front.do_step(time_step);
+      left.do_step(time_step);
+      right.do_step(time_step);
+    }
+
+  };
+
 
   enum Mode {
     FREE = 0,
@@ -69,84 +163,130 @@ public:
     body = 1
   };
 
+  Robot();
 
-  Robot()
-  : mode(Mode::FREE){
+  virtual void update_led_colors(LEDColors &) = 0;
+  virtual void update_target_wheel_speeds(WheelSpeeds &) = 0;
+  virtual WheelSpeeds read_wheel_speeds() = 0;
+  virtual WheelValues<float> read_wheel_angles() = 0;
+  virtual IMU read_imu() = 0;
+  // virtual void control_gripper(GripperStatus state, float power) = 0;
 
-  }
+  void do_step(float time_step);
 
+  void update_odometry(float time_step);
+  void update_attitude(float time_step);
   /**
   * Set the angular speed of the wheels in [rad/s] with respect to robot y-axis
-  * @param front_right front right angular wheel speed
-  * @param front_left  front left angular wheel speed
-  * @param rear_left   rear left angular wheel speed
-  * @param rear_right  rear right angular wheel speed
   */
-  virtual void set_wheel_speeds(float front_right, float front_left, float rear_left, float rear_right) = 0;
+  void set_target_wheel_speeds(WheelSpeeds &speeds);
 
   /**
-   * [set_leds description]
+   * Set the current LED effect
    * @param color      Color
-   * @param mask       LEDs to control
-   * @param effect     LEDs gesture
+   * @param mask       LED to control
+   * @param effect     LED gesture
    * @param period_on  Gesture on-period [TODO(jerome): check]
    * @param period_off Gesture off-period [TODO(jerome): check]
    * @param loop       Repeat the gesture
    */
-  virtual void set_leds(Color color, LedMask mask, LedEffect effect, float period_on, float period_off, bool loop) = 0;
+  void set_led_effect(Color color, LedMask mask, ActiveLED::LedEffect effect, float period_on, float period_off, bool loop);
 
   /**
    * Set the type of coordination between gimbal and chassis
    * @param mode The desired robot mode
    */
-  void set_mode(Mode _mode){
-    mode = _mode;
-  }
-
+  void set_mode(Mode _mode);
   /**
    * Get the type of coordination between gimbal and chassis
    * @return The current robot mode
    */
-  Mode get_mode(){
-    return mode;
-  }
+  Mode get_mode();
 
   /**
    * Set the robot velocity in its frame.
-   * @param x     Linear velocity (x, [m/s])
-   * @param y     Linear velocity (y, [m/s])
-   * @param theta Angualar velocity (theta, [rad/s])
    */
-  virtual void set_velocity(float x, float y, float theta) = 0;
+  void set_target_velocity(Twist2D &twist);
 
   /**
    * Enable/disable the SDK [client]
    * @param value SDK [client] state
    */
-  virtual void set_enable_sdk(bool value) = 0;
+  void set_enable_sdk(bool value);
+
+
+
+  Twist2D get_twist(Frame frame);
+
+  Pose2D get_pose();
+
+  Attitude get_attitude();
+
+  IMU get_imu();
+
+  GripperStatus get_gripper_status();
+
+  Vector3 get_arm_position();
 
   /**
    * Control the gripper
    * @param state the desired state: open, close or pause the gripper
    * @param power The fraction of power to apply
    */
-  virtual void control_gripper(GripperStatus state, float power) = 0;
+  void set_target_gripper(GripperStatus state, float power);
 
-  Twist2D get_twist(Frame frame) { return {}; };
+  void set_commands(Commands * _commands) {
+    commands = _commands;
+  }
 
-  Pose2D get_pose() { return {}; };
+  // in seconds
+  float get_time() {
+    return time_;
+  }
 
-  Attitude get_attitude() { return {}; };
 
-  IMU get_imu() { return {}; };
+  WheelSpeeds get_wheel_speeds() {
+    return wheel_speeds;
+  }
 
-  GripperStatus get_gripper_status() { return GripperStatus::pause; };
+  WheelValues<float> get_wheel_angles() {
+    return wheel_angles;
+  }
 
-  Vector3 get_arm_position() { return {}; };
+  bool submit_action(std::shared_ptr<MoveAction> action);
 
 protected:
+  IMU imu;
+  WheelSpeeds target_wheel_speed;
+
+private:
   Mode mode;
 
+  float axis_x;
+  float axis_y;
+  float wheel_radius;
+
+  bool sdk_enabled;
+
+  Odometry odometry;
+  Twist2D body_twist;
+  WheelSpeeds desired_target_wheel_speed;
+  WheelSpeeds wheel_speeds;
+  WheelValues<float> wheel_angles;
+  LED leds;
+  LEDColors led_colors;
+
+  float time_;
+
+  GripperStatus gripper_state;
+  GripperStatus desired_gripper_state;
+  //float gripper_power;
+  float desired_gripper_power;
+  Vector3 arm_position;
+  Commands * commands;
+
+  // std::map<int, std::shared_ptr<Action>> actions;
+  std::shared_ptr<MoveAction> move_action;
 };
 
 #endif /* end of include guard: ROBOT_HPP */

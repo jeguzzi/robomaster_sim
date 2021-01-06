@@ -19,7 +19,10 @@ class Server
   typedef std::function<std::vector<uint8_t>(uint8_t, uint8_t, uint16_t, uint8_t, const uint8_t *)> Callback;
 
 public:
-  Server(Robot * robot, boost::asio::io_context& io_context, short port = 30030);
+  Server(boost::asio::io_context * io_context, Robot * robot, short port = 30030);
+  ~Server() {
+
+  }
   void start();
   void send(std::vector<uint8_t> data);
 protected:
@@ -33,7 +36,7 @@ protected:
     {
       typename R::Request request(sender, receiver, seq_id, attri, buffer);
       typename R::Response response(request);
-      spdlog::debug("Got {}", request);
+      spdlog::debug("Got {} ({})", request, request.need_ack());
       bool valid = R::answer(request, response, r, args ...);
       if(valid)
       {
@@ -42,6 +45,7 @@ protected:
       return {};
     };
   }
+
 
 private:
   udp::socket socket_;

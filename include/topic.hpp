@@ -13,7 +13,8 @@ struct Topic
   Robot * robot;
   AddSubMsg::Request request;
   std::shared_ptr<Subject> subject;
-  unsigned period_ms;
+  float deadline;
+  bool active;
 
   Topic(Commands * _server, Robot * _robot, AddSubMsg::Request &_request,
         std::shared_ptr<Subject> _subject)
@@ -24,7 +25,7 @@ struct Topic
   virtual ~Topic() {
     stop();
   }
-
+  void do_step(float time_step);
   virtual void start();
   virtual void stop();
   void publish();

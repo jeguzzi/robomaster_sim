@@ -2,16 +2,31 @@
 #include "topic.hpp"
 #include "command.hpp"
 
+void Topic::do_step(float time_step)
+{
+  // spdlog::info("[TOPIC] do_step {} {}", active, deadline);
+  if(!active) return;
+  deadline -= time_step;
+  while(deadline <= 0) {
+    deadline += 1.0f /request.sub_freq;
+    // spdlog::info("[TOPIC] publish");
+    publish();
+  }
+}
+
 void Topic::start()
 {
-  period_ms = 1000/request.sub_freq;
-  spdlog::info("[Topic] Start topic");
+  active = true;
+  deadline = 0.0f;
+  // deadline = 1.0f/request.sub_freq;
+  spdlog::info("[Topic] Start {}", subject->name());
+  // publish();
 }
 
 void Topic::stop()
 {
-  period_ms = 0;
-  spdlog::info("[Topic] Stop topic");
+  active = false;
+  spdlog::info("[Topic] Stop {}", subject->name());
 }
 
 void Topic::publish()
@@ -19,6 +34,7 @@ void Topic::publish()
   PushPeriodMsg::Response response(request);
   response.subject_data = subject_data();
   auto data = response.encode_msg(PushPeriodMsg::set, PushPeriodMsg::cmd);
+  spdlog::debug("Push {} bytes: {:n}", data.size(), spdlog::to_hex(data));
   server->send(data);
 }
 

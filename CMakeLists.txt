@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-c99-extensions)
 
-find_package(Boost COMPONENTS system REQUIRED)
+find_package(Boost COMPONENTS system thread REQUIRED)
 find_package(spdlog REQUIRED)
 # find_package(libav REQUIRED avcodec REQUIRED)
 
@@ -52,7 +52,10 @@ add_library(robomaster
   src/dummy_robot.cpp
   src/protocol.cpp
   src/topic.cpp
-  src/rt_topic.cpp
+  # src/rt_topic.cpp
+  src/robot.cpp
+  src/action.cpp
+  src/utils.cpp
   # src/streamer.cpp
 )
 add_executable(test test.cpp)
@@ -62,12 +65,12 @@ add_executable(test_encoder test_encoder.cpp)
 target_link_libraries(test PRIVATE
   robomaster
   spdlog::spdlog
-  ${AVCODEC_LIBRARY}
-  ${AVFORMAT_LIBRARY}
-  ${AVUTIL_LIBRARY}
-  ${AVDEVICE_LIBRARY}
+  # ${AVCODEC_LIBRARY}
+  # ${AVFORMAT_LIBRARY}
+  # ${AVUTIL_LIBRARY}
+  # ${AVDEVICE_LIBRARY}
   # PRIVATE spdlog::spdlog_header_only
-  # ${Boost_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 message("${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY}")
@@ -77,4 +80,28 @@ target_link_libraries(test_encoder
   ${AVFORMAT_LIBRARY}
   ${AVUTIL_LIBRARY}
   ${AVDEVICE_LIBRARY}
+)
+
+link_directories(
+/usr/local/opt/icu4c/lib
+)
+
+add_subdirectory(coppeliaSim_plugin)
+
+
+
+
+
+target_link_libraries(simExtRobomaster
+  robomaster
+  spdlog::spdlog
+  ${Boost_LIBRARIES}
+)
+
+# set_target_properties( PROPERTIES COMPILE_FLAGS "Wno-reorder-ctor")
+target_compile_options(simExtRobomaster PUBLIC
+"-Wno-reorder-ctor"
+"-Wno-sign-compare"
+"-Wno-delete-non-abstract-non-virtual-dtor"
+"-Wno-unused-function"
 )

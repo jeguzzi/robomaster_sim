@@ -1,6 +1,8 @@
 #ifndef COMMAND_SUBJECTS_H
 #define COMMAND_SUBJECTS_H
 
+#include <algorithm>
+
 #include "subject.hpp"
 #include "utils.hpp"
 #include <spdlog/spdlog.h>
@@ -24,8 +26,30 @@
 // DDS_TOF: 0x0002000986e4c05a,
 // DDS_PINBOARD: 0x00020009eebb9ffc,
 
+// template<typename T>
+// static T from_robot(T twist);
+
+// template<>
+// NOTE(jerome): Currently the firmware set the angular component to 0
+Twist2D from_robot(Twist2D twist) {
+  return {twist.x, -twist.y, rad2deg(0.0)};
+}
+
+// template<>
+// NOTE(jerome): Currently the firmware set the angular component to 0
+Pose2D from_robot(Pose2D pose) {
+  return {pose.x, -pose.y, rad2deg(0.0)};
+}
+
+// template<>
+Attitude from_robot(Attitude attitude) {
+  return {.yaw=rad2deg(-attitude.yaw), .pitch=rad2deg(-attitude.pitch), .roll=rad2deg(attitude.roll)};
+}
+
+
 struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
 {
+  std::string name() { return "Velocity"; };
 
   // {vgx, vgy, vgz}: The velocity in the world coordinate system [initialized] at the time of power-on
   float vgx;
@@ -35,6 +59,8 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
   float vbx;
   float vby;
   float vbz;
+
+
 
   std::vector<uint8_t> encode()
   {
@@ -49,8 +75,8 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
   }
 
   void update(Robot * robot){
-    Twist2D twist_odom = robot->get_twist(Robot::Frame::odom);
-    Twist2D twist_body = robot->get_twist(Robot::Frame::body);
+    Twist2D twist_odom = from_robot(robot->get_twist(Robot::Frame::odom));
+    Twist2D twist_body = from_robot(robot->get_twist(Robot::Frame::body));
     vgx = twist_odom.x;
     vgy = twist_odom.y;
     vgz = twist_odom.theta;
@@ -64,8 +90,9 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
 
 struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece>
 {
+  std::string name() { return "Position"; };
 
-  // pose2D in [m, m, degree]
+  // position3D in [m, m, m]
   float position_x;
   float position_y;
   float position_z;
@@ -80,15 +107,16 @@ struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece>
   }
 
   void update(Robot * robot){
-    Pose2D pose_odom = robot->get_pose();
+    Pose2D pose_odom = from_robot(robot->get_pose());
     position_x = pose_odom.x;
     position_y = pose_odom.y;
-    position_z = rad2deg(pose_odom.theta);
+    position_z = pose_odom.theta;
   }
 };
 
 struct AttiInfoSubject : SubjectWithUID<0x000200096b986306>
 {
+  std::string name() { return "AttiInfo"; };
   // degrees
   float yaw;
   float pitch;
@@ -104,19 +132,21 @@ struct AttiInfoSubject : SubjectWithUID<0x000200096b986306>
   }
 
   void update(Robot * robot){
-    Attitude attitude_odom = robot->get_attitude();
-    yaw = rad2deg(attitude_odom.yaw);
-    pitch = rad2deg(attitude_odom.pitch);
-    roll = rad2deg(attitude_odom.roll);
+    Attitude attitude_odom = from_robot(robot->get_attitude());
+    yaw = attitude_odom.yaw;
+    pitch = attitude_odom.pitch;
+    roll = attitude_odom.roll;
   }
 };
 
 
 struct ChassisModeSubject : SubjectWithUID<0x000200094fcb1146>
 {
+  std::string name() { return "ChassisMode"; };
   // ? not exposed/documented in the Python client library
   uint8_t mis_cur_type;
   // mode; TODO(jerome): is this the same mode as Robot::Mode?
+  // => NO: 8 when stopped, 5 when moving (with an action), ...
   uint8_t sdk_cur_type;
 
   std::vector<uint8_t> encode()
@@ -133,14 +163,34 @@ struct ChassisModeSubject : SubjectWithUID<0x000200094fcb1146>
 
 struct EscSubject : SubjectWithUID<0x00020009c14cb7c5>
 {
+  std::string name() { return "Esc"; };
+  inline static const int max_speed = 8191;
+  inline static const int min_speed = -8192;
+  inline static const int max_angle = 32767;
 
+  static int esc_speed(float speed) {
+    return std::clamp<int>(rpm_from_angular_speed(speed), EscSubject::min_speed,  EscSubject::max_speed);
+  }
+
+  static int esc_angle(float angle) {
+    angle = angle / (2 * M_PI);
+    angle = fmod(angle, 1.0f);
+    if(angle < 0) angle += 1.0f;
+    return (int) round(angle * EscSubject::max_angle);
+  }
+
+  // [front right, front left, rear left, rear right]
+
+  // rpm in [-8192, 8191]
   int16_t speed[4];
+  // angles in [0, 32767] ~ [0, 2\pi]
   int16_t angle[4];
+  // 600 units ~ 1 s
   uint32_t timestamp[4];
+  // ?
   uint8_t state[4];
 
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(4 * (2 + 2 + 4 + 1), 0);
     short j = 0;
     for (size_t i = 0; i < 4; i++, j+=2) {
@@ -158,14 +208,40 @@ struct EscSubject : SubjectWithUID<0x00020009c14cb7c5>
     return buffer;
   }
 
-  void update(Robot * robot){
-    spdlog::warn("EscSubject not implemented");
+  void update(Robot * robot) {
+    // spdlog::warn("EscSubject not implemented");
+    WheelSpeeds speeds = robot->get_wheel_speeds();
+    WheelValues<float> angles = robot->get_wheel_angles();
+    float time_ = robot->get_time();
+
+    speed[0] = EscSubject::esc_speed(speeds.front_right);
+    speed[1] = -EscSubject::esc_speed(speeds.front_left);
+    speed[2] = -EscSubject::esc_speed(speeds.rear_left);
+    speed[3] = EscSubject::esc_speed(speeds.rear_right);
+
+    angle[0] = EscSubject::esc_angle(angles.front_right);
+    angle[1] = -EscSubject::esc_angle(angles.front_left);
+    angle[2] = -EscSubject::esc_angle(angles.rear_left);
+    angle[3] = EscSubject::esc_angle(angles.rear_right);
+
+    for (size_t i = 0; i < 4; i++) {
+      timestamp[i] = (int32_t) (600 * time_);
+      state[i] = 0;
+    }
   }
 };
 
 struct ImuSubject : SubjectWithUID<0x00020009a7985b8d>
 {
+  std::string name() { return "Imu"; };
   // [m/s^2]
+  //
+  constexpr const static float G = 9.81f;
+
+  static float acc(float value) {
+    return value / ImuSubject::G;
+  }
+
   float acc_x, acc_y, acc_z;
   // angular velocity [deg/s]
   float gyro_x, gyro_y, gyro_z;
@@ -184,17 +260,18 @@ struct ImuSubject : SubjectWithUID<0x00020009a7985b8d>
 
   void update(Robot * robot){
     IMU imu_body = robot->get_imu();
-    acc_x = imu_body.acceleration.x;
-    acc_y = imu_body.acceleration.y;
-    acc_z = imu_body.acceleration.z;
-    gyro_x = imu_body.angular_velocity.x;
-    gyro_y = imu_body.angular_velocity.y;
-    gyro_z = imu_body.angular_velocity.z;
+    acc_x = -acc(imu_body.acceleration.x);
+    acc_y = acc(imu_body.acceleration.y);
+    acc_z = acc(imu_body.acceleration.z);
+    gyro_x = rad2deg(imu_body.angular_velocity.x);
+    gyro_y = -rad2deg(imu_body.angular_velocity.y);
+    gyro_z = -rad2deg(imu_body.angular_velocity.z);
   }
 };
 
 struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55>
 {
+  std::string name() { return "SaStatus"; };
   // Status standard bit [?]
   bool static_flag;
   bool up_hill;
@@ -225,6 +302,7 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55>
 
 struct SbusSubject : SubjectWithUID<0x0002000988223568>
 {
+  std::string name() { return "Sbus"; };
   uint8_t connect_status;
   int16_t subs_channel[16];
 
@@ -243,6 +321,8 @@ struct SbusSubject : SubjectWithUID<0x0002000988223568>
 
 struct BatterySubject : SubjectWithUID<0x000200096862229f>
 {
+  std::string name() { return "Battery"; };
+
   uint16_t adc_value;
   int16_t temperature;
   int32_t current;
@@ -267,6 +347,8 @@ struct BatterySubject : SubjectWithUID<0x000200096862229f>
 
 struct GripperSubject : SubjectWithUID<0x00020009124d156a>
 {
+  std::string name() { return "Gripper"; };
+
   uint8_t status;
 
   std::vector<uint8_t> encode()
@@ -281,6 +363,7 @@ struct GripperSubject : SubjectWithUID<0x00020009124d156a>
 
 struct ArmSubject : SubjectWithUID<0x0002000926abd64d>
 {
+  std::string name() { return "Arm"; };
   // [mm], TODO(jerome): check
   uint32_t pos_x, pos_y;
 
@@ -292,7 +375,7 @@ struct ArmSubject : SubjectWithUID<0x0002000926abd64d>
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot * robot) {
     Vector3 position = robot->get_arm_position();
     pos_x = static_cast<uint32_t>(position.x);
     pos_y = static_cast<uint32_t>(position.z);
