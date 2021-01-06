@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml-stylesheet type="text/xsl" href="callbacks.xsl"?>
+
+<plugin name="Robomaster" author="jerome@idsia.ch">
+    <description></description>
+    <command name="create">
+        <description>Instantiate a RoboMaster controller</description>
+        <params>
+          <param name="front_left_wheel" type="int">
+              <description>handle of the front left wheel joint</description>
+          </param>
+          <param name="front_right_wheel" type="int">
+              <description>handle of the front right wheel joint</description>
+          </param>
+          <param name="rear_left_wheel" type="int">
+              <description>handle of the rear left wheel joint</description>
+          </param>
+          <param name="rear_right_wheel" type="int">
+              <description>handle of the rear right wheel joint</description>
+          </param>
+          <param name="front_LED" type="int">
+              <description>handle of the front LED</description>
+          </param>
+          <param name="left_LED" type="int">
+              <description>handle of the left LED</description>
+          </param>
+          <param name="rear_LED" type="int">
+              <description>handle of the rear LED</description>
+          </param>
+          <param name="right_LED" type="int">
+              <description>handle of the right LED</description>
+          </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description>handle</description>
+            </param>
+        </return>
+    </command>
+    <command name="has_read_accelerometer">
+        <description></description>
+        <params>
+          <param name="handle" type="int">
+              <description>handle</description>
+          </param>
+          <param name="x" type="float">
+              <description>x (front)</description>
+          </param>
+          <param name="y" type="float">
+              <description>y (left)</description>
+          </param>
+          <param name="z" type="float">
+              <description>z (up)</description>
+          </param>
+        </params>
+        <!-- <return>
+            <param name="handle" type="string">
+                <description>handle of the newly created object</description>
+            </param>
+        </return> -->
+    </command>
+    <command name="has_read_gyro">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="x" type="float">
+              <description>x (front)</description>
+            </param>
+            <param name="y" type="float">
+              <description>y (left)</description>
+            </param>
+            <param name="z" type="float">
+              <description>z (up)</description>
+            </param>
+        </params>
+        <!-- <return>
+            <param name="handle" type="string">
+                <description>handle of the newly created object</description>
+            </param>
+        </return> -->
+    </command>
+    <command name="update_orientation">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="alpha" type="float">
+              <description>alpha (front)</description>
+            </param>
+            <param name="beta" type="float">
+              <description>beta (left)</description>
+            </param>
+            <param name="gamma" type="float">
+              <description>gamma (up)</description>
+            </param>
+        </params>
+    </command>
+</plugin>
