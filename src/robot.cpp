@@ -9,7 +9,7 @@
 #include "command.hpp"
 #include "utils.hpp"
 #include "action.hpp"
-
+#include "streamer.hpp"
 
 static Color breath_led(float _time, Color color, float period_1, float period_2) {
   float f;
@@ -90,11 +90,21 @@ static Twist2D twist_from_wheel_speeds(WheelSpeeds &speeds, float l=0.2, float r
 }
 
 
+static std::vector<unsigned char> generate_strip_image(unsigned i0, unsigned i1, unsigned width, unsigned height) {
+  unsigned size = width * height * 3;
+  std::vector<unsigned char> buffer(size, 0);
+  if(i0 > i1) i1 += width;
+  for (size_t i = i0; i < i1; i++)
+    for (size_t j = 0; j < height; j++)
+      buffer[(3 * (j * width + i)) % size] = 255;
+  return buffer;
+}
+
 Robot::Robot()
   : imu(), target_wheel_speed(),
   mode(Mode::FREE), axis_x(0.1),  axis_y(0.1), wheel_radius(0.05), sdk_enabled(false),
   odometry(), body_twist(), desired_target_wheel_speed(), wheel_speeds(), wheel_angles(),
-  leds(), led_colors(), time_(0.0f), commands(NULL)  {
+  leds(), led_colors(), time_(0.0f), commands(nullptr), video_streamer(nullptr)  {
   }
 
 void Robot::do_step(float time_step) {
@@ -106,7 +116,7 @@ void Robot::do_step(float time_step) {
   update_odometry(time_step);
   update_attitude(time_step);
 
-  spdlog::debug("state {}", odometry);
+  // spdlog::debug("state {}", odometry);
 
 
   // Update Actions
@@ -182,6 +192,16 @@ void Robot::do_step(float time_step) {
   // Update Publishers
   if(commands)
     commands->do_step(time_step);
+
+
+  // Stream the [for now dummy] camera image
+  if(video_streamer) {
+    spdlog::info("[Robot] stream new dummy frame");
+    static unsigned seq = 0;
+    seq = (seq + 1) % 640;
+    auto image = generate_strip_image(seq, seq + 10, 640, 360);
+    video_streamer->send(image.data());
+  }
 }
 
 void Robot::update_odometry(float time_step){
@@ -270,4 +290,18 @@ bool Robot::submit_action(std::shared_ptr<MoveAction> action) {
   move_action = action;
   move_action->state = Action::State::started;
   return true;
+}
+
+void Robot::start_streaming(int resolution) {
+  if(!video_streamer) {
+    spdlog::info("[Robot] start streaming");
+    video_streamer = std::make_shared<VideoStreamer>(commands->get_io_context(), 640, 360, 25);
+  }
+}
+
+void Robot::stop_streaming() {
+  if(video_streamer) {
+    spdlog::info("[Robot] stop streaming");
+    video_streamer = nullptr;
+  }
 }

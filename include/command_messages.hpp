@@ -1071,9 +1071,15 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
   };
 
   struct Request : RequestT {
-
+    // 1 ?
+    // 2 video
+    // 3 audio
     uint8_t ctrl;
+    // 0 wifi
+    // 1 usb
     uint8_t conn_type;
+    // 0 stop
+    // 1 start
     uint8_t state;
     Resolution resolution;
 
@@ -1102,8 +1108,14 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
     // TODO(jerome): implement after video is added
-    spdlog::warn("StreamCtrl answer not implemented");
-    return false;
+    // spdlog::warn("StreamCtrl answer not implemented");
+    if(request.ctrl == 2) {
+      if (request.state)
+        robot->start_streaming(request.resolution);
+      else
+        robot->stop_streaming();
+    }
+    return true;
   }
 
 };

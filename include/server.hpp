@@ -25,6 +25,11 @@ public:
   }
   void start();
   void send(std::vector<uint8_t> data);
+
+  boost::asio::io_context * get_io_context() {
+    return io_context;
+  }
+
 protected:
   boost::asio::io_context * io_context;
   Robot * robot;

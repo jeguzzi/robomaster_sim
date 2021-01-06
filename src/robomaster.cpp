@@ -12,7 +12,7 @@ using rm::RoboMaster;
 RoboMaster::RoboMaster(boost::asio::io_context * _io_context, Robot * robot)
 : io_context(_io_context ? _io_context : new boost::asio::io_context), conn(io_context, robot, 30030), cmds(io_context, robot, 20020)
 {
-  spdlog::set_level(spdlog::level::info);
+  spdlog::set_level(spdlog::level::debug);
 }
 
 void RoboMaster::spin(bool thread) {

@@ -56,19 +56,20 @@ add_library(robomaster
   src/robot.cpp
   src/action.cpp
   src/utils.cpp
-  # src/streamer.cpp
+  src/encoder.cpp
+  src/streamer.cpp
 )
 add_executable(test test.cpp)
 
-add_executable(test_encoder test_encoder.cpp)
+add_executable(test_encoder test_encoder.cpp src/encoder.cpp)
 
 target_link_libraries(test PRIVATE
   robomaster
   spdlog::spdlog
-  # ${AVCODEC_LIBRARY}
-  # ${AVFORMAT_LIBRARY}
-  # ${AVUTIL_LIBRARY}
-  # ${AVDEVICE_LIBRARY}
+  ${AVCODEC_LIBRARY}
+  ${AVFORMAT_LIBRARY}
+  ${AVUTIL_LIBRARY}
+  ${AVDEVICE_LIBRARY}
   # PRIVATE spdlog::spdlog_header_only
   ${Boost_LIBRARIES}
 )
@@ -88,14 +89,14 @@ link_directories(
 
 add_subdirectory(coppeliaSim_plugin)
 
-
-
-
-
 target_link_libraries(simExtRobomaster
   robomaster
   spdlog::spdlog
   ${Boost_LIBRARIES}
+  ${AVCODEC_LIBRARY}
+  ${AVFORMAT_LIBRARY}
+  ${AVUTIL_LIBRARY}
+  ${AVDEVICE_LIBRARY}
 )
 
 # set_target_properties( PROPERTIES COMPILE_FLAGS "Wno-reorder-ctor")

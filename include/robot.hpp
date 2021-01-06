@@ -105,6 +105,14 @@ struct IMU {
 struct Odometry {
   Pose2D pose;
   Twist2D twist;
+
+  template<typename OStream>
+  friend OStream& operator<<(OStream& os, const Odometry& v)
+  {
+    os << "Odom <" << v.pose << ", " << v.twist << " >";
+    return os;
+  }
+
 };
 
 
@@ -112,6 +120,7 @@ struct Odometry {
 typedef WheelValues<float> WheelSpeeds;
 
 class Commands;
+class VideoStreamer;
 
 class Robot
 {
@@ -255,6 +264,10 @@ public:
 
   bool submit_action(std::shared_ptr<MoveAction> action);
 
+  //TODO(jerome): use enum for resolution, pass address and protocol
+  void start_streaming(int resolution);
+  void stop_streaming();
+
 protected:
   IMU imu;
   WheelSpeeds target_wheel_speed;
@@ -287,6 +300,7 @@ private:
 
   // std::map<int, std::shared_ptr<Action>> actions;
   std::shared_ptr<MoveAction> move_action;
+  std::shared_ptr<VideoStreamer> video_streamer;
 };
 
 #endif /* end of include guard: ROBOT_HPP */
