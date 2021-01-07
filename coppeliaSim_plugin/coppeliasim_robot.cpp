@@ -54,3 +54,18 @@ void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) 
   imu.attitude.roll = alpha;
   imu.attitude.pitch = beta;
 }
+
+std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
+  simInt width = 0;
+  simInt height = 0;
+  simUChar * buffer = simGetVisionSensorCharImage(camera_handle, &width, &height);
+  unsigned size = width * height * 3;
+  // std::vector image(buffer, buffer + size);
+  std::vector<unsigned char> image;
+  image.reserve(size);
+  std::copy(buffer, buffer + size, std::back_inserter(image));
+  // image = std::vector(image);
+  simReleaseBuffer((const simChar *)buffer);
+  spdlog::debug("Got a {} x {} from CoppeliaSim", width, height);
+  return image;
+}

@@ -30,6 +30,9 @@
           <param name="right_LED" type="int">
               <description>handle of the right LED</description>
           </param>
+          <param name="camera" type="int">
+              <description>camera handle</description>
+          </param>
         </params>
         <return>
             <param name="handle" type="int">

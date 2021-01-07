@@ -1,5 +1,8 @@
 #include "encoder.hpp"
 
+extern "C" {
+  #include "libavutil/opt.h"
+}
 
 Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   // uint8_t endcode[] = { 0, 0, 1, 0xb7 };
@@ -19,25 +22,53 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
     fprintf(stderr, "av_packet_alloc failed\n");
     return;
   }
+
   /* put sample parameters */
   c->bit_rate = bitrate;
+  c->bit_rate_tolerance = 1000000;
  /* resolution must be a multiple of two */
   c->width = width;
   c->height = height;
+
+//   format_ctx->max_delay = 0;
+// format_ctx->probesize = 64;
+
   /* frames per second */
   c->time_base = (AVRational){1, fps};
   c->framerate = (AVRational){fps, 1};
+  c->pix_fmt = AV_PIX_FMT_RGB24;
 
   c->gop_size = 10; /* emit one intra frame every ten frames */
   c->max_b_frames=1;
   // c->pix_fmt = AV_PIX_FMT_YUV420P;
-  c->pix_fmt = AV_PIX_FMT_RGB24;
+
+  av_opt_set(c->priv_data, "preset", "superfast", 0);
+  av_opt_set(c->priv_data, "tune", "zerolatency", 0);
+
+  c->bit_rate_tolerance = 1000000;
+  // c->bit_rate = bitrate;
+  // c->delay = 0;
+  // c->thread_count = 1;
+  // c->gop_size = 0;
+
+  //preset: ultrafast, superfast, veryfast, faster, fast,
+  //medium, slow, slower, veryslow, placebo
+  // av_opt_set(pCodecCtx->priv_data,"preset","slow",0);
+  //tune: film, animation, grain, stillimage, psnr,
+  //ssim, fastdecode, zerolatency
+  // av_opt_set(pCodecCtx->priv_data,"tune","zerolatency",0);
+  //profile: baseline, main, high, high10, high422, high444
+  // av_opt_set(pCodecCtx->priv_data,"profile","main",0);
+
+
   //
   /* open it */
   if (avcodec_open2(c, codec, NULL) < 0) {
       fprintf(stderr, "could not open codec\n");
       return;
   }
+
+  printf("Opened codec %s\n", codec->long_name);
 
   frame->format = c->pix_fmt;
   frame->width  = c->width;
@@ -50,11 +81,17 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   //     return;
   // }
   seq = 0;
+
+  printf("Has a latency of %d frames\n", c->delay);
 }
 
 std::vector<unsigned char> Encoder::encode(unsigned char * buffer) {
 
   av_image_fill_arrays(frame->data, frame->linesize, buffer, AV_PIX_FMT_RGB24, frame->width, frame->height, 1);
+  // av_image_copy(frame->data, frame->linesize, (const uint8_t **) &buffer, frame->linesize, AV_PIX_FMT_RGB24, frame->width, frame->height);
+  // av_image_copy        (uint8_t *dst_data[4], int dst_linesizes[4], const uint8_t *src_data[4], const int src_linesizes[4], enum AVPixelFormat pix_fmt, int width, int height)
+  // av_image_fill_arrays (uint8_t *dst_data[4], int dst_linesize[4],   uint8_t *src, enum AVPixelFormat pix_fmt, int width, int height, int align)
+  //
 
   // frame->extended_data = &buffer;
   // memcpy(frame->extended_data[0], buffer, frame->width * frame->height);
@@ -79,8 +116,12 @@ std::vector<unsigned char> Encoder::encode(unsigned char * buffer) {
           fprintf(stderr, "error during encoding\n");
           return {};
       }
-      printf("encoded frame %3" PRId64" %lld (size=%5d) %d \n", pkt->pts, pkt->dts, pkt->size, seq);
-      return std::vector<unsigned char>(pkt->data, pkt->data + pkt->size);
+      // printf("encoded frame %3" PRId64" %lld (size=%5d) %d \n", pkt->pts, pkt->dts, pkt->size, seq);
+      std::vector<unsigned char> buffer;
+      buffer.reserve(pkt->size);
+      std::copy( pkt->data, pkt->data+pkt->size, std::back_inserter(buffer));
+      return buffer;
+      // return std::vector<unsigned char>(pkt->data, pkt->data+pkt->size);
   }
   return {};
 }

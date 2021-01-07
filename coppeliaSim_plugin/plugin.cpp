@@ -46,13 +46,13 @@ static std::map<int, std::shared_ptr<rm::RoboMaster>> _interfaces;
 
 static int add_robot(
     int front_left_wheel, int front_right_wheel, int rear_left_wheel, int rear_right_wheel,
-    int front_LED, int left_LED, int rear_LED, int right_LED)
+    int front_LED, int left_LED, int rear_LED, int right_LED, int camera)
 {
   int handle = next_robot_handle;
   next_robot_handle += 1;
   WheelValues<simInt> wheel_handles {front_left_wheel, front_right_wheel, rear_left_wheel, rear_right_wheel};
   LEDValues<simInt> led_handles {front_LED, left_LED, rear_LED, right_LED};
-  _robots[handle] = std::make_shared<CoppeliaSimRobot>(wheel_handles, led_handles);
+  _robots[handle] = std::make_shared<CoppeliaSimRobot>(wheel_handles, led_handles, camera);
   // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context, _robots[handle].get());
   _interfaces[handle] = std::make_shared<rm::RoboMaster>(nullptr, _robots[handle].get());
   _interfaces[handle]->spin(true);
@@ -99,7 +99,7 @@ public:
     {
       out->handle = add_robot(
         in->front_left_wheel, in->front_right_wheel, in->rear_left_wheel, in->rear_right_wheel,
-        in->front_LED, in->left_LED, in->rear_LED, in->right_LED
+        in->front_LED, in->left_LED, in->rear_LED, in->right_LED, in->camera
       );
 
     }

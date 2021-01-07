@@ -268,6 +268,8 @@ public:
   void start_streaming(int resolution);
   void stop_streaming();
 
+  virtual std::vector<unsigned char> read_camera_image() = 0;
+
 protected:
   IMU imu;
   WheelSpeeds target_wheel_speed;

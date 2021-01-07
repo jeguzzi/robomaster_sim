@@ -10,13 +10,14 @@ using boost::asio::ip::address;
 VideoStreamer::VideoStreamer(boost::asio::io_context * io_context,
                              unsigned image_width, unsigned image_height, int fps)
 : socket(*io_context, udp::endpoint(udp::v4(), 11111)), seq(0) {
-  encoder = std::make_shared<Encoder>(100000, image_width, image_height, fps);
+  encoder = std::make_shared<Encoder>(200000, image_width, image_height, fps);
 }
 
 void VideoStreamer::send(unsigned char *buffer) {
   auto data = encoder->encode(buffer);
   if(!data.empty()) {
     unsigned long frame_seq = seq++;
+    frame_seq = frame_seq+1;
     spdlog::debug("[Video] Will send frame #{} ({} bytes)", frame_seq, data.size());
     socket.async_send_to(
         boost::asio::buffer(data.data(), data.size()), udp::endpoint(address::from_string(IPADDRESS), UDP_PORT),

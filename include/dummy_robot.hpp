@@ -16,6 +16,7 @@ public:
   WheelSpeeds read_wheel_speeds();
   WheelSpeeds read_wheel_angles();
   IMU read_imu();
+  std::vector<unsigned char> read_camera_image();
 private:
   boost::asio::io_context * io_context;
   std::shared_ptr<boost::asio::deadline_timer> timer;

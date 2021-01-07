@@ -89,17 +89,6 @@ static Twist2D twist_from_wheel_speeds(WheelSpeeds &speeds, float l=0.2, float r
   return value;
 }
 
-
-static std::vector<unsigned char> generate_strip_image(unsigned i0, unsigned i1, unsigned width, unsigned height) {
-  unsigned size = width * height * 3;
-  std::vector<unsigned char> buffer(size, 0);
-  if(i0 > i1) i1 += width;
-  for (size_t i = i0; i < i1; i++)
-    for (size_t j = 0; j < height; j++)
-      buffer[(3 * (j * width + i)) % size] = 255;
-  return buffer;
-}
-
 Robot::Robot()
   : imu(), target_wheel_speed(),
   mode(Mode::FREE), axis_x(0.1),  axis_y(0.1), wheel_radius(0.05), sdk_enabled(false),
@@ -194,13 +183,18 @@ void Robot::do_step(float time_step) {
     commands->do_step(time_step);
 
 
-  // Stream the [for now dummy] camera image
+  // Stream the camera image
   if(video_streamer) {
-    spdlog::info("[Robot] stream new dummy frame");
-    static unsigned seq = 0;
-    seq = (seq + 1) % 640;
-    auto image = generate_strip_image(seq, seq + 10, 640, 360);
-    video_streamer->send(image.data());
+    // TODO(jerome): I miss something important with allocation/shifting around of buffers.
+    // If I do not copy here -> segfault ... why?
+    auto _image = read_camera_image();
+    // std::cout << int(image[0]) << " " << int(image[1]) << " " << int(image[2]) << " (" << image.size() <<")\n";
+    // auto image = std::vector<unsigned char>(640 * 360 * 3, 0);
+    auto image = _image;
+    if(!image.empty()) {
+      // spdlog::info("[Robot] stream new frame");
+      video_streamer->send(image.data());
+    }
   }
 }
 
@@ -295,7 +289,7 @@ bool Robot::submit_action(std::shared_ptr<MoveAction> action) {
 void Robot::start_streaming(int resolution) {
   if(!video_streamer) {
     spdlog::info("[Robot] start streaming");
-    video_streamer = std::make_shared<VideoStreamer>(commands->get_io_context(), 640, 360, 25);
+    video_streamer = std::make_shared<VideoStreamer>(commands->get_io_context(), 640, 360, 20);
   }
 }
 
