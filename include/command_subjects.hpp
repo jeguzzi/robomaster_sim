@@ -377,8 +377,8 @@ struct ArmSubject : SubjectWithUID<0x0002000926abd64d>
 
   void update(Robot * robot) {
     Vector3 position = robot->get_arm_position();
-    pos_x = static_cast<uint32_t>(position.x);
-    pos_y = static_cast<uint32_t>(position.z);
+    pos_x = static_cast<uint32_t>(1000 * position.x);
+    pos_y = static_cast<uint32_t>(1000 * position.z);
   }
 };
 

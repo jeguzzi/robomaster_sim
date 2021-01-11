@@ -14,6 +14,8 @@
 
 struct Action;
 struct MoveAction;
+struct MoveArmAction;
+
 
 // static unsigned char multiply(unsigned char value, float factor)
 // {
@@ -121,6 +123,7 @@ typedef WheelValues<float> WheelSpeeds;
 
 class Commands;
 class VideoStreamer;
+class Discovery;
 
 class Robot
 {
@@ -248,6 +251,14 @@ public:
     commands = _commands;
   }
 
+  void set_discovery(Discovery * _discovery) {
+    discovery = _discovery;
+  }
+
+  void set_video_streamer(VideoStreamer * _video) {
+    video_streamer = _video;
+  }
+
   // in seconds
   float get_time() {
     return time_;
@@ -263,16 +274,33 @@ public:
   }
 
   bool submit_action(std::shared_ptr<MoveAction> action);
+  bool submit_action(std::shared_ptr<MoveArmAction> action);
 
   //TODO(jerome): use enum for resolution, pass address and protocol
-  void start_streaming(int resolution);
-  void stop_streaming();
+  bool start_streaming(unsigned width, unsigned height);
+  bool stop_streaming();
+
+  virtual bool set_camera_resolution(unsigned width, unsigned height) = 0;
 
   virtual std::vector<unsigned char> read_camera_image() = 0;
+
+  void set_target_servo_angles(ServoValues<float> &angles);
+
+  ServoValues<float> get_servo_angles() {
+    return servo_angles;
+  }
+
+  void set_target_arm_position(Vector3 &position);
+
+  virtual void update_target_servo_angles(ServoValues<float> &angles) = 0;
+  virtual ServoValues<float> read_servo_angles() = 0;
+
+  void update_arm_position(float time_step);
 
 protected:
   IMU imu;
   WheelSpeeds target_wheel_speed;
+  ServoValues<float> target_servo_angles;
 
 private:
   Mode mode;
@@ -299,10 +327,16 @@ private:
   float desired_gripper_power;
   Vector3 arm_position;
   Commands * commands;
-
+  Discovery * discovery;
+  VideoStreamer * video_streamer;
+  bool streaming;
+  float last_time_step;
+  ServoValues<float> servo_angles;
+  ServoValues<float> desired_servo_angles;
   // std::map<int, std::shared_ptr<Action>> actions;
   std::shared_ptr<MoveAction> move_action;
-  std::shared_ptr<VideoStreamer> video_streamer;
+  std::shared_ptr<MoveArmAction> move_arm_action;
+  // std::shared_ptr<VideoStreamer> video_streamer;
 };
 
 #endif /* end of include guard: ROBOT_HPP */

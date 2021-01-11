@@ -33,6 +33,12 @@
           <param name="camera" type="int">
               <description>camera handle</description>
           </param>
+          <param name="right_arm_motor" type="int">
+              <description>the right servo motor</description>
+          </param>
+          <param name="left_arm_motor" type="int">
+              <description>the left servo motor</description>
+          </param>
         </params>
         <return>
             <param name="handle" type="int">

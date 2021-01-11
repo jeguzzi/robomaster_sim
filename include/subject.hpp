@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "robot.hpp"
+class Robot;
 
 struct Subject
 {

@@ -7,10 +7,10 @@ project(
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-c99-extensions)
-
+add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-c99-extensions)
+# -pedantic
 find_package(Boost COMPONENTS system thread REQUIRED)
-find_package(spdlog REQUIRED)
+find_package(spdlog REQUIRED )
 # find_package(libav REQUIRED avcodec REQUIRED)
 
 # if(libav)
@@ -41,6 +41,7 @@ include_directories(
   ${AVFORMAT_INCLUDE_DIR}
   ${AVUTIL_INCLUDE_DIR}
   ${AVDEVICE_INCLUDE_DIR}
+  ${spdlog_INCLUDE_DIR}
   include
 )
 
@@ -58,6 +59,7 @@ add_library(robomaster
   src/utils.cpp
   src/encoder.cpp
   src/streamer.cpp
+  src/discovery.cpp
 )
 add_executable(test test.cpp)
 
@@ -105,4 +107,18 @@ target_compile_options(simExtRobomaster PUBLIC
 "-Wno-sign-compare"
 "-Wno-delete-non-abstract-non-virtual-dtor"
 "-Wno-unused-function"
+"-Wno-reorder"
+"-Wno-delete-non-virtual-dtor"
 )
+
+# add_executable(test_log test_log.cpp)
+#
+# target_link_libraries(test_log PRIVATE
+#   spdlog::spdlog
+# )
+
+# add_executable(test_tcp test_acceptor.cpp)
+#
+# target_link_libraries(test_tcp PRIVATE
+#   ${Boost_LIBRARIES}
+# )

@@ -55,4 +55,4 @@ int main(int argc, char **argv) {
   }
   std::cout << "Goodbye" << std::endl;
   return 0;
-};
+}

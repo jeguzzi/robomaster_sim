@@ -56,6 +56,7 @@ void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) 
 }
 
 std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
+  if(!camera_handle) return {};
   simInt width = 0;
   simInt height = 0;
   simUChar * buffer = simGetVisionSensorCharImage(camera_handle, &width, &height);
@@ -68,4 +69,35 @@ std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
   simReleaseBuffer((const simChar *)buffer);
   spdlog::debug("Got a {} x {} from CoppeliaSim", width, height);
   return image;
+}
+
+bool CoppeliaSimRobot::set_camera_resolution(unsigned width, unsigned height) {
+  if(!camera_handle) return false;
+  simInt image_size[2]{};
+  simGetVisionSensorResolution(camera_handle, image_size);
+  if(width != image_size[0] || height != image_size[1]) {
+    simSetObjectInt32Parameter(camera_handle, sim_visionintparam_resolution_x, width);
+    simSetObjectInt32Parameter(camera_handle, sim_visionintparam_resolution_x, height);
+    spdlog::warn("Changing camera resolution from {} x {} to {} {}", image_size[0], image_size[1], width, height);
+    return true;
+  }
+  return true;
+}
+
+
+void CoppeliaSimRobot::update_target_servo_angles(ServoValues<float> &angles) {
+  if(servo_motor) {
+    simSetJointTargetPosition(servo_motor.right, angles.right);
+    simSetJointTargetPosition(servo_motor.left, angles.left);
+  }
+}
+
+ServoValues<float> CoppeliaSimRobot::read_servo_angles() {
+  if(servo_motor) {
+    ServoValues<float> angles;
+    simGetJointPosition(servo_motor.right, &angles.right);
+    simGetJointPosition(servo_motor.left, &angles.left);
+    return angles;
+  }
+  return {};
 }

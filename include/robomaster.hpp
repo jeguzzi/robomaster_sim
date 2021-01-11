@@ -2,18 +2,21 @@
 #define ROBOMASTER_HPP_
 
 #include <string>
+
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
 #include <spdlog/spdlog.h>
 
 #include "connection.hpp"
 #include "command.hpp"
-#include "dummy_robot.hpp"
+#include "discovery.hpp"
+#include "streamer.hpp"
+#include "robot.hpp"
 
 namespace rm {
 class RoboMaster {
 public:
-  explicit RoboMaster(boost::asio::io_context * io_context, Robot * robot);
+  explicit RoboMaster(boost::asio::io_context * io_context, Robot * robot, std::string serial_number="RM0001");
   void spin(bool);
   ~RoboMaster(){
     spdlog::info("Will destroy RoboMaster");
@@ -29,11 +32,12 @@ public:
   }
 private:
   boost::asio::io_context * io_context;
+  Discovery discovery;
   Connection conn;
   Commands cmds;
+  VideoStreamer video;
   boost::thread * t;
 };
-
 
 }
 

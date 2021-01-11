@@ -6,8 +6,8 @@
 #include <boost/asio.hpp>
 
 #include "server.hpp"
-#include "rt_topic.hpp"
 #include "subject.hpp"
+#include "topic.hpp"
 
 using boost::asio::ip::udp;
 

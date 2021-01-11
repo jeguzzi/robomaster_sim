@@ -17,11 +17,16 @@ public:
   WheelSpeeds read_wheel_angles();
   IMU read_imu();
   std::vector<unsigned char> read_camera_image();
+  bool set_camera_resolution(unsigned width, unsigned height);
+  void update_target_servo_angles(ServoValues<float> &angles);
+  ServoValues<float> read_servo_angles();
 private:
   boost::asio::io_context * io_context;
   std::shared_ptr<boost::asio::deadline_timer> timer;
   boost::posix_time::time_duration control_step;
   void cb();
+  unsigned camera_width;
+  unsigned camera_height;
   // void control_gripper(GripperStatus state, float power);
 };
 

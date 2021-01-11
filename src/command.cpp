@@ -113,9 +113,10 @@ void Commands::stop_publisher(DelMsg::Request &request)
 
 void Commands::do_step(float time_step)
 {
-  // spdlog::info("[Commands] do_step");
+  // spdlog::debug("[Commands] do_step");
   for (auto const& [key, pub] : publishers)
   {
+    // spdlog::debug("[Pub] do_step");
     pub->do_step(time_step);
   }
 }

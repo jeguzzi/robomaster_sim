@@ -56,10 +56,14 @@ struct SetSdkConnection : Proto<0x3f, 0xd4>
 
   static bool answer(Request &request, Response &response, Robot * robot)
   {
-    response.ip[0] = 127;
+    response.ip[0] = 0;
     response.ip[1] = 0;
     response.ip[2] = 0;
-    response.ip[3] = 1;
+    response.ip[3] = 0;
+    // response.ip[0] = 127;
+    // response.ip[1] = 0;
+    // response.ip[2] = 0;
+    // response.ip[3] = 1;
     return true;
   }
 

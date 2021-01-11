@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cstdint>
 
+#include <boost/asio.hpp>
+
 #include <spdlog/spdlog.h>
 #include "spdlog/fmt/ostr.h"
 
@@ -225,8 +227,8 @@ struct SetWheelSpeed : Proto<0x3f, 0x20>
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
     WheelSpeeds speeds = {
-      .front_right=angular_speed_from_rpm(request.w1_speed),
       .front_left=-angular_speed_from_rpm(request.w2_speed),
+      .front_right=angular_speed_from_rpm(request.w1_speed),
       .rear_left=-angular_speed_from_rpm(request.w3_speed),
       .rear_right=angular_speed_from_rpm(request.w4_speed)
     };
@@ -955,10 +957,15 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
     uint8_t freq;
     uint8_t action_ctrl;
     uint8_t id;
+    // mode = 1 -> absolute, mode = 0 -> relative
     uint8_t mode;
+    // always 0x3
     uint8_t mask;
+    // front [mm]
     int32_t x;
+    // up [mm]
     int32_t y;
+    // always 0
     int32_t z;
 
     Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
@@ -1006,56 +1013,29 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
     // TODO(jerome): implement after actions are added
-    spdlog::warn("RoboticArmMoveCtrl answer not implemented");
-    return false;
-  }
+    // spdlog::warn("RoboticArmMoveCtrl answer not implemented");
+    // return false;
 
-};
-
-
-struct RoboticArmMovePush : Proto<0x3f, 0xb6>
-{
-  struct Request : RequestT {
-
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-    : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
-    };
-
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
-      os << "RoboticArmMovePush::Request { }";
-      return os;
+    if(request.action_ctrl == 0){
+        auto push = std::make_shared<RoboticArmMovePush::Response>(request);
+        push->is_ack = false;
+        push->need_ack = 0;
+        push->seq_id = 0;
+        spdlog::info("Creating MoveArmAction");
+        auto a = std::make_shared<MoveArmAction>(
+            request.action_id, (float) request.freq, push, request.x * 0.001, request.y * 0.001, (bool) request.mode);
+        spdlog::info("Submitting MoveArmAction");
+        robot->submit_action(a);
+        response.accept = a->accept_code();
+        spdlog::info("Action accepted? {}", response.accept);
+        return true;
     }
-  };
+    // Cancel (not implemented in client yet)
+    else {
+      spdlog::warn("Cancel action not implemented yet");
+      return true;
+    }
 
-  struct Response : ResponseT{
-
-    uint8_t action_id;
-    uint8_t percent;
-    uint8_t action_state;
-    int32_t x;
-    int32_t y;
-
-    std::vector<uint8_t> encode()
-    {
-      std::vector<uint8_t> buffer(11, 0);
-      buffer[0] = action_id;
-      buffer[1] = percent;
-      buffer[2] = action_state;
-      write<int32_t>(buffer, 3, x);
-      write<int32_t>(buffer, 7, y);
-      return buffer;
-    };
-    using ResponseT::ResponseT;
-  };
-
-  static bool answer(Request &request, Response &response, Robot  * robot)
-  {
-    // TODO(jerome): implement after actions are added
-    spdlog::warn("RoboticArmMovePush answer not implemented");
-    return false;
   }
 
 };
@@ -1105,15 +1085,25 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
     }
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot) // , boost::asio::ip::udp::endpoint * endpoint)
   {
     // TODO(jerome): implement after video is added
     // spdlog::warn("StreamCtrl answer not implemented");
     if(request.ctrl == 2) {
-      if (request.state)
-        robot->start_streaming(request.resolution);
-      else
+      if (request.state) {
+        if(request.resolution == R720p){
+          robot->start_streaming(1280, 720);
+        }
+        else if (request.resolution == R540p){
+          robot->start_streaming(960, 540);
+        }
+        else {
+          robot->start_streaming(640, 360);
+        }
+      }
+      else {
         robot->stop_streaming();
+      }
     }
     return true;
   }

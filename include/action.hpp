@@ -112,7 +112,7 @@ struct MoveAction : TAction<PositionPush>
       push_msg->percent = std::max(0, (int)(100 - round(100.0f * remaining_duration / predicted_duration)));
     }
     push_msg->action_state = state;
-    std::cout << "current: " << current << std::endl;
+    // std::cout << "current: " << current << std::endl;
     // TODO(jerome): check if coherent with real robot
     push_msg->pos_x = (int16_t) round(100 * current.x);
     push_msg->pos_y = -(int16_t) round(100 * current.y);
@@ -128,6 +128,64 @@ struct MoveAction : TAction<PositionPush>
   float predicted_duration;
   float remaining_duration;
 };
+
+
+struct RoboticArmMovePush : Proto<0x3f, 0xb6>
+{
+
+  struct Response : ResponseT{
+
+    uint8_t action_id;
+    uint8_t percent;
+    uint8_t action_state;
+    int32_t x;
+    int32_t y;
+
+    std::vector<uint8_t> encode()
+    {
+      std::vector<uint8_t> buffer(11, 0);
+      buffer[0] = action_id;
+      buffer[1] = percent;
+      buffer[2] = action_state;
+      write<int32_t>(buffer, 3, x);
+      write<int32_t>(buffer, 7, y);
+      return buffer;
+    };
+    using ResponseT::ResponseT;
+  };
+};
+
+
+struct MoveArmAction : TAction<RoboticArmMovePush>
+{
+  MoveArmAction(uint8_t _id, float _frequency, std::shared_ptr<RoboticArmMovePush::Response> push,
+    float x, float z, bool _absolute)
+  : TAction<RoboticArmMovePush>(_id, _frequency, push), goal_position({x, 0, z}), absolute(_absolute) {
+  }
+  void update() {
+    push_msg->seq_id++;
+    if (state == Action::State::succeed) {
+      push_msg->percent = 100;
+    }
+    else {
+      push_msg->percent = std::max(0, (int)(100 - round(100.0f * remaining_duration / predicted_duration)));
+    }
+    push_msg->action_state = state;
+    // std::cout << "current: " << current_position << std::endl;
+    // TODO(jerome): check if coherent with real robot
+    push_msg->x = (int32_t) round(1000 * current_position.x);
+    push_msg->y = (int32_t) round(1000 * current_position.z);
+  }
+
+  Vector3 goal_position;
+  ServoValues<float> target_angles;
+  bool absolute;
+  Vector3 current_position;
+  float predicted_duration;
+  float remaining_duration;
+
+};
+
 
 
 

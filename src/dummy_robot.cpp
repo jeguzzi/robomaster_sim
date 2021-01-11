@@ -14,8 +14,8 @@ static std::vector<unsigned char> generate_strip_image(unsigned i0, unsigned i1,
 
 std::vector<unsigned char> DummyRobot::read_camera_image() {
   static unsigned seq = 0;
-  seq = (seq + 1) % 640;
-  return generate_strip_image(seq, seq + 10, 640, 360);
+  seq = (seq + 1) % camera_width;
+  return generate_strip_image(seq, seq + 10, camera_width, camera_height);
 }
 
 void DummyRobot::cb() {
@@ -56,4 +56,20 @@ IMU DummyRobot::read_imu() {
 DummyRobot::~DummyRobot()
 {
   timer->cancel();
+}
+
+bool DummyRobot::set_camera_resolution(unsigned width, unsigned height) {
+  camera_width = width;
+  camera_height = height;
+  return true;
+}
+
+void DummyRobot::update_target_servo_angles(ServoValues<float> &angles) {
+
+}
+
+ServoValues<float> DummyRobot::read_servo_angles() {
+  return {
+    0.5f * (get_servo_angles().right + target_servo_angles.right),
+    0.5f * (get_servo_angles().left + target_servo_angles.left)};
 }
