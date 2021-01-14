@@ -32,6 +32,10 @@ public:
     return io_context;
   }
 
+  udp::endpoint sender_endpoint() {
+    return sender_endpoint_;
+  }
+
 protected:
   boost::asio::io_context * io_context;
   Robot * robot;

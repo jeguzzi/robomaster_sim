@@ -9,28 +9,24 @@
 
 namespace ba = boost::asio;
 
-#define VIDEO_STREAM_USE_UDP true
-#define BITRATE 100000
+#define DEFAULT_BITRATE 200000
 
 class VideoStreamer {
 public:
-  VideoStreamer(boost::asio::io_context * io_context);
+  VideoStreamer(long bitrate=DEFAULT_BITRATE);
+  static std::shared_ptr<VideoStreamer> create_video_streamer(ba::io_context * io_context, bool udp=false, long bitrate=DEFAULT_BITRATE);
   void send(unsigned char * buffer);
   void stop();
-  void start(unsigned image_width, unsigned image_height, int fps, long bitrate=BITRATE);
+  void start(ba::ip::address & address, unsigned image_width, unsigned image_height, int fps);
+protected:
+  bool active;
+  long bitrate;
 private:
   std::shared_ptr<Encoder> encoder;
-#ifdef VIDEO_STREAM_USE_UDP
-  ba::ip::udp::socket udp_socket;
-  ba::ip::udp::endpoint udp_endpoint;
-#else
-  ba::ip::tcp::acceptor acceptor;
-  ba::ip::tcp::socket tcp_socket;
-#endif
   unsigned long seq;
-  bool active;
-  void send_buffer(ba::const_buffer &);
+  virtual void send_buffer(ba::const_buffer &) = 0;
+  virtual void start_socket(ba::ip::address & address) = 0;
+  virtual void stop_socket() = 0;
 };
-
 
 #endif /* end of include guard: STREAMER_HPP */

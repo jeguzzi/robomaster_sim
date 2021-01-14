@@ -20,6 +20,8 @@ public:
   bool set_camera_resolution(unsigned width, unsigned height);
   void update_target_servo_angles(ServoValues<float> &angles);
   ServoValues<float> read_servo_angles();
+  void update_target_gripper(GripperStatus state, float power);
+  GripperStatus read_gripper_state();
 private:
   boost::asio::io_context * io_context;
   std::shared_ptr<boost::asio::deadline_timer> timer;

@@ -45,9 +45,11 @@ static std::map<int, std::shared_ptr<rm::RoboMaster>> _interfaces;
 // static boost::asio::io_context io_context;
 
 static int add_robot(
+    std::string serial_number,
     int front_left_wheel, int front_right_wheel, int rear_left_wheel, int rear_right_wheel,
-    int front_LED, int left_LED, int rear_LED, int right_LED, int camera,
-    int right_arm_motor, int left_arm_motor)
+    int front_LED, int left_LED, int rear_LED, int right_LED,
+    int camera, bool camera_use_udp, long camera_bitrate,
+    int right_arm_motor, int left_arm_motor, std::string gripper_state, std::string gripper_target)
 {
   int handle = next_robot_handle;
   next_robot_handle += 1;
@@ -55,10 +57,11 @@ static int add_robot(
   LEDValues<simInt> led_handles {front_LED, left_LED, rear_LED, right_LED};
   ServoValues<simInt> servo_motors {right_arm_motor, left_arm_motor};
   _robots[handle] = std::make_shared<CoppeliaSimRobot>(
-      wheel_handles, led_handles, camera, servo_motors
+      wheel_handles, led_handles, camera, servo_motors, gripper_state, gripper_target
   );
   // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context, _robots[handle].get());
-  _interfaces[handle] = std::make_shared<rm::RoboMaster>(nullptr, _robots[handle].get());
+  _interfaces[handle] = std::make_shared<rm::RoboMaster>(
+      nullptr, _robots[handle].get(), serial_number, camera_use_udp, camera_bitrate);
   _interfaces[handle]->spin(true);
   return handle;
 }
@@ -102,9 +105,11 @@ public:
     void create(create_in *in, create_out *out)
     {
       out->handle = add_robot(
+        in->serial_number,
         in->front_left_wheel, in->front_right_wheel, in->rear_left_wheel, in->rear_right_wheel,
-        in->front_LED, in->left_LED, in->rear_LED, in->right_LED, in->camera,
-        in->right_arm_motor, in->left_arm_motor
+        in->front_LED, in->left_LED, in->rear_LED, in->right_LED,
+        in->camera, in->camera_use_udp, in->camera_bitrate,
+        in->right_arm_motor, in->left_arm_motor, in->gripper_state_signal, in->gripper_target_signal
       );
 
     }

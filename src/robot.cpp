@@ -136,10 +136,12 @@ static ServoValues<float> inverse_arm_kinematics(Vector3 & position, Vector3 & a
 
 
 Robot::Robot()
-  : imu(), target_wheel_speed(), target_servo_angles(),
+  : imu(), target_wheel_speed(), target_servo_angles(), target_gripper_state(Robot::GripperStatus::pause),
   mode(Mode::FREE), axis_x(0.1),  axis_y(0.1), wheel_radius(0.05), sdk_enabled(false),
   odometry(), body_twist(), desired_target_wheel_speed(), wheel_speeds(), wheel_angles(),
-  leds(), led_colors(), time_(0.0f), commands(nullptr), discovery(nullptr), video_streamer(nullptr), streaming(false),
+  leds(), led_colors(), time_(0.0f),
+  desired_gripper_state(target_gripper_state),
+  commands(nullptr), discovery(nullptr), video_streamer(nullptr), streaming(false),
   servo_angles(), desired_servo_angles()   {
   }
 
@@ -155,6 +157,8 @@ void Robot::do_step(float time_step) {
 
   servo_angles = read_servo_angles();
   update_arm_position(time_step);
+
+  gripper_state = read_gripper_state();
 
   // spdlog::debug("state {}", odometry);
 
@@ -273,6 +277,13 @@ void Robot::do_step(float time_step) {
     target_servo_angles = desired_servo_angles;
     update_target_servo_angles(target_servo_angles);
   }
+
+  if (target_gripper_state != desired_gripper_state || target_gripper_power != desired_gripper_power) {
+    target_gripper_state = desired_gripper_state;
+    target_gripper_power = desired_gripper_power;
+    update_target_gripper(target_gripper_state, target_gripper_power);
+  }
+
 
   // arm
   // Gripper
@@ -439,9 +450,10 @@ bool Robot::start_streaming(unsigned width, unsigned height) {
     spdlog::warn("[Robot] Camera resolution {} x {} not supported", width, height);
     return false;
   }
-  spdlog::info("[Robot] Start video streamer");
+  auto address = commands->sender_endpoint().address();
+  spdlog::info("[Robot] Start video streamer to {}", address);
   streaming = true;
-  video_streamer->start(width, height, 1.0f / last_time_step);
+  video_streamer->start(address, width, height, 1.0f / last_time_step);
   return true;
 }
 

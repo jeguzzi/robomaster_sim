@@ -6,6 +6,9 @@
     <command name="create">
         <description>Instantiate a RoboMaster controller</description>
         <params>
+          <param name="serial_number" type="string">
+              <description>the robot serial number</description>
+          </param>
           <param name="front_left_wheel" type="int">
               <description>handle of the front left wheel joint</description>
           </param>
@@ -33,11 +36,23 @@
           <param name="camera" type="int">
               <description>camera handle</description>
           </param>
+          <param name="camera_use_udp" type="bool">
+              <description>the camera should use UDP for streaming?</description>
+          </param>
+          <param name="camera_bitrate" type="int">
+              <description>the target bitrate for the camera stream</description>
+          </param>
           <param name="right_arm_motor" type="int">
               <description>the right servo motor</description>
           </param>
           <param name="left_arm_motor" type="int">
               <description>the left servo motor</description>
+          </param>
+          <param name="gripper_state_signal" type="string">
+              <description>the name of the gripper (integer) state signal</description>
+          </param>
+          <param name="gripper_target_signal" type="string">
+              <description>the name of the gripper (integer) target state signal</description>
           </param>
         </params>
         <return>

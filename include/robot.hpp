@@ -247,6 +247,10 @@ public:
    */
   void set_target_gripper(GripperStatus state, float power);
 
+  virtual GripperStatus read_gripper_state() = 0;
+
+  virtual void update_target_gripper(GripperStatus state, float power) = 0;
+
   void set_commands(Commands * _commands) {
     commands = _commands;
   }
@@ -301,6 +305,8 @@ protected:
   IMU imu;
   WheelSpeeds target_wheel_speed;
   ServoValues<float> target_servo_angles;
+  GripperStatus target_gripper_state;
+  float target_gripper_power;
 
 private:
   Mode mode;

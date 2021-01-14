@@ -16,7 +16,9 @@
 namespace rm {
 class RoboMaster {
 public:
-  explicit RoboMaster(boost::asio::io_context * io_context, Robot * robot, std::string serial_number="RM0001");
+  explicit RoboMaster(boost::asio::io_context * io_context, Robot * robot,
+                      std::string serial_number="RM0001",
+                      bool udp_video_stream=false, long video_stream_bitrate=200000);
   void spin(bool);
   ~RoboMaster(){
     spdlog::info("Will destroy RoboMaster");
@@ -35,7 +37,7 @@ private:
   Discovery discovery;
   Connection conn;
   Commands cmds;
-  VideoStreamer video;
+  std::shared_ptr<VideoStreamer> video;
   boost::thread * t;
 };
 

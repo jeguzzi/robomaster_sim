@@ -9,6 +9,8 @@ Discovery::Discovery(boost::asio::io_context * io_context, std::string serial_nu
   socket.set_option(boost::asio::socket_base::broadcast(true));
   message = serial_number;
   ports = {45678, 40927};
+  // auto ep = udp::endpoint(udp::v4(), PORT);
+  // spdlog::info("[Discovery] Create to endpoint {}", ep.address().to_string());
 }
 
 void Discovery::start() {

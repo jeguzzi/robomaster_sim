@@ -429,7 +429,7 @@ struct PositionMove : Proto<0x3f, 0x25>
     using ResponseT::ResponseT;
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot, Commands * server)
+  static bool answer(Request &request, Response &response, Robot  * robot)
   {
     // TODO(jerome): implement after actions are added
     // spdlog::warn("PositionMove answer not implemented");
@@ -918,7 +918,7 @@ struct GripperCtrl : Proto<0x33, 0x11>
   {
     // id is ignored
     robot->set_target_gripper(Robot::GripperStatus(request.control), (float) 100.0 / request.power);
-    return false;
+    return true;
   }
 
 };
@@ -1085,9 +1085,9 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
     }
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot) // , boost::asio::ip::udp::endpoint * endpoint)
+  static bool answer(Request &request, Response &response, Robot  * robot)
   {
-    // TODO(jerome): implement after video is added
+    // DONE(jerome): implement after video is added
     // spdlog::warn("StreamCtrl answer not implemented");
     if(request.ctrl == 2) {
       if (request.state) {

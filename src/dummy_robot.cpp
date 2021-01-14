@@ -73,3 +73,11 @@ ServoValues<float> DummyRobot::read_servo_angles() {
     0.5f * (get_servo_angles().right + target_servo_angles.right),
     0.5f * (get_servo_angles().left + target_servo_angles.left)};
 }
+
+void DummyRobot::update_target_gripper(Robot::GripperStatus state, float power) {
+
+}
+
+Robot::GripperStatus DummyRobot::read_gripper_state() {
+  return target_gripper_state;
+}

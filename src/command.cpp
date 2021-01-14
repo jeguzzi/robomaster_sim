@@ -58,7 +58,7 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, short p
   register_message<GetSn>();
   register_message<SetSystemLed>();
   register_message<PlaySound>();
-  register_message<PositionMove, Commands *>(this);
+  register_message<PositionMove>();
   // register_message<PositionPush>();
   register_message<SetWheelSpeed>();
   register_message<ChassisPwmPercent>();

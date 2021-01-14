@@ -64,6 +64,9 @@ std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
   // std::vector image(buffer, buffer + size);
   std::vector<unsigned char> image;
   image.reserve(size);
+  simInt resolution[2] = {width, height};
+  simTransformImage(buffer, resolution, 4, nullptr, nullptr, nullptr);
+
   std::copy(buffer, buffer + size, std::back_inserter(image));
   // image = std::vector(image);
   simReleaseBuffer((const simChar *)buffer);
@@ -100,4 +103,21 @@ ServoValues<float> CoppeliaSimRobot::read_servo_angles() {
     return angles;
   }
   return {};
+}
+
+void CoppeliaSimRobot::update_target_gripper(Robot::GripperStatus state, float power) {
+  if(gripper_target_signal.empty()) {
+    spdlog::warn("Gripper not available");
+  }
+  simSetIntegerSignal(gripper_target_signal.data(), int(state));
+}
+
+Robot::GripperStatus CoppeliaSimRobot::read_gripper_state() {
+  if(gripper_state_signal.empty()) {
+    spdlog::warn("Gripper not available");
+    return Robot::GripperStatus::pause;
+  }
+  simInt value;
+  simGetIntegerSignal(gripper_state_signal.data(), &value);
+  return Robot::GripperStatus(value);
 }
