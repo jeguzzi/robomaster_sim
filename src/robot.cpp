@@ -210,7 +210,7 @@ void Robot::do_step(float time_step) {
   }
 
   if(move_arm_action) {
-    bool first;
+    bool first = false;
     if(move_arm_action->state == Action::State::started) {
       if(!move_arm_action->absolute) {
         move_arm_action->goal_position = get_arm_position() + move_arm_action->goal_position;
@@ -220,27 +220,34 @@ void Robot::do_step(float time_step) {
       first = true;
     }
     if(move_arm_action->state == Action::State::running) {
+      set_target_arm_position(move_arm_action->goal_position);
+      ServoValues<float> angles = get_servo_angles();
+      ServoValues<float> target_angles = desired_servo_angles;
+      move_arm_action->remaining_duration = (
+        abs(normalize(target_angles.right - angles.right)) +
+        abs(normalize(target_angles.left - angles.left)));
+        if(first) move_arm_action->predicted_duration = move_arm_action->remaining_duration;
+        if(move_arm_action->remaining_duration < 0.005) {
+          move_arm_action->state = Action::State::succeed;
+          move_arm_action->remaining_duration = 0;
+          spdlog::info("[Move Arm Action] done");
+        }
+        else {
+          spdlog::info("[Move Arm Action] will continue for {:.2f} rad", move_arm_action->remaining_duration);
+        }
+    }
+    // if(move_arm_action->state == Action::State::running) {
       move_arm_action->current_position = get_arm_position();
       auto distance = (move_arm_action->current_position - move_arm_action->goal_position).norm();
       spdlog::info("[Move Arm Action] current arm position {} is distant {} from goal", move_arm_action->current_position, distance);
-      if(distance < 0.001) {
-        move_arm_action->state = Action::State::succeed;
-        move_arm_action->remaining_duration = 0;
-        spdlog::info("[Move Arm Action] done");
-      }
-      else {
-        set_target_arm_position(move_arm_action->goal_position);
-        ServoValues<float> angles = get_servo_angles();
-        // spdlog::info("Current servo angles {}", angles);
-        ServoValues<float> target_angles = desired_servo_angles;
-        // spdlog::info("Desired servo angles {}", target_angles);
-        move_arm_action->remaining_duration = (
-          abs(normalize(target_angles.right - angles.right)) +
-          abs(normalize(target_angles.left - angles.left)));
-        if(first) move_arm_action->predicted_duration = move_arm_action->remaining_duration;
-        spdlog::info("[Move Arm Action] will continue for {:.2f} rad", move_arm_action->remaining_duration);
-      }
-    }
+    //   if(distance < 0.001) {
+    //     move_arm_action->state = Action::State::succeed;
+    //     move_arm_action->remaining_duration = 0;
+    //     spdlog::info("[Move Arm Action] done");
+    //   }
+      // else {
+      //   spdlog::info("[Move Arm Action] will continue for {:.2f} rad", move_arm_action->remaining_duration);
+      // }
     auto data = move_arm_action->do_step(time_step);
     if(data.size()) {
       spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
@@ -397,6 +404,28 @@ void Robot::set_target_velocity(Twist2D &twist)
 
 void Robot::set_target_servo_angles(ServoValues<float> & values)
 {
+  spdlog::info("set_target_servo_angles {}", values);
+  // Limits:
+  // -0.2740 < right < 1.3840
+  // -0.7993 < left (< 1.7313)
+  // -0.3473 < right - left < 1.2147
+  values.right = std::clamp(values.right, -0.2740f, 1.3840f);
+  values.left = std::clamp(values.left, -0.7993f, 1.7313f);
+  // distance from the (right - left) upper line
+  float dist = (values.right - values.left - 1.2147) / sqrt(2);
+  if (dist > 0) {
+    // compute nearest point on the line by moving down along (1, -1) by distance
+    values.right -= dist;
+    values.left += dist;
+  }
+  // distance from the (right - left) lower line
+  dist = (values.right - values.left + 0.3473) / sqrt(2);
+  if (dist < 0) {
+    // compute nearest point on the line by moving down along (1, -1) by distance
+    values.right -= dist;
+    values.left += dist;
+  }
+  spdlog::info("-> {}", values);
   desired_servo_angles = values;
 }
 
