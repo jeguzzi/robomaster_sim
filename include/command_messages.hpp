@@ -1019,7 +1019,7 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
   };
 
   struct Response : ResponseT{
-    bool accept;
+    uint8_t accept;
 
     std::vector<uint8_t> encode()
     {
