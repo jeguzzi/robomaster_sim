@@ -34,12 +34,12 @@ int main(int argc, char **argv) {
   // spdlog::set_level(spdlog::level::debug);
   // spdlog::cfg::load_env_levels();
   std::cout << "LOG_LEVEL " << spdlog::level::from_str(log_level) << std::endl;
-  boost::asio::io_context io_context;
+  auto io_context = std::make_shared<boost::asio::io_context>();
   spdlog::info("Welcome to the RoboMaster test");
   // Get ignored
   spdlog::set_level(spdlog::level::from_str(log_level));
-  DummyRobot dummy(&io_context, 0.05);
-  rm::RoboMaster robot(&io_context, &dummy, std::string(serial), use_udp, bitrate);
+  DummyRobot dummy(io_context.get(), 0.05);
+  rm::RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate);
   spdlog::info("Start spinning");
   robot.spin(false);
   std::cout << "Goodbye" << std::endl;

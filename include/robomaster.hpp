@@ -2,10 +2,12 @@
 #define ROBOMASTER_HPP_
 
 #include <string>
+#include <memory>
 
 #include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
 #include <spdlog/spdlog.h>
+
 
 #include "connection.hpp"
 #include "command.hpp"
@@ -16,7 +18,7 @@
 namespace rm {
 class RoboMaster {
 public:
-  explicit RoboMaster(boost::asio::io_context * io_context, Robot * robot,
+  explicit RoboMaster(std::shared_ptr<boost::asio::io_context> io_context, Robot * robot,
                       std::string serial_number="RM0001",
                       bool udp_video_stream=false, long video_stream_bitrate=200000);
   void spin(bool);
@@ -26,14 +28,17 @@ public:
       io_context->stop();
       spdlog::info("IO context stopped");
       t->join();
-      delete t;
-      t = nullptr;
-      delete io_context;
       spdlog::info("Thread terminated");
+      delete t;
+      spdlog::info("Thread deleted");
+      // t = nullptr;
+      // TODO: this results in an error in Linux, because (I think)
+      // delete io_context;
+      // spdlog::info("io_context deleted");
     }
   }
 private:
-  boost::asio::io_context * io_context;
+  std::shared_ptr<boost::asio::io_context> io_context;
   Discovery discovery;
   Connection conn;
   Commands cmds;
