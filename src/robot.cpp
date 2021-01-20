@@ -174,7 +174,8 @@ void Robot::do_step(float time_step) {
     }
     if(move_action->state == Action::State::running) {
       Pose2D goal = move_action->goal_odom.relative_to(get_pose());
-      goal.theta = normalize(goal.theta);
+      // Real robomaster is not normalizing!
+      // goal.theta = normalize(goal.theta);
       spdlog::info("Update Move Action to {} [frame] from {} [odom]", goal, get_pose());
       const float tau = 0.5f;
       float remaining_duration;
