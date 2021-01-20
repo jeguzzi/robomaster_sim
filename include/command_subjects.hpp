@@ -164,9 +164,9 @@ struct ChassisModeSubject : SubjectWithUID<0x000200094fcb1146>
 struct EscSubject : SubjectWithUID<0x00020009c14cb7c5>
 {
   std::string name() { return "Esc"; };
-  inline static const int max_speed = 8191;
-  inline static const int min_speed = -8192;
-  inline static const int max_angle = 32767;
+  constexpr static const int max_speed = 8191;
+  constexpr static const int min_speed = -8192;
+  constexpr static const int max_angle = 32767;
 
   static int esc_speed(float speed) {
     return std::clamp<int>(rpm_from_angular_speed(speed), EscSubject::min_speed,  EscSubject::max_speed);
@@ -260,17 +260,22 @@ struct ImuSubject : SubjectWithUID<0x00020009a7985b8d>
 
   void update(Robot * robot){
     IMU imu_body = robot->get_imu();
-    acc_x = -acc(imu_body.acceleration.x);
-    acc_y = acc(imu_body.acceleration.y);
-    acc_z = acc(imu_body.acceleration.z);
+    acc_x = acc(imu_body.acceleration.x);
+    acc_y = -acc(imu_body.acceleration.y);
+    acc_z = -acc(imu_body.acceleration.z);
     gyro_x = rad2deg(imu_body.angular_velocity.x);
     gyro_y = -rad2deg(imu_body.angular_velocity.y);
     gyro_z = -rad2deg(imu_body.angular_velocity.z);
   }
 };
 
-struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55>
-{
+struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
+
+  constexpr const static float MAX_SPEED_STATIC = 10.0f;
+  constexpr const static float MAX_PITCH_FLAT = 0.1f;
+  constexpr const static float MAX_ROLL_FLAT = 0.1f;
+  constexpr const static float MIN_ROLL_OVER = 1.6f;
+
   std::string name() { return "SaStatus"; };
   // Status standard bit [?]
   bool static_flag;
@@ -295,8 +300,23 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55>
   }
 
   void update(Robot * robot){
-    spdlog::warn("SaStatusSubject update not implemented");
+    // TODO(jerome): Tentative. Some flags are still not clear
+    auto speeds = robot->get_wheel_speeds();
+    static_flag = true;
+    for (size_t i = 0; i < 4; i++) {
+      if(abs(speeds[i]) > MAX_SPEED_STATIC) {
+        static_flag = false;
+        break;
+      }
+    }
+    auto attitude = robot->get_attitude();
+    up_hill = (attitude.pitch < -MAX_PITCH_FLAT);
+    down_hill = (attitude.pitch > MAX_PITCH_FLAT);
+    on_slope = (abs(attitude.roll) > MAX_ROLL_FLAT);
+    roll_over = (abs(normalize(attitude.roll)) > MIN_ROLL_OVER);
+    hill_static = up_hill & static_flag;
   }
+
 };
 
 
@@ -315,7 +335,8 @@ struct SbusSubject : SubjectWithUID<0x0002000988223568>
   }
 
   void update(Robot * robot){
-    spdlog::warn("SbusSubject not implemented");
+    // spdlog::warn("SbusSubject not implemented");
+    connect_status = false;
   }
 };
 
@@ -340,7 +361,11 @@ struct BatterySubject : SubjectWithUID<0x000200096862229f>
   }
 
   void update(Robot * robot){
-    spdlog::warn("BatterySubject update not implemented");
+    // spdlog::warn("BatterySubject update not implemented");
+    adc_value = 10987;
+    temperature = 321;
+    current = -1234;
+    percent = 88;
   }
 };
 
@@ -380,6 +405,54 @@ struct ArmSubject : SubjectWithUID<0x0002000926abd64d>
     pos_x = static_cast<uint32_t>(1000 * position.x);
     pos_y = static_cast<uint32_t>(1000 * position.z);
   }
+};
+
+
+struct ServoSubject : SubjectWithUID<0x000200095f0059e7> {
+    std::string name() { return "Servo"; };
+
+    constexpr static int NUMBER_OF_SERVOS = 4;
+    // The values at the RM reset position (maximal flexion)
+    constexpr static ServoValues<float> reset_angles = {.right=-0.274016f, .left=0.073304f};
+    constexpr static ServoValues<int> reset_values = {.right=1273, .left=1242};
+    constexpr static float rad2unit = 325.95f;
+    constexpr static ServoValues<float> biases = {
+        .right=reset_values.right +  rad2unit * reset_angles.right,
+        .left=reset_values.left + rad2unit * reset_angles.left
+      };
+    // value = - angle * rad2unit + bias
+    // reset_value = - reset_angle * rad2unit + bias =>
+    // bias = reset_value + reset_angle * rad2unit
+
+    uint8_t valid[NUMBER_OF_SERVOS];
+    uint16_t speed[NUMBER_OF_SERVOS];
+    uint16_t angle[NUMBER_OF_SERVOS];
+
+    std::vector<uint8_t> encode()
+    {
+      std::vector<uint8_t> buffer(NUMBER_OF_SERVOS * 4 + 1, 0);
+      buffer[0] = 0;
+      for (size_t i = 0; i < NUMBER_OF_SERVOS; i++) {
+          buffer[0] += valid[i] << i;
+          write<uint16_t>(buffer, 1 + 2 * i, speed[i]);
+          write<uint16_t>(buffer, 9 + 2 * i, angle[i]);
+      }
+      return buffer;
+    }
+
+    void update(Robot * robot) {
+      ServoValues<float> _speeds = robot->get_servo_speeds();
+      speed[0] = round(rad2unit * _speeds.left);
+      speed[1] = round(rad2unit * _speeds.right);
+      ServoValues<float> _angles = robot->get_servo_angles();
+      // spdlog::info("Servo angles {}", _angles);
+      angle[0] = round(-rad2unit * _angles.left + biases.left);
+      angle[1] = round(-rad2unit * _angles.right + biases.right);
+      valid[0] = valid[1] = 1;
+      valid[2] = valid[3] = 0;
+      // spdlog::info("-> Servo values {} {}", angle[0], angle[1]);
+    }
+
 };
 
 #endif /* end of include guard: COMMAND_SUBJECTS_H */

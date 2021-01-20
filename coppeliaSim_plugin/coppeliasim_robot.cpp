@@ -57,9 +57,15 @@ void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) 
 
 std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
   if(!camera_handle) return {};
+  simHandleVisionSensor(camera_handle, nullptr, nullptr);
   simInt width = 0;
   simInt height = 0;
   simUChar * buffer = simGetVisionSensorCharImage(camera_handle, &width, &height);
+  if(width!=camera_width || height!=camera_height) {
+    spdlog::warn("Skip frame because of uncorrect size ({}, {}) vs desired size ({}, {})",
+      width, height, camera_width, camera_height);
+    return {};
+  }
   unsigned size = width * height * 3;
   // std::vector image(buffer, buffer + size);
   std::vector<unsigned char> image;
@@ -80,8 +86,8 @@ bool CoppeliaSimRobot::set_camera_resolution(unsigned width, unsigned height) {
   simGetVisionSensorResolution(camera_handle, image_size);
   if(width != image_size[0] || height != image_size[1]) {
     simSetObjectInt32Parameter(camera_handle, sim_visionintparam_resolution_x, width);
-    simSetObjectInt32Parameter(camera_handle, sim_visionintparam_resolution_x, height);
-    spdlog::warn("Changing camera resolution from {} x {} to {} {}", image_size[0], image_size[1], width, height);
+    simSetObjectInt32Parameter(camera_handle, sim_visionintparam_resolution_y, height);
+    spdlog::warn("Changing camera resolution from ({}, {}) to ({}, {})", image_size[0], image_size[1], width, height);
     return true;
   }
   return true;
@@ -101,6 +107,16 @@ ServoValues<float> CoppeliaSimRobot::read_servo_angles() {
     simGetJointPosition(servo_motor.right, &angles.right);
     simGetJointPosition(servo_motor.left, &angles.left);
     return angles;
+  }
+  return {};
+}
+
+ServoValues<float> CoppeliaSimRobot::read_servo_speeds() {
+  if(servo_motor) {
+    ServoValues<float> speeds;
+    simGetObjectFloatParameter(servo_motor.right, sim_jointfloatparam_velocity, &speeds.right);
+    simGetObjectFloatParameter(servo_motor.left, sim_jointfloatparam_velocity, &speeds.left);
+    return speeds;
   }
   return {};
 }

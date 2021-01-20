@@ -251,6 +251,7 @@ struct SetSystemLed : Proto<0x3f, 0x33>
     uint8_t ctrl_mode;
     uint8_t effect_mode;
     uint8_t r, g, b;
+    // ignored by real robot -> always equal true
     uint8_t loop;
     int16_t t1, t2;
 
@@ -289,10 +290,11 @@ struct SetSystemLed : Proto<0x3f, 0x33>
 
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
+    // The real robot ignore the loop parameter and set it to true.
     uint8_t mask = (0xFF & request.led_mask & request.comp_mask);
     Color color = {request.r / 255.0f, request.g / 255.0f, request.b / 255.0f};
     robot->set_led_effect(color, mask, ActiveLED::LedEffect(request.effect_mode),
-                          request.t1 * 0.001, request.t2 * 0.001, request.loop);
+                          request.t1 * 0.001, request.t2 * 0.001, true or request.loop);
     return true;
   }
 
@@ -301,6 +303,7 @@ struct SetSystemLed : Proto<0x3f, 0x33>
 struct PlaySound : Proto<0x3f, 0xb3>
 {
   struct Request : RequestT {
+
 
     uint8_t action_id;
     uint8_t task_ctrl;
@@ -349,7 +352,22 @@ struct PlaySound : Proto<0x3f, 0xb3>
 
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
-    spdlog::info("PlaySound ignored");
+    if(request.play_ctrl == 1){
+        auto push = std::make_shared<PlaySoundPush::Response>(request);
+        push->is_ack = false;
+        push->need_ack = 0;
+        push->seq_id = 0;
+        auto a = std::make_shared<PlaySoundAction>(
+            request.action_id, (float) request.push_freq, push, request.sound_id, request.play_times);
+        robot->submit_action(a);
+        response.accept = a->accept_code();
+        return true;
+    }
+    // Cancel (not implemented in client yet)
+    else {
+      spdlog::warn("Cancel action not implemented yet");
+      return true;
+    }
     response.accept = true;
     return true;
   }
@@ -610,7 +628,7 @@ struct ChassisPwmFreq : Proto<0x3f, 0x2b>
 
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
-    spdlog::info("ChassisPwmFreq ignored");
+    spdlog::warn("ChassisPwmFreq ignored");
     return true;
   }
 

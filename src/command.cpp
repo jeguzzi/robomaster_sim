@@ -85,6 +85,7 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, short p
   register_subject<SbusSubject>();
   register_subject<ArmSubject>();
   register_subject<GripperSubject>();
+  register_subject<ServoSubject>();
 
   spdlog::info("[Commands] Start listening on port {}", port);
   start();

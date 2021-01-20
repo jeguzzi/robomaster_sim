@@ -20,6 +20,7 @@ public:
   bool set_camera_resolution(unsigned width, unsigned height);
   void update_target_servo_angles(ServoValues<float> &angles);
   ServoValues<float> read_servo_angles();
+  ServoValues<float> read_servo_speeds();
   void update_target_gripper(GripperStatus state, float power);
   GripperStatus read_gripper_state();
 private:

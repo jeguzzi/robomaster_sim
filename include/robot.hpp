@@ -15,6 +15,7 @@
 struct Action;
 struct MoveAction;
 struct MoveArmAction;
+struct PlaySoundAction;
 
 
 // static unsigned char multiply(unsigned char value, float factor)
@@ -279,6 +280,7 @@ public:
 
   bool submit_action(std::shared_ptr<MoveAction> action);
   bool submit_action(std::shared_ptr<MoveArmAction> action);
+  bool submit_action(std::shared_ptr<PlaySoundAction> action);
 
   //TODO(jerome): use enum for resolution, pass address and protocol
   bool start_streaming(unsigned width, unsigned height);
@@ -294,10 +296,16 @@ public:
     return servo_angles;
   }
 
+  ServoValues<float> get_servo_speeds() {
+    return servo_speeds;
+  }
+
   void set_target_arm_position(Vector3 &position);
 
   virtual void update_target_servo_angles(ServoValues<float> &angles) = 0;
   virtual ServoValues<float> read_servo_angles() = 0;
+  virtual ServoValues<float> read_servo_speeds() = 0;
+
 
   void update_arm_position(float time_step);
 
@@ -307,6 +315,9 @@ protected:
   ServoValues<float> target_servo_angles;
   GripperStatus target_gripper_state;
   float target_gripper_power;
+  int camera_width;
+  int camera_height;
+  float last_time_step;
 
 private:
   Mode mode;
@@ -336,12 +347,13 @@ private:
   Discovery * discovery;
   VideoStreamer * video_streamer;
   bool streaming;
-  float last_time_step;
   ServoValues<float> servo_angles;
   ServoValues<float> desired_servo_angles;
+  ServoValues<float> servo_speeds;
   // std::map<int, std::shared_ptr<Action>> actions;
   std::shared_ptr<MoveAction> move_action;
   std::shared_ptr<MoveArmAction> move_arm_action;
+  std::shared_ptr<PlaySoundAction> play_sound_action;
   // std::shared_ptr<VideoStreamer> video_streamer;
 };
 

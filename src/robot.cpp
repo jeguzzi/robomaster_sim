@@ -151,11 +151,12 @@ void Robot::do_step(float time_step) {
 
   wheel_speeds = read_wheel_speeds();
   wheel_angles = read_wheel_angles();
-  imu = read_imu();
   update_odometry(time_step);
+  imu = read_imu();
   update_attitude(time_step);
 
   servo_angles = read_servo_angles();
+  servo_speeds = read_servo_speeds();
   update_arm_position(time_step);
 
   gripper_state = read_gripper_state();
@@ -173,7 +174,8 @@ void Robot::do_step(float time_step) {
     }
     if(move_action->state == Action::State::running) {
       Pose2D goal = move_action->goal_odom.relative_to(get_pose());
-      spdlog::info("Update Move Action to {} [frame]", goal);
+      goal.theta = normalize(goal.theta);
+      spdlog::info("Update Move Action to {} [frame] from {} [odom]", goal, get_pose());
       const float tau = 0.5f;
       float remaining_duration;
       Twist2D twist;
@@ -245,6 +247,29 @@ void Robot::do_step(float time_step) {
       commands->send(data);
       if (move_arm_action->state == Action::State::failed || move_arm_action->state == Action::State::succeed) {
         move_arm_action = NULL;
+      }
+    }
+  }
+
+  if(play_sound_action) {
+    play_sound_action->remaining_duration -= time_step;
+    play_sound_action->state = Action::State::running;
+    if(play_sound_action->remaining_duration < 0) {
+      if(play_sound_action->play_times == 0) {
+        play_sound_action->state = Action::State::succeed;
+      }
+      else {
+        spdlog::info("[Robot] Play sound {}", play_sound_action->play_times);
+        play_sound_action->remaining_duration = play_sound_action->predicted_duration;
+        play_sound_action->play_times--;
+      }
+    }
+    auto data = play_sound_action->do_step(time_step);
+    if(data.size()) {
+      spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
+      commands->send(data);
+      if (play_sound_action->state == Action::State::failed || play_sound_action->state == Action::State::succeed) {
+        play_sound_action = NULL;
       }
     }
   }
@@ -324,6 +349,7 @@ void Robot::update_odometry(float time_step){
   body_twist = twist_from_wheel_speeds(wheel_speeds);
   odometry.twist = body_twist.rotate_around_z(odometry.pose.theta);
   odometry.pose = odometry.pose + odometry.twist * time_step;
+  // spdlog::info("update_odometry {}, {}, {}", body_twist, odometry.twist, odometry.pose);
 }
 
 void Robot::update_attitude(float time_step){
@@ -334,6 +360,7 @@ void Robot::update_attitude(float time_step){
   odometry.twist.theta = imu.angular_velocity.z;
   odometry.pose.theta = imu.attitude.yaw;
   // TODO(jerome): body twist too
+  // spdlog::info("update_attitude {}, {}", imu.attitude.yaw,  odometry.pose);
 }
 
 void Robot::update_arm_position(float time_step){
@@ -437,6 +464,16 @@ bool Robot::submit_action(std::shared_ptr<MoveArmAction> action) {
   return true;
 }
 
+bool Robot::submit_action(std::shared_ptr<PlaySoundAction> action) {
+  // TODO(jerome): What should we do if an action is already active?
+  if(play_sound_action) return false;
+  play_sound_action = action;
+  play_sound_action->state = Action::State::started;
+  return true;
+}
+
+
+
 bool Robot::start_streaming(unsigned width, unsigned height) {
   if(!video_streamer) {
     spdlog::warn("[Robot] has no video streamer to be started");
@@ -446,6 +483,8 @@ bool Robot::start_streaming(unsigned width, unsigned height) {
     spdlog::warn("[Robot] time step unknown: cannot set video streamer fps");
     return false;
   }
+  camera_width = width;
+  camera_height = height;
   if(!set_camera_resolution(width, height)) {
     spdlog::warn("[Robot] Camera resolution {} x {} not supported", width, height);
     return false;

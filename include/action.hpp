@@ -187,6 +187,50 @@ struct MoveArmAction : TAction<RoboticArmMovePush>
 };
 
 
+struct PlaySoundPush : Proto<0x3f, 0xb4>
+{
+
+  struct Response : ResponseT{
+
+    uint8_t action_id;
+    uint8_t percent;
+    uint8_t action_state;
+    int32_t sound_id;
+    uint8_t error_reason;
+
+    std::vector<uint8_t> encode()
+    {
+      std::vector<uint8_t> buffer(11, 7);
+      buffer[0] = action_id;
+      buffer[1] = percent;
+      buffer[2] = (error_reason << 2) | action_state;
+      write<int32_t>(buffer, 3, sound_id);
+      return buffer;
+    };
+    using ResponseT::ResponseT;
+  };
+};
+
+
+struct PlaySoundAction : TAction<PlaySoundPush>
+{
+  PlaySoundAction(uint8_t _id, float _frequency, std::shared_ptr<PlaySoundPush::Response> push,
+    uint32_t _sound_id, uint8_t _play_times)
+  : TAction<PlaySoundPush>(_id, _frequency, push), sound_id(_sound_id), play_times(_play_times) {
+    predicted_duration = 3.0;
+    remaining_duration = 0.0;
+  }
+  void update() {
+    push_msg->sound_id = sound_id;
+    push_msg->percent = std::max(0, (int)(100 - round(100.0f * remaining_duration / predicted_duration)));
+    push_msg->action_state = state;
+  }
+  uint32_t sound_id;
+  uint8_t play_times;
+  float predicted_duration;
+  float remaining_duration;
+};
+
 
 
 #endif /* end of include guard: ACTION */

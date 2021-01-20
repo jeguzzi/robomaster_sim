@@ -50,7 +50,10 @@ void DummyRobot::update_led_colors(LEDColors &colors) {
 }
 
 IMU DummyRobot::read_imu() {
-  return {};
+  IMU imu;
+  imu.attitude.yaw = get_pose().theta;
+  imu.acceleration.z = 9.81;
+  return imu;
 }
 
 DummyRobot::~DummyRobot()
@@ -73,6 +76,15 @@ ServoValues<float> DummyRobot::read_servo_angles() {
     0.5f * (get_servo_angles().right + target_servo_angles.right),
     0.5f * (get_servo_angles().left + target_servo_angles.left)};
 }
+
+ServoValues<float> DummyRobot::read_servo_speeds() {
+  return {
+    0.5f * (get_servo_angles().right + target_servo_angles.right) / last_time_step,
+    0.5f * (get_servo_angles().left + target_servo_angles.left) / last_time_step
+  };
+}
+
+
 
 void DummyRobot::update_target_gripper(Robot::GripperStatus state, float power) {
 
