@@ -99,7 +99,11 @@ const float L = 0.12f;
 // The end effector is longitudinally at start of edge of the gripper, at an altitude
 // about 1 cm below the arm end effector
 static ServoValues<float> ARM_ZERO {1.5508f, 2.6578f};
-static Vector3 ARM_OFFSET {0.0032f, 0.0f, 0.0179f};
+
+// Defined to that (0.071, 0.057) is the point with maximal flection (like in the real RM)
+static Vector3 ARM_OFFSET {-0.0007f, 0.0f, 0.0043f};
+
+// static Vector3 ARM_OFFSET {0.0032f, 0.0f, 0.0179f};
 
 static Vector3 forward_arm_kinematics(ServoValues<float> & _angles) {
   ServoValues<float> angles = ARM_ZERO - _angles;
@@ -213,7 +217,10 @@ void Robot::do_step(float time_step) {
   if(move_arm_action) {
     bool first = false;
     if(move_arm_action->state == Action::State::started) {
-      if(!move_arm_action->absolute) {
+      if(move_arm_action->absolute) {
+
+      }
+      else {
         move_arm_action->goal_position = get_arm_position() + move_arm_action->goal_position;
       }
       move_arm_action->state = Action::State::running;
@@ -405,7 +412,7 @@ void Robot::set_target_velocity(Twist2D &twist)
 
 void Robot::set_target_servo_angles(ServoValues<float> & values)
 {
-  spdlog::info("set_target_servo_angles {}", values);
+  // spdlog::info("set_target_servo_angles {}", values);
   // Limits:
   // -0.2740 < right < 1.3840
   // -0.7993 < left (< 1.7313)
@@ -426,7 +433,7 @@ void Robot::set_target_servo_angles(ServoValues<float> & values)
     values.right -= dist;
     values.left += dist;
   }
-  spdlog::info("-> {}", values);
+  // spdlog::info("-> {}", values);
   desired_servo_angles = values;
 }
 
