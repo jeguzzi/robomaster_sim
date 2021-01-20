@@ -78,11 +78,12 @@ target_link_libraries(test PRIVATE
 
 message("${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY}")
 
-target_link_libraries(test_encoder
+target_link_libraries(test_encoder PRIVATE
   ${AVCODEC_LIBRARY}
   ${AVFORMAT_LIBRARY}
   ${AVUTIL_LIBRARY}
   ${AVDEVICE_LIBRARY}
+  spdlog::spdlog
 )
 
 link_directories(
@@ -109,6 +110,7 @@ target_compile_options(simExtRobomaster PUBLIC
 "-Wno-unused-function"
 "-Wno-reorder"
 "-Wno-delete-non-virtual-dtor"
+"-Wno-unused-result"
 )
 
 # add_executable(test_log test_log.cpp)

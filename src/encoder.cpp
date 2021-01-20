@@ -1,4 +1,8 @@
+#include "spdlog/spdlog.h"
+
 #include "encoder.hpp"
+
+
 
 extern "C" {
   #include "libavutil/opt.h"
@@ -6,12 +10,14 @@ extern "C" {
 
 Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   // uint8_t endcode[] = { 0, 0, 1, 0xb7 };
+  spdlog::info("Initializing an H264 encoder with input ({}, {}), fps {} and bitrate {}",
+                width, height, fps, bitrate);
   avcodec_register_all();
   /* find the h264 encoder */
   // codec = avcodec_find_encoder(AV_CODEC_ID_H264);
   codec = avcodec_find_encoder_by_name("libx264rgb");
   if (!codec) {
-      fprintf(stderr, "codec not found\n");
+      spdlog::error("H264 codec not found");
       return;
   }
   c = avcodec_alloc_context3(codec);
@@ -19,7 +25,7 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   pkt = av_packet_alloc();
   if (!pkt)
   {
-    fprintf(stderr, "av_packet_alloc failed\n");
+    spdlog::error("Failed to allocate av_packet");
     return;
   }
 
@@ -64,11 +70,11 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   //
   /* open it */
   if (avcodec_open2(c, codec, NULL) < 0) {
-      fprintf(stderr, "could not open codec\n");
+      spdlog::error("Could not open codec");
       return;
   }
 
-  printf("Opened codec %s\n", codec->long_name);
+  spdlog::info("Opened codec {}", codec->long_name);
 
   frame->format = c->pix_fmt;
   frame->width  = c->width;
@@ -82,7 +88,7 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   // }
   seq = 0;
 
-  printf("Has a latency of %d frames\n", c->delay);
+  // printf("Has a latency of %d frames\n", c->delay);
 }
 
 std::vector<unsigned char> Encoder::encode(unsigned char * buffer) {

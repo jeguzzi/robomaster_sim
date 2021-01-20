@@ -3,8 +3,7 @@
 #include "streamer.hpp"
 
 
-// TODO(jerome): pass ip from command
-#define IPADDRESS "192.168.1.112"
+// DONE(jerome): pass ip from command
 #define PORT 40921
 #define UDP_PORT 11111
 #define VIDEO_STREAMER_ALLOW_TCP false

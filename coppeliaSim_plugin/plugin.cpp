@@ -87,7 +87,7 @@ public:
     void onSimulationAboutToStart()
     {
       // crobot = new CoppeliaRobot();
-      std::cout << "Welcome to the robomaster simulation" << std::endl;
+      // std::cout << "[RoboMaster plugin] Loaded" << std::endl;
       // robot = std::make_shared<rm::RoboMaster>();
       // crobot->set_wheel_speeds(1.0, -1.0, 1.0, -1.0);
 
@@ -96,10 +96,10 @@ public:
     void onSimulationAboutToEnd()
     {
       // delete crobot;
-      std::cout << "Should close RM simulation[s] gracefully" << std::endl;
+      // std::cout << "Should close RM simulation[s] gracefully" << std::endl;
       _interfaces.clear();
       _robots.clear();
-      std::cout << "Goodbye" << std::endl;
+      // std::cout << "Goodbye" << std::endl;
     }
 
     void create(create_in *in, create_out *out)
