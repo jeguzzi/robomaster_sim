@@ -8,20 +8,19 @@
 #include <boost/asio.hpp>
 #include <spdlog/spdlog.h>
 
-
 #include "connection.hpp"
 #include "command.hpp"
 #include "discovery.hpp"
 #include "streamer.hpp"
 #include "robot.hpp"
 
-namespace rm {
 class RoboMaster {
 public:
   explicit RoboMaster(std::shared_ptr<boost::asio::io_context> io_context, Robot * robot,
                       std::string serial_number="RM0001",
                       bool udp_video_stream=false, long video_stream_bitrate=200000);
   void spin(bool);
+  void do_step(float);
   ~RoboMaster(){
     spdlog::info("Will destroy RoboMaster");
     if(t) {
@@ -37,8 +36,12 @@ public:
       // spdlog::info("io_context deleted");
     }
   }
+  VideoStreamer * get_video_streamer() {
+    return video.get();
+  }
 private:
   std::shared_ptr<boost::asio::io_context> io_context;
+  Robot * robot;
   Discovery discovery;
   Connection conn;
   Commands cmds;
@@ -46,6 +49,5 @@ private:
   boost::thread * t;
 };
 
-}
 
 #endif // ROBOMASTER_HPP_

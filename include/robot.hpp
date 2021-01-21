@@ -2,6 +2,7 @@
 #define ROBOT_HPP
 
 #include <math.h>
+#include <memory>
 #include <string.h>
 #include <stdexcept>
 #include <algorithm>
@@ -12,10 +13,89 @@
 
 #include "utils.hpp"
 
-struct Action;
-struct MoveAction;
-struct MoveArmAction;
-struct PlaySoundAction;
+class Robot;
+
+typedef std::function<void(float)> Callback;
+
+struct Action
+{
+  enum State : uint8_t {
+    running = 0,
+    succeed = 1,
+    failed = 2,
+    started = 3,
+    undefined = 4,
+  };
+  Action(Robot *robot) : robot(robot), state(State::undefined), callback([](float){}) {};
+  virtual void do_step(float time_step) = 0;
+  void do_step_cb(float time_step) {
+    do_step(time_step);
+    callback(time_step);
+  }
+  virtual ~Action() {};
+  bool done() {
+    return state == Action::State::failed || state == Action::State::succeed;
+  }
+  void set_callback(Callback value) {
+    callback = value;
+  }
+
+  Robot * robot;
+  State state;
+  float predicted_duration;
+  float remaining_duration;
+  Callback callback;
+};
+
+
+inline float time_to_goal(Pose2D & goal_pose, float linear_speed, float angular_speed) {
+  return std::max(abs(normalize(goal_pose.theta)) / angular_speed, goal_pose.distance() / linear_speed);
+}
+
+
+struct MoveAction : Action
+{
+  MoveAction(Robot * robot, Pose2D goal_pose, float _linear_speed, float _angular_speed)
+  : Action(robot), goal(goal_pose), linear_speed(_linear_speed), angular_speed(_angular_speed) {
+    predicted_duration = time_to_goal(goal_pose, linear_speed, angular_speed);
+  }
+  virtual void do_step(float time_step);
+  Pose2D goal;
+  Pose2D goal_odom;
+  Pose2D current;
+  float linear_speed;
+  float angular_speed;
+};
+
+
+struct MoveArmAction : Action
+{
+  MoveArmAction(Robot * robot, float x, float z, bool _absolute)
+  : Action(robot), goal_position({x, 0, z}), absolute(_absolute) {
+  }
+
+  virtual void do_step(float time_step);
+  Vector3 goal_position;
+  bool absolute;
+  // Vector3 current_position;
+};
+
+
+struct PlaySoundAction : Action
+{
+
+  static constexpr float duration = 3.0;
+
+  PlaySoundAction(Robot * robot, uint32_t _sound_id, uint8_t _play_times)
+  : Action(robot), sound_id(_sound_id), play_times(_play_times) {
+    predicted_duration = duration;
+    remaining_duration = 0.0;
+  };
+  virtual void do_step(float time_step);
+  uint32_t sound_id;
+  uint8_t play_times;
+};
+
 
 
 // static unsigned char multiply(unsigned char value, float factor)
@@ -118,17 +198,36 @@ struct Odometry {
 
 };
 
-
-
 typedef WheelValues<float> WheelSpeeds;
+typedef std::vector<unsigned char> Image;
+typedef std::vector<std::shared_ptr<Detection::Object>> detected_items_t;
+typedef std::map<uint16_t, detected_items_t> detection_t;
 
-class Commands;
-class VideoStreamer;
-class Discovery;
+struct HitEvent {
+  uint8_t type;
+  uint8_t index;
+};
+
+typedef std::vector<HitEvent> hit_event_t;
+
 
 class Robot
 {
+
+friend struct MoveAction;
+friend struct MoveArmAction;
+friend struct PlaySoundAction;
+
 public:
+
+  struct Camera {
+    int width;
+    int height;
+    float fps;
+    bool streaming;
+    Image image;
+    Camera() : streaming(false) {};
+  };
 
   enum Led {
     ARMOR_BOTTOM_BACK = 0x1,
@@ -252,17 +351,6 @@ public:
 
   virtual void update_target_gripper(GripperStatus state, float power) = 0;
 
-  void set_commands(Commands * _commands) {
-    commands = _commands;
-  }
-
-  void set_discovery(Discovery * _discovery) {
-    discovery = _discovery;
-  }
-
-  void set_video_streamer(VideoStreamer * _video) {
-    video_streamer = _video;
-  }
 
   // in seconds
   float get_time() {
@@ -288,7 +376,7 @@ public:
 
   virtual bool set_camera_resolution(unsigned width, unsigned height) = 0;
 
-  virtual std::vector<unsigned char> read_camera_image() = 0;
+  virtual Image read_camera_image() = 0;
 
   void set_target_servo_angles(ServoValues<float> &angles);
 
@@ -309,15 +397,47 @@ public:
 
   void update_arm_position(float time_step);
 
+  virtual detection_t read_detected_objects() = 0;
+
+  void set_enable_vision(uint8_t value) {
+    enabled_vision = value;
+  }
+
+  uint8_t get_enable_vision() {
+    return enabled_vision;
+  }
+
+  detection_t * get_detected_objects() {
+    return &detected_objects;
+  }
+
+  Camera * get_camera() {
+    return &camera;
+  }
+
+  bool move(Pose2D pose, float linear_speed, float angular_speed);
+  bool move_arm(float x, float z, bool absolute);
+  bool play_sound(uint32_t sound_id, uint8_t times);
+
+  void add_callback(Callback callback) {
+    callbacks.push_back(callback);
+  }
+
+  hit_event_t get_hit_events() {
+    return hit_events;
+  }
+
+  virtual hit_event_t read_hit_events() = 0;
+
 protected:
   IMU imu;
+  Camera camera;
   WheelSpeeds target_wheel_speed;
   ServoValues<float> target_servo_angles;
   GripperStatus target_gripper_state;
   float target_gripper_power;
-  int camera_width;
-  int camera_height;
   float last_time_step;
+  uint8_t enabled_vision;
 
 private:
   Mode mode;
@@ -343,17 +463,16 @@ private:
   //float gripper_power;
   float desired_gripper_power;
   Vector3 arm_position;
-  Commands * commands;
-  Discovery * discovery;
-  VideoStreamer * video_streamer;
-  bool streaming;
+
+  std::vector<Callback> callbacks;
+
   ServoValues<float> servo_angles;
   ServoValues<float> desired_servo_angles;
   ServoValues<float> servo_speeds;
-  // std::map<int, std::shared_ptr<Action>> actions;
-  std::shared_ptr<MoveAction> move_action;
-  std::shared_ptr<MoveArmAction> move_arm_action;
-  std::shared_ptr<PlaySoundAction> play_sound_action;
+  std::map<std::string, std::shared_ptr<Action>> actions;
+
+  detection_t detected_objects;
+  hit_event_t hit_events;
   // std::shared_ptr<VideoStreamer> video_streamer;
 };
 

@@ -1,20 +1,11 @@
-#include <math.h>
-#include <string.h>
 #include <stdexcept>
-#include <algorithm>
-
 #include <iostream>
 #include <fstream>
-#include <memory>
-
-#include <spdlog/spdlog.h>
 
 #include "robot.hpp"
-#include "command.hpp"
-#include "discovery.hpp"
-#include "utils.hpp"
-#include "action.hpp"
-#include "streamer.hpp"
+
+
+// TODO [later] expose methods in lua to start an action (and enquire state)
 
 static Color breath_led(float _time, Color color, float period_1, float period_2) {
   float f;
@@ -140,13 +131,17 @@ static ServoValues<float> inverse_arm_kinematics(Vector3 & position, Vector3 & a
 
 
 Robot::Robot()
-  : imu(), target_wheel_speed(), target_servo_angles(), target_gripper_state(Robot::GripperStatus::pause),
+  : imu(), camera(), target_wheel_speed(), target_servo_angles(),
+  target_gripper_state(Robot::GripperStatus::pause),
+  enabled_vision(0),
   mode(Mode::FREE), axis_x(0.1),  axis_y(0.1), wheel_radius(0.05), sdk_enabled(false),
   odometry(), body_twist(), desired_target_wheel_speed(), wheel_speeds(), wheel_angles(),
   leds(), led_colors(), time_(0.0f),
   desired_gripper_state(target_gripper_state),
-  commands(nullptr), discovery(nullptr), video_streamer(nullptr), streaming(false),
-  servo_angles(), desired_servo_angles()   {
+  callbacks(),
+  servo_angles(), desired_servo_angles(),
+  actions({{"move", nullptr}, {"move_arm", nullptr}, {"play_sound", nullptr}}),
+  detected_objects() {
   }
 
 void Robot::do_step(float time_step) {
@@ -167,127 +162,16 @@ void Robot::do_step(float time_step) {
 
   // spdlog::debug("state {}", odometry);
 
-
-  // Update Actions
-
-  if(move_action) {
-    if(move_action->state == Action::State::started) {
-        move_action->goal_odom = get_pose() * move_action->goal;
-        move_action->state = Action::State::running;
-        spdlog::info("Start Move Action to {} [odom]", move_action->goal_odom);
-    }
-    if(move_action->state == Action::State::running) {
-      Pose2D goal = move_action->goal_odom.relative_to(get_pose());
-      // Real robomaster is not normalizing!
-      // goal.theta = normalize(goal.theta);
-      spdlog::info("Update Move Action to {} [frame] from {} [odom]", goal, get_pose());
-      const float tau = 0.5f;
-      float remaining_duration;
-      Twist2D twist;
-      if (goal.norm() < 0.01) {
-        twist = {0, 0, 0};
-        move_action->state = Action::State::succeed;
-        remaining_duration = 0;
-        spdlog::info("Move Action done", goal);
-      }
-      else {
-        float f = std::min(1.0f, move_action->linear_speed / (goal.distance() / tau));
-        twist = {
-          f * goal.x / tau,
-          f * goal.y / tau,
-          std::clamp(goal.theta / tau, -move_action->angular_speed, move_action->angular_speed)
-        };
-        remaining_duration = time_to_goal(goal, move_action->linear_speed, move_action->angular_speed);
-        spdlog::info("Move Action continue [{:.2f} s]", remaining_duration);
-      }
-      move_action->current = goal;
-      move_action->remaining_duration = remaining_duration;
-      set_target_velocity(twist);
-    }
-    auto data = move_action->do_step(time_step);
-    if(data.size()) {
-      spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
-      commands->send(data);
-      if (move_action->state == Action::State::failed || move_action->state == Action::State::succeed) {
-        move_action = NULL;
+  // Run Actions
+  for (auto const & [name, action] : actions) {
+    if(action) {
+      action->do_step_cb(time_step);
+      if(action->done()) {
+        actions[name] = nullptr;
       }
     }
   }
 
-  if(move_arm_action) {
-    bool first = false;
-    if(move_arm_action->state == Action::State::started) {
-      if(move_arm_action->absolute) {
-
-      }
-      else {
-        move_arm_action->goal_position = get_arm_position() + move_arm_action->goal_position;
-      }
-      move_arm_action->state = Action::State::running;
-      spdlog::info("[Move Arm Action] set goal to {}", move_arm_action->goal_position);
-      first = true;
-    }
-    if(move_arm_action->state == Action::State::running) {
-      set_target_arm_position(move_arm_action->goal_position);
-      ServoValues<float> angles = get_servo_angles();
-      ServoValues<float> target_angles = desired_servo_angles;
-      move_arm_action->remaining_duration = (
-        abs(normalize(target_angles.right - angles.right)) +
-        abs(normalize(target_angles.left - angles.left)));
-        if(first) move_arm_action->predicted_duration = move_arm_action->remaining_duration;
-        if(move_arm_action->remaining_duration < 0.005) {
-          move_arm_action->state = Action::State::succeed;
-          move_arm_action->remaining_duration = 0;
-          spdlog::info("[Move Arm Action] done");
-        }
-        else {
-          spdlog::info("[Move Arm Action] will continue for {:.2f} rad", move_arm_action->remaining_duration);
-        }
-    }
-    // if(move_arm_action->state == Action::State::running) {
-      move_arm_action->current_position = get_arm_position();
-      auto distance = (move_arm_action->current_position - move_arm_action->goal_position).norm();
-      spdlog::info("[Move Arm Action] current arm position {} is distant {} from goal", move_arm_action->current_position, distance);
-    //   if(distance < 0.001) {
-    //     move_arm_action->state = Action::State::succeed;
-    //     move_arm_action->remaining_duration = 0;
-    //     spdlog::info("[Move Arm Action] done");
-    //   }
-      // else {
-      //   spdlog::info("[Move Arm Action] will continue for {:.2f} rad", move_arm_action->remaining_duration);
-      // }
-    auto data = move_arm_action->do_step(time_step);
-    if(data.size()) {
-      spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
-      commands->send(data);
-      if (move_arm_action->state == Action::State::failed || move_arm_action->state == Action::State::succeed) {
-        move_arm_action = NULL;
-      }
-    }
-  }
-
-  if(play_sound_action) {
-    play_sound_action->remaining_duration -= time_step;
-    play_sound_action->state = Action::State::running;
-    if(play_sound_action->remaining_duration < 0) {
-      if(play_sound_action->play_times == 0) {
-        play_sound_action->state = Action::State::succeed;
-      }
-      else {
-        spdlog::info("[Robot] Play sound {}", play_sound_action->play_times);
-        play_sound_action->remaining_duration = play_sound_action->predicted_duration;
-        play_sound_action->play_times--;
-      }
-    }
-    auto data = play_sound_action->do_step(time_step);
-    if(data.size()) {
-      spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
-      commands->send(data);
-      if (play_sound_action->state == Action::State::failed || play_sound_action->state == Action::State::succeed) {
-        play_sound_action = NULL;
-      }
-    }
-  }
 
   // for (auto const& [key, action] : actions) {
   //   commands->send(action->encode());
@@ -324,22 +208,28 @@ void Robot::do_step(float time_step) {
     update_target_gripper(target_gripper_state, target_gripper_power);
   }
 
-
   // arm
   // Gripper
   //
 
+  if(enabled_vision) {
+    detected_objects = read_detected_objects();
+  }
+  else {
+    detected_objects.clear();
+  }
+  hit_events = read_hit_events();
+
   // Update Publishers
-  if(commands)
-    commands->do_step(time_step);
+
 
 
   // Stream the camera image
-  if(streaming) {
+  if(camera.streaming) {
     // TODO(jerome): I miss something important with allocation/shifting around of buffers.
     // If I do not copy here -> segfault ... why?
     spdlog::debug("[Robot] capture new camera frame");
-    auto image = read_camera_image();
+    camera.image = read_camera_image();
     // std::cout << int(image[0]) << " " << int(image[1]) << " " << int(image[2]) << " (" << image.size() <<")\n";
     // auto image = std::vector<unsigned char>(640 * 360 * 3, 0);
     // auto image = _image;
@@ -349,15 +239,9 @@ void Robot::do_step(float time_step) {
     // std::ofstream fout(name.c_str(), std::ios::out | std::ios::binary);
     // fout.write((char *)image.data(), image.size());
     // fout.close();
-
-    if(!image.empty()) {
-      video_streamer->send(image.data());
-    }
   }
 
-  if(discovery) {
-    discovery->do_step(time_step);
-  }
+  for(auto &cb: callbacks) cb(time_step);
 }
 
 void Robot::update_odometry(float time_step){
@@ -485,61 +369,187 @@ void Robot::set_target_gripper(GripperStatus state, float power) {
   desired_gripper_power = power;
 }
 
+bool Robot::start_streaming(unsigned width, unsigned height) {
+  if(!last_time_step) {
+    spdlog::warn("[Robot] time step unknown: cannot set video streamer fps");
+    return false;
+  }
+  camera.fps = 1.0f / last_time_step;
+  if(!set_camera_resolution(width, height)) {
+    spdlog::warn("[Robot] Camera resolution {} x {} not supported", width, height);
+    return false;
+  }
+  camera.width = width;
+  camera.height = height;
+  camera.streaming = true;
+  return true;
+}
+
+bool Robot::stop_streaming() {
+  spdlog::info("[Robot] stop streaming");
+  camera.streaming = false;
+  return true;
+}
+
+
+bool Robot::move(Pose2D pose, float linear_speed, float angular_speed) {
+  auto a = std::make_shared<MoveAction>(this, pose, linear_speed, angular_speed);
+  return submit_action(a);
+}
+
+bool Robot::move_arm(float x, float z, bool absolute) {
+  auto a = std::make_shared<MoveArmAction>(this, x, z, absolute);
+  return submit_action(a);
+}
+
+bool Robot::play_sound(uint32_t sound_id, uint8_t times) {
+  auto a = std::make_shared<PlaySoundAction>(this, sound_id, times);
+  return submit_action(a);
+}
+
 bool Robot::submit_action(std::shared_ptr<MoveAction> action) {
   // TODO(jerome): What should we do if an action is already active?
-  if(move_action) return false;
-  move_action = action;
-  move_action->state = Action::State::started;
+  if(actions["move"]) return false;
+  actions["move"] = action;
+  action->state = Action::State::started;
+  spdlog::info("Start new MoveAction");
   return true;
 }
 
 bool Robot::submit_action(std::shared_ptr<MoveArmAction> action) {
   // TODO(jerome): What should we do if an action is already active?
-  if(move_arm_action) return false;
-  move_arm_action = action;
-  move_arm_action->state = Action::State::started;
+  if(actions["move_arm"]) return false;
+  actions["move_arm"] = action;
+  action->state = Action::State::started;
+  spdlog::info("Start new MoveArmAction");
   return true;
 }
 
 bool Robot::submit_action(std::shared_ptr<PlaySoundAction> action) {
   // TODO(jerome): What should we do if an action is already active?
-  if(play_sound_action) return false;
-  play_sound_action = action;
-  play_sound_action->state = Action::State::started;
+  if(actions["play_sound"]) return false;
+  actions["play_sound"] = action;
+  action->state = Action::State::started;
+  spdlog::info("Start new PlaySoundAction");
   return true;
 }
 
 
+// Actions
+//
+//
 
-bool Robot::start_streaming(unsigned width, unsigned height) {
-  if(!video_streamer) {
-    spdlog::warn("[Robot] has no video streamer to be started");
-    return false;
+
+void MoveAction::do_step(float time_step) {
+  if(state == Action::State::started) {
+      goal_odom = robot->get_pose() * goal;
+      state = Action::State::running;
+      spdlog::info("Start Move Action to {} [odom]", goal_odom);
   }
-  if(!last_time_step) {
-    spdlog::warn("[Robot] time step unknown: cannot set video streamer fps");
-    return false;
+  if(state == Action::State::running) {
+    Pose2D goal = goal_odom.relative_to(robot->get_pose());
+    // Real robomaster is not normalizing!
+    // goal.theta = normalize(goal.theta);
+    spdlog::info("Update Move Action to {} [frame] from {} [odom]", goal, robot->get_pose());
+    const float tau = 0.5f;
+    float remaining_duration;
+    Twist2D twist;
+    if (goal.norm() < 0.01) {
+      twist = {0, 0, 0};
+      state = Action::State::succeed;
+      remaining_duration = 0;
+      spdlog::info("Move Action done", goal);
+    }
+    else {
+      float f = std::min(1.0f, linear_speed / (goal.distance() / tau));
+      twist = {
+        f * goal.x / tau,
+        f * goal.y / tau,
+        std::clamp(goal.theta / tau, -angular_speed, angular_speed)
+      };
+      remaining_duration = time_to_goal(goal, linear_speed, angular_speed);
+      spdlog::info("Move Action continue [{:.2f} s]", remaining_duration);
+    }
+    // current = goal;
+    robot->set_target_velocity(twist);
   }
-  camera_width = width;
-  camera_height = height;
-  if(!set_camera_resolution(width, height)) {
-    spdlog::warn("[Robot] Camera resolution {} x {} not supported", width, height);
-    return false;
-  }
-  auto address = commands->sender_endpoint().address();
-  spdlog::info("[Robot] Start video streamer to {}", address);
-  streaming = true;
-  video_streamer->start(address, width, height, 1.0f / last_time_step);
-  return true;
 }
 
-bool Robot::stop_streaming() {
-  if(!video_streamer) {
-    spdlog::warn("[Robot] has no video streamer to be stopped");
-    return false;
+// auto data = do_step(time_step);
+// if(data.size()) {
+//   spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
+//   commands->send(data);
+//   if (state == Action::State::failed || state == Action::State::succeed) {
+//     move_action = NULL;
+//   }
+// }
+
+void MoveArmAction::do_step(float time_step) {
+  bool first = false;
+  if(state == Action::State::started) {
+    if(absolute) {
+    }
+    else {
+      goal_position = robot->get_arm_position() + goal_position;
+    }
+    state = Action::State::running;
+    spdlog::info("[Move Arm Action] set goal to {}", goal_position);
+    first = true;
   }
-  spdlog::info("[Robot] stop streaming");
-  streaming = false;
-  video_streamer->stop();
-  return true;
+  if(state == Action::State::running) {
+    robot->set_target_arm_position(goal_position);
+    ServoValues<float> angles = robot->get_servo_angles();
+    ServoValues<float> target_angles = robot->desired_servo_angles;
+    remaining_duration = (
+      abs(normalize(target_angles.right - angles.right)) +
+      abs(normalize(target_angles.left - angles.left)));
+      if(first) predicted_duration = remaining_duration;
+      if(remaining_duration < 0.005) {
+        state = Action::State::succeed;
+        remaining_duration = 0;
+        spdlog::info("[Move Arm Action] done");
+      }
+      else {
+        spdlog::info("[Move Arm Action] will continue for {:.2f} rad", remaining_duration);
+      }
+  }
+  // if(state == Action::State::running) {
+    // current_position = robot->get_arm_position();
+    // auto distance = (current_position - goal_position).norm();
+    // spdlog::info("[Move Arm Action] current arm position {} is distant {} from goal",
+    //              current_position, distance);
+  //   if(distance < 0.001) {
+  //     state = Action::State::succeed;
+  //     remaining_duration = 0;
+  //     spdlog::info("[Move Arm Action] done");
+  //   }
+    // else {
+    //   spdlog::info("[Move Arm Action] will continue for {:.2f} rad", remaining_duration);
+    // }
+}
+
+// auto data = do_step(time_step);
+// if(data.size()) {
+//   spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
+//   commands->send(data);
+//   if (move_arm_action->state == Action::State::failed || move_arm_action->state == Action::State::succeed) {
+//     move_arm_action = NULL;
+//   }
+// }
+
+
+void PlaySoundAction::do_step(float time_step) {
+  remaining_duration -= time_step;
+  state = Action::State::running;
+  if(remaining_duration < 0) {
+    if(play_times == 0) {
+      state = Action::State::succeed;
+      spdlog::info("Finished playing sounds {}", sound_id);
+    }
+    else {
+      spdlog::info("Start playing sound {} (#{} left)", sound_id, play_times);
+      remaining_duration = predicted_duration;
+      play_times--;
+    }
+  }
 }

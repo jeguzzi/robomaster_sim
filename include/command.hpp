@@ -8,15 +8,24 @@
 #include "server.hpp"
 #include "subject.hpp"
 #include "topic.hpp"
+#include "streamer.hpp"
+
+
+class RoboMaster;
+struct VisionEvent;
+struct ArmorHitEvent;
 
 using boost::asio::ip::udp;
 
 class Commands : public Server {
 public:
-  Commands(boost::asio::io_context * _io_context, Robot * robot, short port = 20020);
+  Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMaster * rm, short port = 20020);
   void create_publisher(uint64_t uid, AddSubMsg::Request &request);
   void stop_publisher(DelMsg::Request &request);
   void do_step(float time_step);
+  VideoStreamer * get_video_streamer();
+  void set_vision_request(uint8_t sender, uint8_t receiver, uint16_t type);
+  void set_enable_sdk(bool);
 private:
 
   typedef std::function<std::shared_ptr<Subject>()> SubjectCreator;
@@ -27,6 +36,10 @@ private:
   void register_subject() {
     subjects[S::uid] = []() -> std::shared_ptr<S>{ return std::make_shared<S>(); };
   }
+
+  RoboMaster * robomaster;
+  std::shared_ptr<VisionEvent> vision_event;
+  std::shared_ptr<ArmorHitEvent> armor_hit_event;
 };
 
 #endif /* end of include guard: _COMMANDS_HPP */

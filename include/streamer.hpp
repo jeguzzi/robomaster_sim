@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 
 #include "encoder.hpp"
+#include "robot.hpp"
 
 namespace ba = boost::asio;
 
@@ -13,15 +14,18 @@ namespace ba = boost::asio;
 
 class VideoStreamer {
 public:
-  VideoStreamer(long bitrate=DEFAULT_BITRATE);
-  static std::shared_ptr<VideoStreamer> create_video_streamer(ba::io_context * io_context, bool udp=false, long bitrate=DEFAULT_BITRATE);
+  VideoStreamer(Robot * robot, long bitrate=DEFAULT_BITRATE);
+  static std::shared_ptr<VideoStreamer> create_video_streamer(
+      ba::io_context * io_context, Robot * robot, bool udp=false, long bitrate=DEFAULT_BITRATE);
   void send(unsigned char * buffer);
   void stop();
   void start(ba::ip::address & address, unsigned image_width, unsigned image_height, int fps);
+  void do_step(float);
 protected:
   bool active;
   long bitrate;
 private:
+  Robot * robot;
   std::shared_ptr<Encoder> encoder;
   unsigned long seq;
   virtual void send_buffer(ba::const_buffer &) = 0;

@@ -45,23 +45,36 @@ include_directories(
   include
 )
 
+add_library(robot
+  src/robot
+)
+
+add_executable(test_robot test_robot.cpp src/dummy_robot.cpp)
+
+target_link_libraries(test_robot PRIVATE
+  robot
+  spdlog::spdlog
+  ${Boost_LIBRARIES}
+)
+
 add_library(robomaster
   src/robomaster.cpp
   src/server.cpp
   src/command.cpp
   src/connection.cpp
   src/dummy_robot.cpp
+  src/rt_dummy_robot.cpp
   src/protocol.cpp
   src/topic.cpp
   # src/rt_topic.cpp
   src/robot.cpp
-  src/action.cpp
-  src/utils.cpp
+  # src/action.cpp
+  # src/utils.cpp
   src/encoder.cpp
   src/streamer.cpp
   src/discovery.cpp
 )
-add_executable(test test.cpp)
+add_executable(test test.cpp )
 
 add_executable(test_encoder test_encoder.cpp src/encoder.cpp)
 

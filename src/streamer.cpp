@@ -11,7 +11,7 @@
 
 class TCPVideoStreamer final : public VideoStreamer{
 public:
-  TCPVideoStreamer(ba::io_context * io_context, long bitrate=DEFAULT_BITRATE);
+  TCPVideoStreamer(ba::io_context * io_context, Robot * robot, long bitrate=DEFAULT_BITRATE);
 private:
   ba::ip::tcp::acceptor acceptor;
   ba::ip::tcp::socket tcp_socket;
@@ -22,7 +22,7 @@ private:
 
 class UDPVideoStreamer final : public VideoStreamer{
 public:
-  UDPVideoStreamer(ba::io_context * io_context, long bitrate=DEFAULT_BITRATE);
+  UDPVideoStreamer(ba::io_context * io_context, Robot * robot, long bitrate=DEFAULT_BITRATE);
 private:
   ba::ip::udp::socket udp_socket;
   ba::ip::udp::endpoint udp_endpoint;
@@ -31,22 +31,31 @@ private:
   void stop_socket();
 };
 
-std::shared_ptr<VideoStreamer> VideoStreamer::create_video_streamer(ba::io_context * io_context, bool udp, long bitrate) {
+std::shared_ptr<VideoStreamer> VideoStreamer::create_video_streamer(
+    ba::io_context * io_context, Robot * robot, bool udp, long bitrate) {
   if(udp)
     return std::dynamic_pointer_cast<VideoStreamer>(
-        std::make_shared<UDPVideoStreamer>(io_context, bitrate));
+        std::make_shared<UDPVideoStreamer>(io_context, robot, bitrate));
   return std::dynamic_pointer_cast<VideoStreamer>(
-        std::make_shared<TCPVideoStreamer>(io_context, bitrate));
+        std::make_shared<TCPVideoStreamer>(io_context, robot, bitrate));
 }
 
 
 
 
-VideoStreamer::VideoStreamer(long _bitrate)
+VideoStreamer::VideoStreamer(Robot * _robot, long _bitrate)
   :
   active(false),
   bitrate(_bitrate),
+  robot(_robot),
   seq(0) {
+}
+
+void VideoStreamer::do_step(float time_step) {
+  auto camera = robot->get_camera();
+  if(!camera->image.empty()) {
+    send(camera->image.data());
+  }
 }
 
 void VideoStreamer::send(unsigned char *buffer) {
@@ -62,21 +71,22 @@ void VideoStreamer::send(unsigned char *buffer) {
 }
 
 void VideoStreamer::start(ba::ip::address & address, unsigned image_width, unsigned image_height, int fps) {
+  spdlog::info("Start video streamer");
   encoder = std::make_shared<Encoder>(bitrate, image_width, image_height, fps);
   start_socket(address);
 }
 
 void VideoStreamer::stop() {
+  spdlog::info("Stop video streamer");
   active = false;
   encoder = nullptr;
   stop_socket();
 }
 
 
-
-TCPVideoStreamer::TCPVideoStreamer(boost::asio::io_context * io_context, long _bitrate)
+TCPVideoStreamer::TCPVideoStreamer(boost::asio::io_context * io_context, Robot * robot, long _bitrate)
 :
-  VideoStreamer(_bitrate),
+  VideoStreamer(robot, _bitrate),
   acceptor(*io_context, ba::ip::tcp::endpoint(ba::ip::tcp::v4(), PORT)),
   tcp_socket(*io_context) {
     spdlog::info("Creating a TCP video streamer @ {} bps", bitrate);
@@ -103,9 +113,9 @@ void TCPVideoStreamer::stop_socket() {
 
 
 
-UDPVideoStreamer::UDPVideoStreamer(boost::asio::io_context * io_context, long _bitrate)
+UDPVideoStreamer::UDPVideoStreamer(boost::asio::io_context * io_context, Robot * robot, long _bitrate)
   :
-  VideoStreamer(_bitrate),
+  VideoStreamer(robot, _bitrate),
   udp_socket(*io_context, ba::ip::udp::endpoint(ba::ip::udp::v4(), UDP_PORT)) {
     spdlog::info("Creating an UDP video streamer @ {} bps", bitrate);
 }

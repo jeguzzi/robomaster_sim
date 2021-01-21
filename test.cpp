@@ -1,7 +1,7 @@
 // main.cpp
 #include <iostream>
 #include "robomaster.hpp"
-#include "dummy_robot.hpp"
+#include "rt_dummy_robot.hpp"
 
 // #include "spdlog/cfg/env.h"
 
@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
   spdlog::info("Welcome to the RoboMaster test");
   // Get ignored
   spdlog::set_level(spdlog::level::from_str(log_level));
-  DummyRobot dummy(io_context.get(), 0.05);
-  rm::RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate);
+  RealTimeDummyRobot dummy(io_context.get(), 0.05);
+  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate);
   spdlog::info("Start spinning");
   robot.spin(false);
   std::cout << "Goodbye" << std::endl;

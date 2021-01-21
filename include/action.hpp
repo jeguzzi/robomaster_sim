@@ -12,63 +12,45 @@
 #include "spdlog/fmt/ostr.h"
 
 class Robot;
+class Commands;
 
-struct Action
-{
-  enum State : uint8_t {
-    running = 0,
-    succeed = 1,
-    failed = 2,
-    started = 3,
-    undefined = 4,
-  };
 
-  Action(uint8_t _id, float _frequency)
-  : id(_id), frequency(_frequency), state(State::undefined), deadline(0) {
+template <typename T>
+struct ActionSDK {
+
+  void publish(float time_step) {
+    deadline -= time_step;
+    if(action->done() || deadline <= 0) {
+      deadline += 1.0f / frequency;
+      update_msg();
+      cmd->send(push_msg->encode_msg(T::set, T::cmd));
+    }
   }
 
+  ActionSDK(Commands * _cmd, uint8_t _id, float _frequency, std::shared_ptr<typename T::Response> push, Action * action)
+  : cmd(_cmd), id(_id), frequency(_frequency), deadline(0), push_msg(push), action(action) {
+    push->action_id = id;
+    action->set_callback(std::bind(&ActionSDK::publish, this, std::placeholders::_1));
+}
+
+  ~ActionSDK() {} ;
+
+  virtual void update_msg() = 0;
 
   uint8_t accept_code() {
-    if(state == State::running || state == State::started) return 0;
-    if(state == State::succeed) return 2;
+    if(action->state == Action::State::running || action->state == Action::State::started) return 0;
+    if(action->state == Action::State::succeed) return 2;
     return 1;
   }
 
-  virtual std::vector<uint8_t> do_step(float time_step) = 0;
 
-  virtual ~Action() {};
-
+  Commands *cmd;
   uint8_t id;
   float frequency;
-  State state;
   float deadline;
-};
-
-template <typename T>
-struct TAction : Action {
-  TAction(uint8_t _id, float _frequency, std::shared_ptr<typename T::Response> push)
-  : Action(_id, _frequency), push_msg(push) {
-    push->action_id = id;
-}
-
-  ~TAction() {} ;
-
-  virtual void update() = 0;
-
-  std::vector<uint8_t> do_step(float time_step) {
-    deadline -= time_step;
-    if(deadline <= 0) {
-      deadline += 1.0f / frequency;
-      update();
-      return push_msg->encode_msg(T::set, T::cmd);
-    }
-    return {};
-  }
-
   std::shared_ptr<typename T::Response> push_msg;
+  Action * action;
 };
-
-float time_to_goal(Pose2D & goal_pose, float linear_speed, float angular_speed);
 
 struct PositionPush : Proto<0x3f, 0x2a>
 {
@@ -96,16 +78,16 @@ struct PositionPush : Proto<0x3f, 0x2a>
 
 };
 
-struct MoveAction : TAction<PositionPush>
-{
-  MoveAction(uint8_t _id, float _frequency, std::shared_ptr<PositionPush::Response> push,
-    Pose2D goal_pose, float _linear_speed, float _angular_speed)
-  : TAction<PositionPush>(_id, _frequency, push), goal(goal_pose), linear_speed(_linear_speed), angular_speed(_angular_speed) {
-    predicted_duration = time_to_goal(goal_pose, linear_speed, angular_speed);
+struct MoveActionSDK : MoveAction, ActionSDK<PositionPush> {
+  MoveActionSDK(Commands * cmd, uint8_t id, float frequency, std::shared_ptr<PositionPush::Response> push,
+      Robot * robot, Pose2D goal, float linear_speed, float angular_speed)
+  : MoveAction(robot, goal, linear_speed, angular_speed),
+    ActionSDK<PositionPush>(cmd, id, frequency, push, this) {
+      action = this;
   }
-  void update() {
+  void update_msg() {
     push_msg->seq_id++;
-    if (state == Action::State::succeed) {
+    if (state == State::succeed) {
       push_msg->percent = 100;
     }
     else {
@@ -114,19 +96,13 @@ struct MoveAction : TAction<PositionPush>
     push_msg->action_state = state;
     // std::cout << "current: " << current << std::endl;
     // TODO(jerome): check if coherent with real robot
+    Pose2D current = robot->get_pose();
     push_msg->pos_x = (int16_t) round(100 * current.x);
     push_msg->pos_y = -(int16_t) round(100 * current.y);
     push_msg->pos_z = (int16_t) round(10 * rad2deg(current.theta));
     // push_msg->pos_y = ...
     // push_msg->pos_z = ...
   }
-  Pose2D goal;
-  Pose2D goal_odom;
-  Pose2D current;
-  float linear_speed;
-  float angular_speed;
-  float predicted_duration;
-  float remaining_duration;
 };
 
 
@@ -156,13 +132,16 @@ struct RoboticArmMovePush : Proto<0x3f, 0xb6>
 };
 
 
-struct MoveArmAction : TAction<RoboticArmMovePush>
-{
-  MoveArmAction(uint8_t _id, float _frequency, std::shared_ptr<RoboticArmMovePush::Response> push,
-    float x, float z, bool _absolute)
-  : TAction<RoboticArmMovePush>(_id, _frequency, push), goal_position({x, 0, z}), absolute(_absolute) {
+struct MoveArmActionSDK : MoveArmAction, ActionSDK<RoboticArmMovePush> {
+
+  MoveArmActionSDK(Commands * cmd, uint8_t id, float frequency, std::shared_ptr<RoboticArmMovePush::Response> push,
+      Robot * robot, float x, float z, bool relative)
+  : MoveArmAction(robot, x, z, relative),
+    ActionSDK<RoboticArmMovePush>(cmd, id, frequency, push, this) {
+      action = this;
   }
-  void update() {
+
+  void update_msg() {
     push_msg->seq_id++;
     if (state == Action::State::succeed) {
       push_msg->percent = 100;
@@ -173,17 +152,10 @@ struct MoveArmAction : TAction<RoboticArmMovePush>
     push_msg->action_state = state;
     // std::cout << "current: " << current_position << std::endl;
     // TODO(jerome): check if coherent with real robot
+    Vector3 current_position = robot->get_arm_position();
     push_msg->x = (int32_t) round(1000 * current_position.x);
     push_msg->y = (int32_t) round(1000 * current_position.z);
   }
-
-  Vector3 goal_position;
-  ServoValues<float> target_angles;
-  bool absolute;
-  Vector3 current_position;
-  float predicted_duration;
-  float remaining_duration;
-
 };
 
 
@@ -212,25 +184,26 @@ struct PlaySoundPush : Proto<0x3f, 0xb4>
 };
 
 
-struct PlaySoundAction : TAction<PlaySoundPush>
-{
-  PlaySoundAction(uint8_t _id, float _frequency, std::shared_ptr<PlaySoundPush::Response> push,
-    uint32_t _sound_id, uint8_t _play_times)
-  : TAction<PlaySoundPush>(_id, _frequency, push), sound_id(_sound_id), play_times(_play_times) {
-    predicted_duration = 3.0;
-    remaining_duration = 0.0;
-  }
-  void update() {
+struct PlaySoundActionSDK : PlaySoundAction, ActionSDK<PlaySoundPush> {
+  PlaySoundActionSDK(Commands * cmd, uint8_t id, float frequency, std::shared_ptr<PlaySoundPush::Response> push,
+      Robot * robot, uint32_t sound_id, uint8_t play_times)
+  : PlaySoundAction(robot, sound_id, play_times),
+    ActionSDK<PlaySoundPush>(cmd, id, frequency, push, this)
+    {
+      action = this;
+    }
+
+  void update_msg() {
+    // TODO: this ver
     push_msg->sound_id = sound_id;
     push_msg->percent = std::max(0, (int)(100 - round(100.0f * remaining_duration / predicted_duration)));
     push_msg->action_state = state;
   }
-  uint32_t sound_id;
-  uint8_t play_times;
-  float predicted_duration;
-  float remaining_duration;
+
+  // void do_step(float time_step) {
+  //   PlaySoundAction::do_step(time_step);
+  //   ActionSDK<PlaySoundPush>::publish(time_step);
+  // }
 };
-
-
 
 #endif /* end of include guard: ACTION */

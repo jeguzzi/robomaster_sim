@@ -40,7 +40,7 @@
 
 static int next_robot_handle = 0;
 static std::map<int, std::shared_ptr<CoppeliaSimRobot>> _robots;
-static std::map<int, std::shared_ptr<rm::RoboMaster>> _interfaces;
+static std::map<int, std::shared_ptr<RoboMaster>> _interfaces;
 
 // static boost::asio::io_context io_context;
 
@@ -60,7 +60,7 @@ static int add_robot(
       wheel_handles, led_handles, camera, servo_motors, gripper_state, gripper_target
   );
   // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context, _robots[handle].get());
-  _interfaces[handle] = std::make_shared<rm::RoboMaster>(
+  _interfaces[handle] = std::make_shared<RoboMaster>(
       nullptr, _robots[handle].get(), serial_number, camera_use_udp, camera_bitrate);
   _interfaces[handle]->spin(true);
   return handle;

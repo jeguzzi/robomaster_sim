@@ -48,6 +48,14 @@ struct ResponseT
     need_ack = !is_ack;
   }
 
+  ResponseT(uint8_t sender, uint8_t receiver)
+  {
+    sender = receiver;
+    receiver = sender;
+    is_ack = 0;
+    need_ack = 0;
+  }
+
   inline uint8_t attri ()
   {
     uint8_t v = 0;

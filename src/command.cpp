@@ -16,6 +16,8 @@
 #include "subscriber_messages.hpp"
 #include "command_subjects.hpp"
 #include "rt_topic.hpp"
+#include "robomaster.hpp"
+#include "event.hpp"
 
 // #include "command_topics.hpp"
 
@@ -39,17 +41,16 @@ bool DelMsg::answer(Request &request, Response &response, Robot  * robot, Comman
   return true;
 }
 
-Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, short port)
-: Server(_io_context, robot, port)
+Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMaster * rm, short port)
+: Server(_io_context, robot, port), robomaster(rm)
 {
-  robot->set_commands(this);
   register_message<SdkHeartBeat>();
-  register_message<SetSdkMode>();
+  register_message<SetSdkMode, Commands *>(this);
   register_message<SetRobotMode>();
   register_message<GetRobotMode>();
   register_message<SubNodeReset>();
   register_message<SubscribeAddNode>();
-  register_message<VisionDetectEnable>();
+  register_message<VisionDetectEnable, Commands *>(this);
   register_message<ChassisSpeedMode>();
   register_message<AddSubMsg, Commands *>(this);
   register_message<DelMsg, Commands *>(this);
@@ -57,17 +58,18 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, short p
   register_message<GetProductVersion>();
   register_message<GetSn>();
   register_message<SetSystemLed>();
-  register_message<PlaySound>();
-  register_message<PositionMove>();
-  // register_message<PositionPush>();
+  register_message<PlaySound, Commands *>(this);
+  register_message<PositionMove, Commands *>(this);
   register_message<SetWheelSpeed>();
   register_message<ChassisPwmPercent>();
   register_message<ChassisPwmFreq>();
   register_message<GripperCtrl>();
+  register_message<RoboticArmMoveCtrl, Commands *>(this);
+  register_message<StreamCtrl, Commands *>(this);
+  register_message<VisionDetectStatus>();
+  register_message<SetArmorParam>();
 
-  register_message<RoboticArmMoveCtrl>();
-  // register_message<RoboticArmMovePush>();
-  register_message<StreamCtrl>();
+
 
   // Currently not used by the robomaster Python library
   // register_message<ChassisSetWorkMode>();
@@ -89,6 +91,16 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, short p
 
   spdlog::info("[Commands] Start listening on port {}", port);
   start();
+}
+
+void Commands::set_enable_sdk(bool value) {
+  if(value) {
+    armor_hit_event = std::make_shared<ArmorHitEvent>(this, robot);
+  }
+  else {
+    armor_hit_event = nullptr;
+    vision_event = nullptr;
+  }
 }
 
 void Commands::create_publisher(uint64_t uid, AddSubMsg::Request &request)
@@ -120,4 +132,16 @@ void Commands::do_step(float time_step)
     // spdlog::debug("[Pub] do_step");
     pub->do_step(time_step);
   }
+  if(vision_event)
+    vision_event->do_step(time_step);
+  if(armor_hit_event)
+    armor_hit_event->do_step(time_step);
+}
+
+VideoStreamer * Commands::get_video_streamer() {
+  return robomaster->get_video_streamer();
+}
+
+void Commands::set_vision_request(uint8_t sender, uint8_t request, uint16_t mask) {
+  vision_event = std::make_shared<VisionEvent>(this, robot, sender, request, mask);
 }

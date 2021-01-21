@@ -61,9 +61,9 @@ std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
   simInt width = 0;
   simInt height = 0;
   simUChar * buffer = simGetVisionSensorCharImage(camera_handle, &width, &height);
-  if(width!=camera_width || height!=camera_height) {
+  if(width!=camera.width || height!=camera.height) {
     spdlog::warn("Skip frame because of uncorrect size ({}, {}) vs desired size ({}, {})",
-      width, height, camera_width, camera_height);
+      width, height, camera.width, camera.height);
     return {};
   }
   unsigned size = width * height * 3;
@@ -136,4 +136,12 @@ Robot::GripperStatus CoppeliaSimRobot::read_gripper_state() {
   simInt value;
   simGetIntegerSignal(gripper_state_signal.data(), &value);
   return Robot::GripperStatus(value);
+}
+
+detection_t CoppeliaSimRobot::read_detected_objects() {
+  return {};
+}
+
+hit_event_t CoppeliaSimRobot::read_hit_events() {
+  return {};
 }

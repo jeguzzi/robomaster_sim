@@ -350,16 +350,17 @@ struct PlaySound : Proto<0x3f, 0xb3>
     using ResponseT::ResponseT;
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
     if(request.play_ctrl == 1){
         auto push = std::make_shared<PlaySoundPush::Response>(request);
         push->is_ack = false;
         push->need_ack = 0;
         push->seq_id = 0;
-        auto a = std::make_shared<PlaySoundAction>(
-            request.action_id, (float) request.push_freq, push, request.sound_id, request.play_times);
-        robot->submit_action(a);
+        auto a = std::make_shared<PlaySoundActionSDK>(
+          cmd, request.action_id, (float) request.push_freq, push,
+          robot, request.sound_id, request.play_times);
+        robot->submit_action(std::dynamic_pointer_cast<PlaySoundAction>(a));
         response.accept = a->accept_code();
         return true;
     }
@@ -447,7 +448,7 @@ struct PositionMove : Proto<0x3f, 0x25>
     using ResponseT::ResponseT;
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands *cmd)
   {
     // TODO(jerome): implement after actions are added
     // spdlog::warn("PositionMove answer not implemented");
@@ -459,9 +460,10 @@ struct PositionMove : Proto<0x3f, 0x25>
         push->is_ack = false;
         push->need_ack = 0;
         push->seq_id = 0;
-        auto a = std::make_shared<MoveAction>(
-            request.action_id, (float) request.freq, push, request.pose(), request.linear_speed(), request.angular_speed());
-        robot->submit_action(a);
+        auto a = std::make_shared<MoveActionSDK>(
+          cmd, request.action_id, (float) request.freq, push, robot, request.pose(),
+          request.linear_speed(), request.angular_speed());
+        robot->submit_action(std::dynamic_pointer_cast<MoveAction>(a));
         response.accept = a->accept_code();
         return true;
     }
@@ -721,9 +723,11 @@ struct VisionDetectEnable : Proto<0xa, 0xa3>
     }
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
-    spdlog::warn("VisionDetectEnable not implemented yet");
+    // spdlog::warn("VisionDetectEnable {} not implemented yet", request.type);
+    robot->set_enable_vision(request.type);
+    cmd->set_vision_request(request.sender, request.receiver, request.type);
     return true;
   }
 
@@ -818,9 +822,10 @@ struct SetSdkMode : Proto<0x3f, 0xd1>
     }
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
     robot->set_enable_sdk(request.enable);
+    cmd->set_enable_sdk(request.enable);
     return true;
   }
 
@@ -845,8 +850,9 @@ struct SubscribeAddNode : Proto<0x48, 0x01>
     {
       os << "SubscribeAddNode::Request {"
          << " node_id=" << int(r.node_id)
-         << " sub_vision=" << unsigned(r.sub_vision)
+         << " sub_vision=0x" << std::hex << unsigned(r.sub_vision)
          << " }";
+      os << std::dec;
       return os;
     }
   };
@@ -863,7 +869,7 @@ struct SubscribeAddNode : Proto<0x48, 0x01>
   static bool answer(Request &request, Response &response, Robot  * robot)
   {
     // TODO(jerome): implement after publishers are added
-    spdlog::warn("SubscribeAddNode answer not implemented");
+    spdlog::warn("Answer to {} not implemented yet", request);
     return true;
   }
 };
@@ -895,7 +901,7 @@ struct SubNodeReset : Proto<0x48, 0x02>
   {
     // TODO(jerome): implement after publishers are added
     // Are nodes just for subscribers?
-    spdlog::warn("SubNodeReset answer not implemented");
+    spdlog::warn("Answer to {} not implemented yet", request);
     return true;
   }
 
@@ -1028,7 +1034,7 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
     using ResponseT::ResponseT;
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
     // TODO(jerome): implement after actions are added
     // spdlog::warn("RoboticArmMoveCtrl answer not implemented");
@@ -1040,10 +1046,11 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
         push->need_ack = 0;
         push->seq_id = 0;
         spdlog::info("Creating MoveArmAction");
-        auto a = std::make_shared<MoveArmAction>(
-            request.action_id, (float) request.freq, push, request.x * 0.001, request.y * 0.001, (bool) request.mode);
+        auto a = std::make_shared<MoveArmActionSDK>(
+            cmd, request.action_id, (float) request.freq, push, robot, request.x * 0.001,
+            request.y * 0.001, (bool) request.mode);
         spdlog::info("Submitting MoveArmAction");
-        robot->submit_action(a);
+        robot->submit_action(std::dynamic_pointer_cast<MoveArmAction>(a));
         response.accept = a->accept_code();
         spdlog::info("Action accepted? {}", response.accept);
         return true;
@@ -1103,7 +1110,7 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
     }
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
     // DONE(jerome): implement after video is added
     // spdlog::warn("StreamCtrl answer not implemented");
@@ -1118,11 +1125,122 @@ struct StreamCtrl : Proto<0x3f, 0xd2>
         else {
           robot->start_streaming(640, 360);
         }
+        auto camera = robot->get_camera();
+        if(camera->streaming) {
+          auto address = cmd->sender_endpoint().address();
+          cmd->get_video_streamer()->start(
+              address, camera->width, camera->height, camera->fps);
+        }
+        else {
+          spdlog::warn("Failed to start streaming");
+        }
       }
       else {
         robot->stop_streaming();
+        cmd->get_video_streamer()->stop();
       }
     }
+    return true;
+  }
+
+};
+
+
+struct VisionDetectStatus : Proto<0xa, 0xa5>
+{
+
+  struct Request : RequestT {
+
+    template<typename OStream>
+    friend OStream& operator<<(OStream& os, const Request& r)
+    {
+      os << "VisionDetectStatus::Request {}";
+      return os;
+    }
+
+    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
+    : RequestT(_sender, _receiver, _seq_id, _attri)
+    {
+    };
+  };
+
+  struct Response : ResponseT{
+    uint16_t vision_type;
+
+    std::vector<uint8_t> encode()
+    {
+      std::vector<uint8_t> buffer(3, 0);
+      write<uint16_t>(buffer, 1, vision_type);
+      return buffer;
+    };
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    response.vision_type = robot->get_enable_vision();
+    return true;
+  }
+
+};
+
+struct SetArmorParam : Proto<0x3f, 0x7>
+{
+
+  struct Request : RequestT {
+
+    uint8_t armor_mask;
+    uint16_t voice_energy_en;
+    uint16_t voice_energy_ex;
+    uint16_t voice_len_max;
+    uint16_t voice_len_min;
+    uint16_t voice_len_silence;
+    uint16_t voice_peak_count;
+    uint16_t voice_peak_min;
+    uint16_t voice_peak_ave;
+    uint16_t voice_peak_final;
+
+    template<typename OStream>
+    friend OStream& operator<<(OStream& os, const Request& r)
+    {
+      os << "SetArmorParam::Request {"
+         << " armor_mask=" << (int)r.armor_mask
+         << " voice_energy_en=" << (int)r.voice_energy_en
+         << " voice_energy_ex=" << (int)r.voice_energy_ex
+         << " voice_len_max=" << (int)r.voice_len_max
+         << " voice_len_min=" << (int)r.voice_len_min
+         << " voice_len_silence=" << (int)r.voice_len_silence
+         << " voice_peak_count=" << (int)r.voice_peak_count
+         << " voice_peak_min=" << (int)r.voice_peak_min
+         << " voice_peak_ave=" << (int)r.voice_peak_ave
+         << " voice_peak_final=" << (int)r.voice_peak_final
+         << " }";
+      return os;
+    }
+
+    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
+    : RequestT(_sender, _receiver, _seq_id, _attri)
+    {
+      armor_mask = buffer[0];
+      voice_energy_en = read<uint16_t>(buffer + 1);
+      voice_energy_ex = read<uint16_t>(buffer + 3);
+      voice_len_max = read<uint16_t>(buffer + 5);
+      voice_len_min = read<uint16_t>(buffer + 7);
+      voice_len_silence = read<uint16_t>(buffer + 9);
+      voice_peak_count = read<uint16_t>(buffer + 11);
+      voice_peak_min = read<uint16_t>(buffer + 13);
+      voice_peak_ave = read<uint16_t>(buffer + 15);
+      voice_peak_final = read<uint16_t>(buffer + 17);
+    }
+
+  };
+
+  struct Response : ResponseT{
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
     return true;
   }
 
