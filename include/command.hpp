@@ -26,6 +26,8 @@ public:
   VideoStreamer * get_video_streamer();
   void set_vision_request(uint8_t sender, uint8_t receiver, uint16_t type);
   void set_enable_sdk(bool);
+  void add_subscriber_node(uint8_t node_id);
+  void reset_subscriber_node(uint8_t node_id);
 private:
 
   typedef std::function<std::shared_ptr<Subject>()> SubjectCreator;

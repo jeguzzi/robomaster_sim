@@ -332,9 +332,9 @@ void Robot::set_enable_sdk(bool value){
   if(sdk_enabled == value) return;
   sdk_enabled = value;
   if(value)
-    spdlog::info("Enabled SDK");
+    spdlog::info("[Robot] enabled SDK");
   else
-    spdlog::info("Disabled SDK");
+    spdlog::info("[Robot] disabled SDK");
 }
 
 Twist2D Robot::get_twist(Frame frame) {

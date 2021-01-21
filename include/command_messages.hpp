@@ -866,10 +866,11 @@ struct SubscribeAddNode : Proto<0x48, 0x01>
     using ResponseT::ResponseT;
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands *cmd)
   {
     // TODO(jerome): implement after publishers are added
-    spdlog::warn("Answer to {} not implemented yet", request);
+    // spdlog::warn("Answer to {} not implemented yet", request);
+    cmd->add_subscriber_node(request.node_id);
     return true;
   }
 };
@@ -897,11 +898,12 @@ struct SubNodeReset : Proto<0x48, 0x02>
     }
   };
 
-  static bool answer(Request &request, Response &response, Robot  * robot)
+  static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
     // TODO(jerome): implement after publishers are added
     // Are nodes just for subscribers?
-    spdlog::warn("Answer to {} not implemented yet", request);
+    // spdlog::warn("Answer to {} not implemented yet", request);
+    cmd->reset_subscriber_node(request.node_id);
     return true;
   }
 

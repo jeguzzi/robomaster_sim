@@ -48,8 +48,8 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMas
   register_message<SetSdkMode, Commands *>(this);
   register_message<SetRobotMode>();
   register_message<GetRobotMode>();
-  register_message<SubNodeReset>();
-  register_message<SubscribeAddNode>();
+  register_message<SubNodeReset, Commands *>(this);
+  register_message<SubscribeAddNode, Commands *>(this);
   register_message<VisionDetectEnable, Commands *>(this);
   register_message<ChassisSpeedMode>();
   register_message<AddSubMsg, Commands *>(this);
@@ -93,14 +93,33 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMas
   start();
 }
 
+void Commands::add_subscriber_node(uint8_t node_id) {
+  spdlog::info("[Commands] add subscriber {}", node_id);
+  armor_hit_event = std::make_shared<ArmorHitEvent>(this, robot, node_id);
+}
+
+void Commands::reset_subscriber_node(uint8_t node_id) {
+  spdlog::info("[Commands] reset subscriber {}", node_id);
+  armor_hit_event = nullptr;
+  vision_event = nullptr;
+  publishers.clear();
+}
+
+
 void Commands::set_enable_sdk(bool value) {
+
   if(value) {
-    armor_hit_event = std::make_shared<ArmorHitEvent>(this, robot);
+    spdlog::info("[Commands] enabled the SDK");
   }
   else {
+    spdlog::info("[Commands] disabled the SDK");
     armor_hit_event = nullptr;
     vision_event = nullptr;
+    armor_hit_event = nullptr;
+    vision_event = nullptr;
+    publishers.clear();
   }
+
 }
 
 void Commands::create_publisher(uint64_t uid, AddSubMsg::Request &request)
