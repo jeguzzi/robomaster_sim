@@ -429,6 +429,14 @@ public:
 
   virtual hit_event_t read_hit_events() = 0;
 
+  // ignored for now:
+  // color {1: red, 2: green, 3: blue}
+  // type {1: line, 2: marker}
+  // TODO: attention that this enum is different that the one used in vision type
+  void set_vision_color(uint8_t type, uint8_t color) {
+    vision_color[type] = color;
+  }
+
 protected:
   IMU imu;
   Camera camera;
@@ -438,6 +446,7 @@ protected:
   float target_gripper_power;
   float last_time_step;
   uint8_t enabled_vision;
+  std::map<uint8_t, uint8_t> vision_color;
 
 private:
   Mode mode;

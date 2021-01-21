@@ -1047,14 +1047,14 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
         push->is_ack = false;
         push->need_ack = 0;
         push->seq_id = 0;
-        spdlog::info("Creating MoveArmAction");
+        // spdlog::info("Creating MoveArmAction");
         auto a = std::make_shared<MoveArmActionSDK>(
             cmd, request.action_id, (float) request.freq, push, robot, request.x * 0.001,
             request.y * 0.001, (bool) request.mode);
-        spdlog::info("Submitting MoveArmAction");
+        // spdlog::info("Submitting MoveArmAction");
         robot->submit_action(std::dynamic_pointer_cast<MoveArmAction>(a));
         response.accept = a->accept_code();
-        spdlog::info("Action accepted? {}", response.accept);
+        // spdlog::info("Action accepted? {}", response.accept);
         return true;
     }
     // Cancel (not implemented in client yet)
@@ -1185,6 +1185,46 @@ struct VisionDetectStatus : Proto<0xa, 0xa5>
   }
 
 };
+
+
+struct VisionSetColor : Proto<0xa, 0xab>
+{
+
+  struct Request : RequestT {
+
+    uint8_t type;
+    uint8_t color;
+
+    template<typename OStream>
+    friend OStream& operator<<(OStream& os, const Request& r)
+    {
+      os << "VisionSetColor::Request {"
+         << " type=" << (int)r.type
+         << " color=" << (int)r.color
+         << " }";
+      return os;
+    }
+
+    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
+    : RequestT(_sender, _receiver, _seq_id, _attri)
+    {
+        type = buffer[0];
+        color = buffer[1];
+    };
+  };
+
+  struct Response : ResponseT{
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(Request &request, Response &response, Robot  * robot)
+  {
+    robot->set_vision_color(request.type, request.color);
+    return true;
+  }
+
+};
+
 
 struct SetArmorParam : Proto<0x3f, 0x7>
 {
