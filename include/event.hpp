@@ -19,44 +19,70 @@ struct Event
 
   void do_step(float time_step) {
     for(auto & msg : update_msg()) {
-      auto data = msg->encode_msg(B::set, B::cmd);
+      auto data = msg.encode_msg(B::set, B::cmd);
       spdlog::debug("Push Event Msg {} bytes: {:n}", data.size(), spdlog::to_hex(data));
       cmd->send(data);
     }
   }
-  virtual std::vector<std::shared_ptr<typename B::Response>> update_msg() = 0;
+  virtual std::vector<typename B::Response> update_msg() = 0;
   virtual ~Event(){};
 };
 
+void encode(std::vector<uint8_t> &buffer, size_t location, BoundingBox & object) {
+  write<float>(buffer, location + 0, object.x);
+  write<float>(buffer, location + 4, object.y);
+  write<float>(buffer, location + 8, object.width);
+  write<float>(buffer, location + 12, object.height);
+}
+
+void encode(std::vector<uint8_t> &buffer, size_t location, DetectedObjects::Person & object) {
+  encode(buffer, location, object.bounding_box);
+}
+
+void encode(std::vector<uint8_t> &buffer, size_t location, DetectedObjects::Gesture & object) {
+  encode(buffer, location, object.bounding_box);
+  write<uint32_t>(buffer, location+ 16, object.id);
+}
+
+void encode(std::vector<uint8_t> &buffer, size_t location, DetectedObjects::Line & object) {
+  write<float>(buffer, location + 0, object.x);
+  write<float>(buffer, location + 4, object.y);
+  write<float>(buffer, location + 8, object.angle);
+  write<float>(buffer, location + 12, object.curvature);
+  write<uint32_t>(buffer, location + 16, object.info);
+}
+
+void encode(std::vector<uint8_t> &buffer, size_t location, DetectedObjects::Marker & object) {
+  encode(buffer, location, object.bounding_box);
+  write<uint16_t>(buffer, location + 16, object.id);
+  write<uint16_t>(buffer, location + 18, object.distance);
+}
+
+void encode(std::vector<uint8_t> &buffer, size_t location, DetectedObjects::Robot & object) {
+  encode(buffer, location, object.bounding_box);
+}
 
 struct VisionDetectInfo : Proto<0xa, 0xa4>
 {
   struct Response : ResponseT{
 
-    Response(uint8_t sender, uint8_t receiver, uint16_t type)
-    : ResponseT(sender, receiver), type(type)
-    {
-      is_ack = 0;
-      need_ack = 0;
-    }
+    Response(uint8_t sender, uint8_t receiver, uint16_t type, uint8_t number)
+    : ResponseT(sender, receiver), type(type), number(number), status(0), errcode(0),
+      buffer(20 * number + 9) {};
 
-    detected_items_t items;
     uint8_t type;
+    uint8_t number;
     uint8_t status;
     uint16_t errcode;
+    std::vector<uint8_t> buffer;
 
     std::vector<uint8_t> encode()
     {
-      std::vector<uint8_t> buffer(20 * items.size() + 9, 0);
       buffer[0] = type;
       buffer[1] = status;
       write<uint16_t>(buffer, 6, errcode);
-      buffer[8] = items.size();
-      size_t i = 9;
-      for(auto & object : items) {
-        object->encode(buffer, i);
-        i += 20;
-      }
+      buffer[8] = number;
+      // buffer is encoded externally to get around polymorphic items
       return buffer;
     }
 
@@ -70,17 +96,31 @@ struct VisionEvent : Event<VisionDetectInfo> {
   VisionEvent(Commands * cmd, Robot * robot, uint8_t sender, uint8_t receiver, uint8_t type) :
     Event(cmd, robot, sender, receiver), type(type){};
 
-  std::vector<std::shared_ptr<VisionDetectInfo::Response>> update_msg() {
-    auto objects = robot->get_detected_objects();
-    std::vector<std::shared_ptr<VisionDetectInfo::Response>> msgs;
-    for (auto const& [key, objects] : *objects) {
-      if(type & (1 << key)) {
-        auto msg = std::make_shared<VisionDetectInfo::Response>(sender, receiver, key);
-        msg->items = objects;
-        msg->status = 0;
+  template<typename T>
+  void add_message(std::vector<VisionDetectInfo::Response> & msgs, DetectedObjects & objects) {
+    if(type & (1 << T::type)) {
+      auto items = objects.get<T>();
+      auto size = items.size();
+      if(size) {
+        VisionDetectInfo::Response msg(sender, receiver, T::type, size);
+        size_t location = 9;
+        for (auto & item : items) {
+          encode(msg.buffer, location, item);
+          location += 20;
+        }
         msgs.push_back(msg);
       }
     }
+  }
+
+  std::vector<VisionDetectInfo::Response> update_msg() {
+    auto objects = robot->get_detected_objects();
+    std::vector<VisionDetectInfo::Response> msgs;
+    add_message<DetectedObjects::Person>(msgs, objects);
+    add_message<DetectedObjects::Gesture>(msgs, objects);
+    add_message<DetectedObjects::Line>(msgs, objects);
+    add_message<DetectedObjects::Marker>(msgs, objects);
+    add_message<DetectedObjects::Robot>(msgs, objects);
     return msgs;
   }
 
@@ -99,7 +139,6 @@ struct ArmorHitEventMsg : Proto<0x3f, 0x02>
     {
     }
 
-    detected_items_t items;
     uint8_t type;
     uint8_t index;
     uint16_t mic_value;
@@ -122,12 +161,11 @@ struct ArmorHitEvent : Event<ArmorHitEventMsg> {
   ArmorHitEvent(Commands * cmd, Robot * robot, uint8_t sender=0xc9, uint8_t receiver=0x38) :
     Event(cmd, robot, sender, receiver) {};
 
-  std::vector<std::shared_ptr<ArmorHitEventMsg::Response>> update_msg() {
+  std::vector<ArmorHitEventMsg::Response> update_msg() {
     auto hits = robot->get_hit_events();
-    std::vector<std::shared_ptr<ArmorHitEventMsg::Response>> msgs;
+    std::vector<ArmorHitEventMsg::Response> msgs;
     for (auto const& hit : hits) {
-      auto msg = std::make_shared<ArmorHitEventMsg::Response>(sender, receiver, hit.type, hit.index, 0, 0);
-      msgs.push_back(msg);
+      msgs.emplace_back(sender, receiver, hit.type, hit.index, 0, 0);
     }
     return msgs;
   }

@@ -70,29 +70,23 @@ Robot::GripperStatus DummyRobot::read_gripper_state() {
   return target_gripper_state;
 }
 
-detection_t DummyRobot::read_detected_objects() {
+DetectedObjects DummyRobot::read_detected_objects() {
   // Fill with one object per type
-  //
-  detection_t objects;
-  if(enabled_vision & (1 << Detection::Person::type)) {
-    auto o = std::make_shared<Detection::Person>(BoundingBox(0.5, 0.5, 0.25, 0.25));
-    objects[Detection::Person::type] = {std::dynamic_pointer_cast<Detection::Object>(o)};
+  DetectedObjects objects;
+  if(vision.is_enabled<DetectedObjects::Person>()) {
+    objects.people = {DetectedObjects::Person({0.5, 0.5, 0.25, 0.25})};
   }
-  if(enabled_vision & (1 << Detection::Gesture::type)) {
-    auto o = std::make_shared<Detection::Gesture>(BoundingBox(0.5, 0.5, 0.25, 0.25), 1);
-    objects[Detection::Gesture::type] = {std::dynamic_pointer_cast<Detection::Object>(o)};
+  if(vision.is_enabled<DetectedObjects::Gesture>()) {
+    objects.gestures = {DetectedObjects::Gesture({0.5, 0.5, 0.25, 0.25}, 1)};
   }
-  if(enabled_vision & (1 << Detection::Line::type)) {
-    auto o = std::make_shared<Detection::Line>(0.5, 0.5, 0, 0);
-    objects[Detection::Line::type] = {std::dynamic_pointer_cast<Detection::Object>(o)};
+  if(vision.is_enabled<DetectedObjects::Line>()) {
+    objects.lines = {DetectedObjects::Line(0.5, 0.5, 0, 0)};
   }
-  if(enabled_vision & (1 << Detection::Marker::type)) {
-    auto o = std::make_shared<Detection::Marker>(BoundingBox(0.5, 0.5, 0.25, 0.25), 1.0, 1);
-    objects[Detection::Marker::type] = {std::dynamic_pointer_cast<Detection::Object>(o)};
+  if(vision.is_enabled<DetectedObjects::Marker>()) {
+    objects.markers = {DetectedObjects::Marker({0.5, 0.5, 0.25, 0.25}, 1, 1.0)};
   }
-  if(enabled_vision & (1 << Detection::Robot::type)) {
-    auto o = std::make_shared<Detection::Robot>(BoundingBox(0.5, 0.5, 0.25, 0.25));
-    objects[Detection::Robot::type] = {std::dynamic_pointer_cast<Detection::Object>(o)};
+  if(vision.is_enabled<DetectedObjects::Robot>()) {
+    objects.robots = {DetectedObjects::Robot({0.5, 0.5, 0.25, 0.25})};
   }
   return objects;
 }

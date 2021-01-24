@@ -471,91 +471,15 @@ struct Matrix2 {
 
 };
 
-
 struct BoundingBox {
   float x;
   float y;
   float width;
   float height;
-  void encode(std::vector<uint8_t> &buffer, size_t location) {
-    write<float>(buffer, location + 0, x);
-    write<float>(buffer, location + 4, y);
-    write<float>(buffer, location + 8, width);
-    write<float>(buffer, location + 12, height);
-  }
   BoundingBox(float x, float y, float width, float height) :
   x(x), y(y), width(width), height(height) {};
 };
 
-namespace Detection {
-
-struct Object {
-  virtual void encode(std::vector<uint8_t> &, size_t) = 0;
-  virtual ~Object() {};
-};
-
-struct Person : Object {
-  const static uint8_t type = 1;
-  BoundingBox bounding_box;
-  Person(BoundingBox bounding_box) : bounding_box(bounding_box) {};
-  void encode(std::vector<uint8_t> &buffer, size_t location) {
-    bounding_box.encode(buffer, location);
-  }
-};
-
-struct Gesture : Object {
-  const static uint8_t type = 2;
-  BoundingBox bounding_box;
-  uint32_t id;
-  Gesture(BoundingBox bounding_box, uint32_t id) : bounding_box(bounding_box), id(id) {};
-  void encode(std::vector<uint8_t> &buffer, size_t location) {
-    bounding_box.encode(buffer, location);
-    write<uint32_t>(buffer, location+ 16, id);
-  }
-};
-
-struct Line : Object {
-  const static uint8_t type = 4;
-  float x;
-  float y;
-  float curvature;
-  float angle;
-  uint32_t info;
-  Line(float x, float y, float curvature, float angle) : x(x), y(y), curvature(curvature), angle(angle) {};
-  void encode(std::vector<uint8_t> &buffer, size_t location) {
-    write<float>(buffer, location + 0, x);
-    write<float>(buffer, location + 4, y);
-    write<float>(buffer, location + 8, angle);
-    write<float>(buffer, location + 12, curvature);
-    write<uint32_t>(buffer, location + 16, info);
-  }
-};
-
-struct Marker : Object {
-  const static uint8_t type = 5;
-  BoundingBox bounding_box;
-  uint16_t id;
-  uint16_t distance;
-  // TODO(I don't know the distance encoding)
-  Marker(BoundingBox bounding_box, uint16_t id, float distance) :
-    bounding_box(bounding_box), id(id), distance(uint16_t(distance * 1000)) {};
-  void encode(std::vector<uint8_t> &buffer, size_t location) {
-    bounding_box.encode(buffer, location);
-    write<uint16_t>(buffer, location + 16, id);
-    write<uint16_t>(buffer, location + 18, distance);
-  }
-};
-
-struct Robot : Object {
-  const static uint8_t type = 7;
-  BoundingBox bounding_box;
-  Robot(BoundingBox bounding_box) : bounding_box(bounding_box) {};
-  void encode(std::vector<uint8_t> &buffer, size_t location) {
-    bounding_box.encode(buffer, location);
-  }
-};
-
-};
 
 
 #endif /* end of include guard: UTILS_HPP */

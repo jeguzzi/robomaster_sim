@@ -131,17 +131,17 @@ static ServoValues<float> inverse_arm_kinematics(Vector3 & position, Vector3 & a
 
 
 Robot::Robot()
-  : imu(), camera(), target_wheel_speed(), target_servo_angles(),
+  : imu(), camera(), vision(), target_wheel_speed(), target_servo_angles(),
   target_gripper_state(Robot::GripperStatus::pause),
-  enabled_vision(0),
   mode(Mode::FREE), axis_x(0.1),  axis_y(0.1), wheel_radius(0.05), sdk_enabled(false),
   odometry(), body_twist(), desired_target_wheel_speed(), wheel_speeds(), wheel_angles(),
   leds(), led_colors(), time_(0.0f),
   desired_gripper_state(target_gripper_state),
   callbacks(),
   servo_angles(), desired_servo_angles(),
-  actions({{"move", nullptr}, {"move_arm", nullptr}, {"play_sound", nullptr}}),
-  detected_objects() {
+  actions({{"move", nullptr}, {"move_arm", nullptr}, {"play_sound", nullptr}})
+  {
+
   }
 
 void Robot::do_step(float time_step) {
@@ -212,12 +212,13 @@ void Robot::do_step(float time_step) {
   // Gripper
   //
 
-  if(enabled_vision) {
-    detected_objects = read_detected_objects();
+  if(vision.enabled) {
+    vision.detected_objects = read_detected_objects();
   }
-  else {
-    detected_objects.clear();
-  }
+  // else {
+  //   // TODO(J) inefficiant?
+  //   vision.detected_objects = {};
+  // }
   hit_events = read_hit_events();
 
   // Update Publishers

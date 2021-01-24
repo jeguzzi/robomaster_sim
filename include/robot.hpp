@@ -7,11 +7,15 @@
 #include <stdexcept>
 #include <algorithm>
 #include <map>
+#include <array>
+#include <variant>
 
 #include <spdlog/spdlog.h>
 #include "spdlog/fmt/ostr.h"
 
 #include "utils.hpp"
+
+//TODO: make actions a unique pointer
 
 class Robot;
 
@@ -200,8 +204,6 @@ struct Odometry {
 
 typedef WheelValues<float> WheelSpeeds;
 typedef std::vector<unsigned char> Image;
-typedef std::vector<std::shared_ptr<Detection::Object>> detected_items_t;
-typedef std::map<uint16_t, detected_items_t> detection_t;
 
 struct HitEvent {
   uint8_t type;
@@ -210,6 +212,80 @@ struct HitEvent {
 
 typedef std::vector<HitEvent> hit_event_t;
 
+struct DetectedObjects {
+
+  enum Type : uint8_t{
+    PERSON = 1,
+    GESTURE = 2,
+    LINE = 4,
+    MARKER = 5,
+    ROBOT = 7
+  };
+
+  struct Person {
+    constexpr static Type type{PERSON};
+    BoundingBox bounding_box;
+    Person(BoundingBox bounding_box) : bounding_box(bounding_box) {};
+  };
+
+  struct Gesture {
+    constexpr static Type type{GESTURE};
+    BoundingBox bounding_box;
+    uint32_t id;
+    Gesture(BoundingBox bounding_box, uint32_t id) : bounding_box(bounding_box), id(id) {};
+  };
+
+  struct Line {
+    constexpr static Type type{LINE};
+    float x;
+    float y;
+    float curvature;
+    float angle;
+    uint32_t info;
+    Line(float x, float y, float curvature, float angle) : x(x), y(y), curvature(curvature), angle(angle) {};
+  };
+
+  struct Marker {
+    constexpr static Type type{MARKER};
+    BoundingBox bounding_box;
+    uint16_t id;
+    uint16_t distance;
+    // TODO(I don't know the distance encoding)
+    Marker(BoundingBox bounding_box, uint16_t id, float distance) :
+      bounding_box(bounding_box), id(id), distance(uint16_t(distance * 1000)) {};
+  };
+
+  struct Robot {
+    constexpr static Type type{ROBOT};
+    BoundingBox bounding_box;
+    Robot(BoundingBox bounding_box) : bounding_box(bounding_box) {};
+  };
+
+  std::vector<Person> people;
+  std::vector<Gesture> gestures;
+  std::vector<Line> lines;
+  std::vector<Marker> markers;
+  std::vector<Robot> robots;
+
+  template <typename T>
+  const std::vector<T> & get();
+
+  template<>
+  const std::vector<Person> & get() { return people; };
+
+  template<>
+  const std::vector<Gesture> & get() { return gestures; };
+
+  template<>
+  const std::vector<Line> & get() { return lines; };
+
+  template<>
+  const std::vector<Marker> & get() { return markers; };
+
+  template<>
+  const std::vector<Robot> & get() { return robots; };
+
+};
 
 class Robot
 {
@@ -227,6 +303,21 @@ public:
     bool streaming;
     Image image;
     Camera() : streaming(false) {};
+  };
+
+  struct Vision {
+      uint8_t enabled;
+      enum Color {
+        RED = 1,
+        GREEN = 2,
+        BLUE = 3
+      };
+      std::map<DetectedObjects::Type, Color> color;
+      template<typename T>
+      bool is_enabled() {
+        return (1 << T::type) & enabled;
+      }
+      DetectedObjects detected_objects;
   };
 
   enum Led {
@@ -397,18 +488,18 @@ public:
 
   void update_arm_position(float time_step);
 
-  virtual detection_t read_detected_objects() = 0;
+  virtual DetectedObjects read_detected_objects() = 0;
 
   void set_enable_vision(uint8_t value) {
-    enabled_vision = value;
+    vision.enabled = value;
   }
 
   uint8_t get_enable_vision() {
-    return enabled_vision;
+    return vision.enabled;
   }
 
-  detection_t * get_detected_objects() {
-    return &detected_objects;
+  const DetectedObjects & get_detected_objects() {
+    return vision.detected_objects;
   }
 
   Camera * get_camera() {
@@ -433,20 +524,23 @@ public:
   // color {1: red, 2: green, 3: blue}
   // type {1: line, 2: marker}
   // TODO: attention that this enum is different that the one used in vision type
-  void set_vision_color(uint8_t type, uint8_t color) {
-    vision_color[type] = color;
+  void set_vision_color(uint8_t type, uint8_t _color) {
+    Vision::Color color = static_cast<Vision::Color>(_color);
+    if (type == 1)
+      vision.color[DetectedObjects::Type::LINE] = color;
+    else if (type == 2)
+      vision.color[DetectedObjects::Type::MARKER] = color;
   }
 
 protected:
   IMU imu;
   Camera camera;
+  Vision vision;
   WheelSpeeds target_wheel_speed;
   ServoValues<float> target_servo_angles;
   GripperStatus target_gripper_state;
   float target_gripper_power;
   float last_time_step;
-  uint8_t enabled_vision;
-  std::map<uint8_t, uint8_t> vision_color;
 
 private:
   Mode mode;
@@ -480,7 +574,6 @@ private:
   ServoValues<float> servo_speeds;
   std::map<std::string, std::shared_ptr<Action>> actions;
 
-  detection_t detected_objects;
   hit_event_t hit_events;
   // std::shared_ptr<VideoStreamer> video_streamer;
 };
