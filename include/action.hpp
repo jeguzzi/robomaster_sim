@@ -27,9 +27,9 @@ struct ActionSDK {
     }
   }
 
-  ActionSDK(Commands * _cmd, uint8_t _id, float _frequency, std::shared_ptr<typename T::Response> push, Action * action)
-  : cmd(_cmd), id(_id), frequency(_frequency), deadline(0), push_msg(push), action(action) {
-    push->action_id = id;
+  ActionSDK(Commands * _cmd, uint8_t _id, float _frequency, std::unique_ptr<typename T::Response> _push, Action * _action)
+  : cmd(_cmd), id(_id), frequency(_frequency), deadline(0), push_msg(std::move(_push)), action(_action) {
+    push_msg->action_id = id;
     action->set_callback(std::bind(&ActionSDK::publish, this, std::placeholders::_1));
 }
 
@@ -37,18 +37,11 @@ struct ActionSDK {
 
   virtual void update_msg() = 0;
 
-  uint8_t accept_code() {
-    if(action->state == Action::State::running || action->state == Action::State::started) return 0;
-    if(action->state == Action::State::succeed) return 2;
-    return 1;
-  }
-
-
   Commands *cmd;
   uint8_t id;
   float frequency;
   float deadline;
-  std::shared_ptr<typename T::Response> push_msg;
+  std::unique_ptr<typename T::Response> push_msg;
   Action * action;
 };
 
@@ -79,10 +72,10 @@ struct PositionPush : Proto<0x3f, 0x2a>
 };
 
 struct MoveActionSDK : MoveAction, ActionSDK<PositionPush> {
-  MoveActionSDK(Commands * cmd, uint8_t id, float frequency, std::shared_ptr<PositionPush::Response> push,
+  MoveActionSDK(Commands * cmd, uint8_t id, float frequency, std::unique_ptr<PositionPush::Response> push,
       Robot * robot, Pose2D goal, float linear_speed, float angular_speed)
   : MoveAction(robot, goal, linear_speed, angular_speed),
-    ActionSDK<PositionPush>(cmd, id, frequency, push, this) {
+    ActionSDK<PositionPush>(cmd, id, frequency, std::move(push), this) {
       action = this;
   }
   void update_msg() {
@@ -134,10 +127,10 @@ struct RoboticArmMovePush : Proto<0x3f, 0xb6>
 
 struct MoveArmActionSDK : MoveArmAction, ActionSDK<RoboticArmMovePush> {
 
-  MoveArmActionSDK(Commands * cmd, uint8_t id, float frequency, std::shared_ptr<RoboticArmMovePush::Response> push,
+  MoveArmActionSDK(Commands * cmd, uint8_t id, float frequency, std::unique_ptr<RoboticArmMovePush::Response> push,
       Robot * robot, float x, float z, bool relative)
   : MoveArmAction(robot, x, z, relative),
-    ActionSDK<RoboticArmMovePush>(cmd, id, frequency, push, this) {
+    ActionSDK<RoboticArmMovePush>(cmd, id, frequency, std::move(push), this) {
       action = this;
   }
 
@@ -185,10 +178,10 @@ struct PlaySoundPush : Proto<0x3f, 0xb4>
 
 
 struct PlaySoundActionSDK : PlaySoundAction, ActionSDK<PlaySoundPush> {
-  PlaySoundActionSDK(Commands * cmd, uint8_t id, float frequency, std::shared_ptr<PlaySoundPush::Response> push,
+  PlaySoundActionSDK(Commands * cmd, uint8_t id, float frequency, std::unique_ptr<PlaySoundPush::Response> push,
       Robot * robot, uint32_t sound_id, uint8_t play_times)
   : PlaySoundAction(robot, sound_id, play_times),
-    ActionSDK<PlaySoundPush>(cmd, id, frequency, push, this)
+    ActionSDK<PlaySoundPush>(cmd, id, frequency, std::move(push), this)
     {
       action = this;
     }

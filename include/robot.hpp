@@ -15,8 +15,6 @@
 
 #include "utils.hpp"
 
-//TODO: make actions a unique pointer
-
 class Robot;
 
 using Callback = std::function<void(float)>;
@@ -29,6 +27,7 @@ struct Action
     failed = 2,
     started = 3,
     undefined = 4,
+    rejected = 5,
   };
   Action(Robot *robot) : robot(robot), state(State::undefined), callback([](float){}) {};
   virtual void do_step(float time_step) = 0;
@@ -457,9 +456,9 @@ public:
     return wheel_angles;
   }
 
-  bool submit_action(std::shared_ptr<MoveAction> action);
-  bool submit_action(std::shared_ptr<MoveArmAction> action);
-  bool submit_action(std::shared_ptr<PlaySoundAction> action);
+  Action::State submit_action(std::unique_ptr<MoveAction> action);
+  Action::State submit_action(std::unique_ptr<MoveArmAction> action);
+  Action::State submit_action(std::unique_ptr<PlaySoundAction> action);
 
   //TODO(jerome): use enum for resolution, pass address and protocol
   bool start_streaming(unsigned width, unsigned height);
@@ -506,9 +505,9 @@ public:
     return &camera;
   }
 
-  bool move(Pose2D pose, float linear_speed, float angular_speed);
-  bool move_arm(float x, float z, bool absolute);
-  bool play_sound(uint32_t sound_id, uint8_t times);
+  Action::State move(Pose2D pose, float linear_speed, float angular_speed);
+  Action::State move_arm(float x, float z, bool absolute);
+  Action::State play_sound(uint32_t sound_id, uint8_t times);
 
   void add_callback(Callback callback) {
     callbacks.push_back(callback);
@@ -572,10 +571,9 @@ private:
   ServoValues<float> servo_angles;
   ServoValues<float> desired_servo_angles;
   ServoValues<float> servo_speeds;
-  std::map<std::string, std::shared_ptr<Action>> actions;
+  std::map<std::string, std::unique_ptr<Action>> actions;
 
   hit_event_t hit_events;
-  // std::shared_ptr<VideoStreamer> video_streamer;
 };
 
 #endif /* end of include guard: ROBOT_HPP */

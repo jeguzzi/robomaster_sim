@@ -139,7 +139,8 @@ Robot::Robot()
   desired_gripper_state(target_gripper_state),
   callbacks(),
   servo_angles(), desired_servo_angles(),
-  actions({{"move", nullptr}, {"move_arm", nullptr}, {"play_sound", nullptr}})
+  actions()
+  // actions({{"move", nullptr}, {"move_arm", nullptr}, {"play_sound", nullptr}})
   {
 
   }
@@ -162,13 +163,15 @@ void Robot::do_step(float time_step) {
 
   // spdlog::debug("state {}", odometry);
 
-  // Run Actions
-  for (auto const & [name, action] : actions) {
-    if(action) {
-      action->do_step_cb(time_step);
-      if(action->done()) {
-        actions[name] = nullptr;
-      }
+  // Run Actions. Using iterators to safely delete a key.
+  auto it = actions.cbegin();
+  while (it != actions.cend()) {
+    it->second->do_step_cb(time_step);
+    if(it->second->done()) {
+      it = actions.erase(it);
+    }
+    else {
+      it++;
     }
   }
 
@@ -393,46 +396,50 @@ bool Robot::stop_streaming() {
 }
 
 
-bool Robot::move(Pose2D pose, float linear_speed, float angular_speed) {
-  auto a = std::make_shared<MoveAction>(this, pose, linear_speed, angular_speed);
-  return submit_action(a);
+Action::State Robot::move(Pose2D pose, float linear_speed, float angular_speed) {
+  auto a = std::make_unique<MoveAction>(this, pose, linear_speed, angular_speed);
+  return submit_action(std::move(a));
 }
 
-bool Robot::move_arm(float x, float z, bool absolute) {
-  auto a = std::make_shared<MoveArmAction>(this, x, z, absolute);
-  return submit_action(a);
+Action::State Robot::move_arm(float x, float z, bool absolute) {
+  auto a = std::make_unique<MoveArmAction>(this, x, z, absolute);
+  return submit_action(std::move(a));
 }
 
-bool Robot::play_sound(uint32_t sound_id, uint8_t times) {
-  auto a = std::make_shared<PlaySoundAction>(this, sound_id, times);
-  return submit_action(a);
+Action::State Robot::play_sound(uint32_t sound_id, uint8_t times) {
+  auto a = std::make_unique<PlaySoundAction>(this, sound_id, times);
+  return submit_action(std::move(a));
 }
 
-bool Robot::submit_action(std::shared_ptr<MoveAction> action) {
+Action::State Robot::submit_action(std::unique_ptr<MoveAction> action) {
   // TODO(jerome): What should we do if an action is already active?
-  if(actions["move"]) return false;
-  actions["move"] = action;
+  if(actions.count("move")) return Action::State::rejected;
+  // actions["move"] = std::move(action);
   action->state = Action::State::started;
+  actions.emplace("move", std::move(action));
   spdlog::info("Start new MoveAction");
-  return true;
+  return actions["move"]->state;
 }
 
-bool Robot::submit_action(std::shared_ptr<MoveArmAction> action) {
+Action::State Robot::submit_action(std::unique_ptr<MoveArmAction> action) {
   // TODO(jerome): What should we do if an action is already active?
-  if(actions["move_arm"]) return false;
-  actions["move_arm"] = action;
+  if(actions.count("move_arm")) return Action::State::rejected;
+  // actions["move_arm"] = action;
   action->state = Action::State::started;
+  actions.emplace("move_arm", std::move(action));
   spdlog::info("Start new MoveArmAction");
-  return true;
+  return actions["move_arm"]->state;
 }
 
-bool Robot::submit_action(std::shared_ptr<PlaySoundAction> action) {
+Action::State Robot::submit_action(std::unique_ptr<PlaySoundAction> action) {
+  spdlog::info("here");
   // TODO(jerome): What should we do if an action is already active?
-  if(actions["play_sound"]) return false;
-  actions["play_sound"] = action;
+  if(actions.count("play_sound")) return Action::State::rejected;
+  // actions["play_sound"] = action;
   action->state = Action::State::started;
+  actions.emplace("play_sound", std::move(action));
   spdlog::info("Start new PlaySoundAction");
-  return true;
+  return actions["play_sound"]->state;
 }
 
 

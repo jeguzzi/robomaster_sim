@@ -13,6 +13,22 @@
 #include "utils.hpp"
 #include "action.hpp"
 
+
+uint8_t accept_code(Action::State state) {
+  switch(state) {
+    case Action::State::running:
+    case Action::State::started:
+      return 0;
+    case Action::State::succeed:
+      return 2;
+    case Action::failed:
+    case Action::undefined:
+    case Action::rejected:
+      return 1;
+  }
+}
+
+
 struct GetVersion : Proto<0x0, 0x1>
 {
   struct Request : RequestT {
@@ -353,15 +369,14 @@ struct PlaySound : Proto<0x3f, 0xb3>
   static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
     if(request.play_ctrl == 1){
-        auto push = std::make_shared<PlaySoundPush::Response>(request);
+        auto push = std::make_unique<PlaySoundPush::Response>(request);
         push->is_ack = false;
         push->need_ack = 0;
         push->seq_id = 0;
-        auto a = std::make_shared<PlaySoundActionSDK>(
-          cmd, request.action_id, (float) request.push_freq, push,
+        auto a = std::make_unique<PlaySoundActionSDK>(
+          cmd, request.action_id, (float) request.push_freq, std::move(push),
           robot, request.sound_id, request.play_times);
-        robot->submit_action(std::dynamic_pointer_cast<PlaySoundAction>(a));
-        response.accept = a->accept_code();
+        response.accept = accept_code(robot->submit_action(std::move(a)));
         return true;
     }
     // Cancel (not implemented in client yet)
@@ -456,15 +471,14 @@ struct PositionMove : Proto<0x3f, 0x25>
 
     // Start
     if(request.action_ctrl == 0){
-        auto push = std::make_shared<PositionPush::Response>(request);
+        auto push = std::make_unique<PositionPush::Response>(request);
         push->is_ack = false;
         push->need_ack = 0;
         push->seq_id = 0;
-        auto a = std::make_shared<MoveActionSDK>(
-          cmd, request.action_id, (float) request.freq, push, robot, request.pose(),
+        auto a = std::make_unique<MoveActionSDK>(
+          cmd, request.action_id, (float) request.freq, std::move(push), robot, request.pose(),
           request.linear_speed(), request.angular_speed());
-        robot->submit_action(std::dynamic_pointer_cast<MoveAction>(a));
-        response.accept = a->accept_code();
+        response.accept = accept_code(robot->submit_action(std::move(a)));
         return true;
     }
     // Cancel (not implemented in client yet)
@@ -1043,17 +1057,16 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
     // return false;
 
     if(request.action_ctrl == 0){
-        auto push = std::make_shared<RoboticArmMovePush::Response>(request);
+        auto push = std::make_unique<RoboticArmMovePush::Response>(request);
         push->is_ack = false;
         push->need_ack = 0;
         push->seq_id = 0;
         // spdlog::info("Creating MoveArmAction");
-        auto a = std::make_shared<MoveArmActionSDK>(
-            cmd, request.action_id, (float) request.freq, push, robot, request.x * 0.001,
+        auto a = std::make_unique<MoveArmActionSDK>(
+            cmd, request.action_id, (float) request.freq, std::move(push), robot, request.x * 0.001,
             request.y * 0.001, (bool) request.mode);
         // spdlog::info("Submitting MoveArmAction");
-        robot->submit_action(std::dynamic_pointer_cast<MoveArmAction>(a));
-        response.accept = a->accept_code();
+        response.accept = accept_code(robot->submit_action(std::move(a)));
         // spdlog::info("Action accepted? {}", response.accept);
         return true;
     }
