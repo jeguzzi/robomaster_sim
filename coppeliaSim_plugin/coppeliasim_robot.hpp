@@ -28,7 +28,7 @@ public:
   WheelSpeeds read_wheel_speeds();
   WheelValues<float> read_wheel_angles();
   IMU read_imu();
-  std::vector<unsigned char> read_camera_image();
+  std::vector<uint8_t> read_camera_image();
   bool set_camera_resolution(unsigned width, unsigned height);
   void has_read_accelerometer(float, float, float);
   void has_read_gyro(float, float, float);

@@ -30,10 +30,7 @@ public:
       spdlog::info("Thread terminated");
       delete t;
       spdlog::info("Thread deleted");
-      // t = nullptr;
-      // TODO: this results in an error in Linux, because (I think)
-      // delete io_context;
-      // spdlog::info("io_context deleted");
+      t = nullptr;
     }
   }
   VideoStreamer * get_video_streamer() {

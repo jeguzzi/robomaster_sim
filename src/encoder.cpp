@@ -91,7 +91,7 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   // printf("Has a latency of %d frames\n", c->delay);
 }
 
-std::vector<unsigned char> Encoder::encode(unsigned char * buffer) {
+std::vector<uint8_t> Encoder::encode(uint8_t * buffer) {
 
   av_image_fill_arrays(frame->data, frame->linesize, buffer, AV_PIX_FMT_RGB24, frame->width, frame->height, 1);
   // av_image_copy(frame->data, frame->linesize, (const uint8_t **) &buffer, frame->linesize, AV_PIX_FMT_RGB24, frame->width, frame->height);
@@ -123,7 +123,7 @@ std::vector<unsigned char> Encoder::encode(unsigned char * buffer) {
           return {};
       }
       // printf("encoded frame %3" PRId64" %lld (size=%5d) %d \n", pkt->pts, pkt->dts, pkt->size, seq);
-      std::vector<unsigned char> buffer;
+      std::vector<uint8_t> buffer;
       buffer.reserve(pkt->size);
       std::copy( pkt->data, pkt->data+pkt->size, std::back_inserter(buffer));
       return buffer;

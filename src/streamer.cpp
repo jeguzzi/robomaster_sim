@@ -58,7 +58,7 @@ void VideoStreamer::do_step(float time_step) {
   }
 }
 
-void VideoStreamer::send(unsigned char *buffer) {
+void VideoStreamer::send(uint8_t *buffer) {
   if(!active) return;
   auto data = encoder->encode(buffer);
   if(!data.empty()) {

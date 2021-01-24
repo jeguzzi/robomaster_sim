@@ -465,7 +465,7 @@ struct PositionMove : Proto<0x3f, 0x25>
 
   static bool answer(Request &request, Response &response, Robot  * robot, Commands *cmd)
   {
-    // TODO(jerome): implement after actions are added
+    // DONE(jerome): implement after actions are added
     // spdlog::warn("PositionMove answer not implemented");
     // response.accept = true;
 
@@ -489,73 +489,6 @@ struct PositionMove : Proto<0x3f, 0x25>
   };
 
 };
-
-// struct PositionPush : Proto<0x3f, 0x2a>
-// {
-//   struct Request : RequestT {
-//
-//     uint8_t action_id;
-//     uint8_t percent;
-//     uint8_t action_state;
-//     int16_t pos_x;
-//     int16_t pos_y;
-//     int16_t pos_z;
-//
-//     Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t * buffer)
-//       : RequestT(_sender, _receiver, _seq_id, _attri){
-//         action_id = buffer[0];
-//         percent = buffer[1];
-//         action_state = buffer[2];
-//         pos_x = read<int16_t>(buffer+3);
-//         pos_y = read<int16_t>(buffer+5);
-//         pos_z = read<int16_t>(buffer+7);
-//     };
-//
-//     template<typename OStream>
-//     friend OStream& operator<<(OStream& os, const Request& r)
-//     {
-//       os << "PositionMove::Request {"
-//          << " action_id=" << (int) r.action_id
-//          << " percent=" << (int) r.percent
-//          << " action_state=" << (int) r.action_state
-//          << " pos_x=" << (int) r.pos_x
-//          << " pos_y=" << (int) r.pos_y
-//          << " pos_z=" << (int) r.pos_z
-//          << "}";
-//       return os;
-//     }
-//   };
-//
-//   struct Response : ResponseT{
-//     uint8_t action_id;
-//     uint8_t percent;
-//     uint8_t action_state;
-//     int16_t pos_x;
-//     int16_t pos_y;
-//     int16_t pos_z;
-//
-//     std::vector<uint8_t> encode()
-//     {
-//       std::vector<uint8_t> buffer(9, 0);
-//       buffer[0] = action_id;
-//       buffer[1] = percent;
-//       buffer[2] = action_state;
-//       write<int16_t>(buffer, 3, pos_x);
-//       write<int16_t>(buffer, 5, pos_y);
-//       write<int16_t>(buffer, 7, pos_z);
-//       return buffer;
-//     };
-//     using ResponseT::ResponseT;
-//   };
-//
-//   static bool answer(Request &request, Response &response, Robot  * robot)
-//   {
-//     // TODO(jerome): implement after actions are added
-//     spdlog::warn("PositionPush answer not implemented");
-//     return false;
-//   }
-//
-// };
 
 struct ChassisPwmPercent : Proto<0x3f, 0x3c>
 {
@@ -747,7 +680,7 @@ struct VisionDetectEnable : Proto<0xa, 0xa3>
 
 };
 
-// TODO(Jerome):   _cmdtype = DUSS_MB_TYPE_PUSH
+// TODO(Jerome):  _cmdtype = DUSS_MB_TYPE_PUSH
 struct ChassisSpeedMode : Proto<0x3f, 0x21>
 {
   struct Request : RequestT {
@@ -882,7 +815,7 @@ struct SubscribeAddNode : Proto<0x48, 0x01>
 
   static bool answer(Request &request, Response &response, Robot  * robot, Commands *cmd)
   {
-    // TODO(jerome): implement after publishers are added
+    // DONE(jerome): implement after publishers are added
     // spdlog::warn("Answer to {} not implemented yet", request);
     cmd->add_subscriber_node(request.node_id);
     return true;
@@ -914,7 +847,7 @@ struct SubNodeReset : Proto<0x48, 0x02>
 
   static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
-    // TODO(jerome): implement after publishers are added
+    // FONE(jerome): implement after publishers are added
     // Are nodes just for subscribers?
     // spdlog::warn("Answer to {} not implemented yet", request);
     cmd->reset_subscriber_node(request.node_id);
@@ -1052,7 +985,7 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5>
 
   static bool answer(Request &request, Response &response, Robot  * robot, Commands * cmd)
   {
-    // TODO(jerome): implement after actions are added
+    // DONE(jerome): implement after actions are added
     // spdlog::warn("RoboticArmMoveCtrl answer not implemented");
     // return false;
 

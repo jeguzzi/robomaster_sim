@@ -55,7 +55,7 @@ void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) 
   attitude.pitch = beta;
 }
 
-std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
+std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() {
   if(!camera_handle) return {};
   simHandleVisionSensor(camera_handle, nullptr, nullptr);
   simInt width = 0;
@@ -68,7 +68,7 @@ std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
   }
   unsigned size = width * height * 3;
   // std::vector image(buffer, buffer + size);
-  std::vector<unsigned char> image;
+  std::vector<uint8_t> image;
   image.reserve(size);
   simInt resolution[2] = {width, height};
   simTransformImage(buffer, resolution, 4, nullptr, nullptr, nullptr);

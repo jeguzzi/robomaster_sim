@@ -3,9 +3,13 @@
 
 #include <algorithm>
 
+#include <spdlog/spdlog.h>
+
 #include "subject.hpp"
 #include "utils.hpp"
-#include <spdlog/spdlog.h>
+#include "robot.hpp"
+
+
 
 // * DDS_BATTERY: 0x000200096862229f,
 // DDS_GIMBAL_BASE: 0x00020009f5882874,
@@ -145,7 +149,7 @@ struct ChassisModeSubject : SubjectWithUID<0x000200094fcb1146>
   std::string name() { return "ChassisMode"; };
   // ? not exposed/documented in the Python client library
   uint8_t mis_cur_type;
-  // mode; TODO(jerome): is this the same mode as Robot::Mode?
+  // mode; DONE(jerome): is this the same mode as Robot::Mode?
   // => NO: 8 when stopped, 5 when moving (with an action), ...
   uint8_t sdk_cur_type;
 

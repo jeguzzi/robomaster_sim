@@ -17,7 +17,7 @@ public:
   VideoStreamer(Robot * robot, long bitrate=DEFAULT_BITRATE);
   static std::unique_ptr<VideoStreamer> create_video_streamer(
       ba::io_context * io_context, Robot * robot, bool udp=false, long bitrate=DEFAULT_BITRATE);
-  void send(unsigned char * buffer);
+  void send(uint8_t * buffer);
   void stop();
   void start(ba::ip::address & address, unsigned image_width, unsigned image_height, int fps);
   void do_step(float);

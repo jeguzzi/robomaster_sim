@@ -232,8 +232,6 @@ void Robot::do_step(float time_step) {
 
   // Stream the camera image
   if(camera.streaming) {
-    // TODO(jerome): I miss something important with allocation/shifting around of buffers.
-    // If I do not copy here -> segfault ... why?
     spdlog::debug("[Robot] capture new camera frame");
     camera.image = read_camera_image();
     // std::cout << int(image[0]) << " " << int(image[1]) << " " << int(image[2]) << " (" << image.size() <<")\n";
@@ -292,8 +290,6 @@ Robot::Mode Robot::get_mode(){
 
 void Robot::set_target_velocity(Twist2D &twist)
 {
-  // TODO(jerome): Could also postpose this at do_step time.
-  // should do it anyway for the position control
   WheelSpeeds speeds = wheel_speeds_from_twist(twist, axis_x + axis_y, wheel_radius);
   set_target_wheel_speeds(speeds);
 }

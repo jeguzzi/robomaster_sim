@@ -2,9 +2,9 @@
 
 #include "dummy_robot.hpp"
 
-static std::vector<unsigned char> generate_strip_image(unsigned i0, unsigned i1, unsigned width, unsigned height) {
+static std::vector<uint8_t> generate_strip_image(unsigned i0, unsigned i1, unsigned width, unsigned height) {
   unsigned size = width * height * 3;
-  std::vector<unsigned char> buffer(size, 0);
+  std::vector<uint8_t> buffer(size, 0);
   if(i0 > i1) i1 += width;
   for (size_t i = i0; i < i1; i++)
     for (size_t j = 0; j < height; j++)
@@ -12,7 +12,7 @@ static std::vector<unsigned char> generate_strip_image(unsigned i0, unsigned i1,
   return buffer;
 }
 
-std::vector<unsigned char> DummyRobot::read_camera_image() {
+std::vector<uint8_t> DummyRobot::read_camera_image() {
   static unsigned seq = 0;
   seq = (seq + 1) % camera.width;
   return generate_strip_image(seq, seq + 10, camera.width, camera.height);

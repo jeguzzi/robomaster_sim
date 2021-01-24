@@ -39,8 +39,8 @@
 #include "coppeliasim_robot.hpp"
 
 static int next_robot_handle = 0;
-static std::map<int, std::shared_ptr<CoppeliaSimRobot>> _robots;
-static std::map<int, std::shared_ptr<RoboMaster>> _interfaces;
+static std::map<int, std::unique_ptr<CoppeliaSimRobot>> _robots;
+static std::map<int, std::unique_ptr<RoboMaster>> _interfaces;
 
 // static boost::asio::io_context io_context;
 
@@ -56,12 +56,11 @@ static int add_robot(
   WheelValues<simInt> wheel_handles {front_left_wheel, front_right_wheel, rear_left_wheel, rear_right_wheel};
   LEDValues<simInt> led_handles {front_LED, left_LED, rear_LED, right_LED};
   ServoValues<simInt> servo_motors {right_arm_motor, left_arm_motor};
-  _robots[handle] = std::make_shared<CoppeliaSimRobot>(
-      wheel_handles, led_handles, camera, servo_motors, gripper_state, gripper_target
-  );
+  _robots.emplace(handle, std::make_unique<CoppeliaSimRobot>(
+      wheel_handles, led_handles, camera, servo_motors, gripper_state, gripper_target));
   // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context, _robots[handle].get());
-  _interfaces[handle] = std::make_shared<RoboMaster>(
-      nullptr, _robots[handle].get(), serial_number, camera_use_udp, camera_bitrate);
+  _interfaces.emplace(handle, std::make_unique<RoboMaster>(
+      nullptr, _robots[handle].get(), serial_number, camera_use_udp, camera_bitrate));
   _interfaces[handle]->spin(true);
   return handle;
 }

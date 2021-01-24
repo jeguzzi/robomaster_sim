@@ -12,14 +12,15 @@ extern "C" {
   #include "libavutil/imgutils.h"
 }
 
-// TODO:
-// - [ ] add [TCP] socket
-// - [ ] add RGB pixel interface (input to the decoder) (look at https://stackoverflow.com/questions/16667687/how-to-convert-rgb-from-yuv420p-for-ffmpeg-encoder)
+// DONE:
+// - [x] add [TCP] socket
+// - [x] add RGB pixel interface (input to the decoder) (look at https://stackoverflow.com/questions/16667687/how-to-convert-rgb-from-yuv420p-for-ffmpeg-encoder)
 // see also http://ffmpeg.org/libswscale.html
 // https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/scaling_video.c
 // ---> perché devo anche scalare!!! (da 720p a 360p o 540p)
-// - [ ] add dummy image feeder (timer) just to test the communication
-// - [ ] should this be in a separate thread?
+// non needed as libx264 accept RGB
+// - [x] add dummy image feeder (timer) just to test the communication
+// - [x] should this be in a separate thread? -> no
 
 class Encoder
 {
@@ -27,7 +28,7 @@ public:
   Encoder(unsigned bitrate=400000, unsigned width=1280, unsigned height=720,
           int fps=25);
 
-  std::vector<unsigned char> encode(unsigned char * buffer);
+  std::vector<uint8_t> encode(uint8_t * buffer);
 
   ~Encoder();
 

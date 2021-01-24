@@ -1,6 +1,8 @@
 #ifndef ROBOT_HPP
 #define ROBOT_HPP
 
+// TODO: make sure we are not uselessly copying images
+
 #include <math.h>
 #include <memory>
 #include <string.h>
@@ -217,7 +219,7 @@ struct Odometry {
 };
 
 using WheelSpeeds = WheelValues<float> ;
-using Image = std::vector<unsigned char>;
+using Image = std::vector<uint8_t>;
 
 struct HitEvent {
   uint8_t type;
@@ -343,7 +345,7 @@ public:
     ARMOR_TOP_RIGHT = 0x20,
   };
 
-  using LedMask = unsigned char ;
+  using LedMask = uint8_t ;
   using LEDColors = LEDValues<Color> ;
 
   struct LED : LEDValues<ActiveLED> {
@@ -403,8 +405,8 @@ public:
    * @param color      Color
    * @param mask       LED to control
    * @param effect     LED gesture
-   * @param period_on  Gesture on-period [TODO(jerome): check]
-   * @param period_off Gesture off-period [TODO(jerome): check]
+   * @param period_on  Gesture on-period [DONE(jerome): check]
+   * @param period_off Gesture off-period [DONE(jerome): check]
    * @param loop       Repeat the gesture
    */
   void set_led_effect(Color color, LedMask mask, ActiveLED::LedEffect effect, float period_on, float period_off, bool loop);
@@ -473,7 +475,6 @@ public:
   Action::State submit_action(std::unique_ptr<MoveArmAction> action);
   Action::State submit_action(std::unique_ptr<PlaySoundAction> action);
 
-  //TODO(jerome): use enum for resolution, pass address and protocol
   bool start_streaming(unsigned width, unsigned height);
   bool stop_streaming();
 
@@ -546,7 +547,7 @@ public:
 
 protected:
   IMU imu;
-  Attitude attitude;  
+  Attitude attitude;
   Camera camera;
   Vision vision;
   WheelSpeeds target_wheel_speed;

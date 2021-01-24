@@ -187,16 +187,11 @@ struct PlaySoundActionSDK : PlaySoundAction, ActionSDK<PlaySoundPush> {
     }
 
   void update_msg() {
-    // TODO: this ver
     push_msg->sound_id = sound_id;
     push_msg->percent = std::max(0, (int)(100 - round(100.0f * remaining_duration / predicted_duration)));
     push_msg->action_state = state;
   }
 
-  // void do_step(float time_step) {
-  //   PlaySoundAction::do_step(time_step);
-  //   ActionSDK<PlaySoundPush>::publish(time_step);
-  // }
 };
 
 #endif /* end of include guard: ACTION */

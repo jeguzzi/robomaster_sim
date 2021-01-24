@@ -64,7 +64,7 @@ void Server::do_receive()
       });
 }
 
-void Server::send(std::vector<uint8_t> data)
+void Server::send(const std::vector<uint8_t> & data)
 {
   if(data.empty()) return;
   socket_.async_send_to(

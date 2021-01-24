@@ -12,7 +12,7 @@ public:
   ~RealTimeDummyRobot();
 private:
   boost::asio::io_context * io_context;
-  std::shared_ptr<boost::asio::deadline_timer> timer;
+  std::unique_ptr<boost::asio::deadline_timer> timer;
   boost::posix_time::time_duration control_step;
   void cb();
 };

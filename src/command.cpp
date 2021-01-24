@@ -18,11 +18,7 @@
 #include "robomaster.hpp"
 #include "event.hpp"
 
-// #include "command_topics.hpp"
 
-// TODO(jerome): actions
-// TODO(jerome): publisher
-//
 using boost::asio::ip::udp;
 
 bool AddSubMsg::answer(Request &request, Response &response, Robot  * robot, Commands * server)

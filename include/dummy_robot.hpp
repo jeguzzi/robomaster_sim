@@ -12,7 +12,7 @@ public:
   WheelSpeeds read_wheel_speeds();
   WheelSpeeds read_wheel_angles();
   IMU read_imu();
-  std::vector<unsigned char> read_camera_image();
+  std::vector<uint8_t> read_camera_image();
   bool set_camera_resolution(unsigned width, unsigned height);
   void update_target_servo_angles(ServoValues<float> &angles);
   ServoValues<float> read_servo_angles();

@@ -5,12 +5,12 @@
 
 #include "robomaster.hpp"
 
-// TODO(not urgent): make Robot decoupled from the protocol (so that in future I can use it without protocol/real time/...)
+// DONE(not urgent): make Robot decoupled from the protocol (so that in future I can use it without protocol/real time/...)
 // for that:
-// - set a callback (or a callback list) to be called at the end of an update step (to be set in the RM constructor)
-// - refactor actions [seems the most difficult], splitting the robot specific and the protocol specific part
+// - [x] set a callback (or a callback list) to be called at the end of an update step (to be set in the RM constructor)
+// - [x] refactor actions [seems the most difficult], splitting the robot specific and the protocol specific part
 // (how to link them)
-// - then expose (actions, commands, and state) in lua too (first actions and commands)
+// - [ ] then expose (actions, commands, and state) in lua too (first actions and commands)
 // Should be able to compile robot.c in a library without the protocol (and maybe instantiate is in the plugin (remote_api=<bool>))
 
 

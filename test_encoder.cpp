@@ -11,7 +11,7 @@ struct Image {
     h264 = 1
   };
 
-  std::vector<unsigned char> buffer;
+  std::vector<uint8_t> buffer;
   unsigned width;
   unsigned height;
   Format format;
@@ -24,7 +24,7 @@ Image generate_strip_image(unsigned i0, unsigned i1, unsigned width, unsigned he
   Image image;
   image.width = width;
   image.height = height;
-  image.buffer = std::vector<unsigned char>(image.size(), 0);
+  image.buffer = std::vector<uint8_t>(image.size(), 0);
   image.format = Image::Format::raw;
   unsigned size = image.size();
   if(i0 > i1) i1 += width;
