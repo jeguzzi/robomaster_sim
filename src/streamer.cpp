@@ -72,7 +72,7 @@ void VideoStreamer::send(unsigned char *buffer) {
 
 void VideoStreamer::start(ba::ip::address & address, unsigned image_width, unsigned image_height, int fps) {
   spdlog::info("Start video streamer");
-  encoder = std::make_shared<Encoder>(bitrate, image_width, image_height, fps);
+  encoder = std::make_unique<Encoder>(bitrate, image_width, image_height, fps);
   start_socket(address);
 }
 

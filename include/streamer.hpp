@@ -27,7 +27,7 @@ protected:
   long bitrate;
 private:
   Robot * robot;
-  std::shared_ptr<Encoder> encoder;
+  std::unique_ptr<Encoder> encoder;
   unsigned long seq;
   virtual void send_buffer(ba::const_buffer &) = 0;
   virtual void start_socket(ba::ip::address & address) = 0;
