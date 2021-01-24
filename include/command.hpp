@@ -30,7 +30,7 @@ public:
   void reset_subscriber_node(uint8_t node_id);
 private:
 
-  typedef std::function<std::shared_ptr<Subject>()> SubjectCreator;
+  using SubjectCreator = std::function<std::shared_ptr<Subject>()> ;
   std::map<uint64_t, SubjectCreator> subjects;
   std::map<int, std::shared_ptr<Topic>> publishers;
 

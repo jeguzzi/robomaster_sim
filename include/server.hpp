@@ -18,7 +18,7 @@ using boost::asio::ip::udp;
 class Server
 {
 
-  typedef std::function<std::vector<uint8_t>(uint8_t, uint8_t, uint16_t, uint8_t, const uint8_t *)> Callback;
+  using Callback = std::function<std::vector<uint8_t>(uint8_t, uint8_t, uint16_t, uint8_t, const uint8_t *)>;
 
 public:
   Server(boost::asio::io_context * io_context, Robot * robot, short port = 30030);

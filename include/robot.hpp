@@ -19,7 +19,7 @@
 
 class Robot;
 
-typedef std::function<void(float)> Callback;
+using Callback = std::function<void(float)>;
 
 struct Action
 {
@@ -202,15 +202,15 @@ struct Odometry {
 
 };
 
-typedef WheelValues<float> WheelSpeeds;
-typedef std::vector<unsigned char> Image;
+using WheelSpeeds = WheelValues<float> ;
+using Image = std::vector<unsigned char>;
 
 struct HitEvent {
   uint8_t type;
   uint8_t index;
 };
 
-typedef std::vector<HitEvent> hit_event_t;
+using hit_event_t = std::vector<HitEvent> ;
 
 struct DetectedObjects {
 
@@ -329,8 +329,8 @@ public:
     ARMOR_TOP_RIGHT = 0x20,
   };
 
-  typedef unsigned char LedMask;
-  typedef LEDValues<Color> LEDColors;
+  using LedMask = unsigned char ;
+  using LEDColors = LEDValues<Color> ;
 
   struct LED : LEDValues<ActiveLED> {
 
