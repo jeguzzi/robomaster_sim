@@ -131,7 +131,7 @@ static ServoValues<float> inverse_arm_kinematics(Vector3 & position, Vector3 & a
 
 
 Robot::Robot()
-  : imu(), camera(), vision(), target_wheel_speed(), target_servo_angles(),
+  : imu(), attitude(), camera(), vision(), target_wheel_speed(), target_servo_angles(),
   target_gripper_state(Robot::GripperStatus::pause),
   mode(Mode::FREE), axis_x(0.1),  axis_y(0.1), wheel_radius(0.05), sdk_enabled(false),
   odometry(), body_twist(), desired_target_wheel_speed(), wheel_speeds(), wheel_angles(),
@@ -151,8 +151,10 @@ void Robot::do_step(float time_step) {
 
   wheel_speeds = read_wheel_speeds();
   wheel_angles = read_wheel_angles();
+  // spdlog::info("wheel_speeds {}, wheel_angles {}", wheel_speeds, wheel_angles);
   update_odometry(time_step);
   imu = read_imu();
+  // spdlog::info("imu {}", imu);
   update_attitude(time_step);
 
   servo_angles = read_servo_angles();
@@ -256,12 +258,10 @@ void Robot::update_odometry(float time_step){
 }
 
 void Robot::update_attitude(float time_step){
-  // TODO(jerome): compute attitude from the other sensing values
-  imu.attitude.yaw += time_step * imu.angular_velocity.z;
-
-  // use attitude as a source for odometry angular data:
+  attitude.yaw += time_step * imu.angular_velocity.z;
+  // use [imu] attitude as a source for odometry angular data:
   odometry.twist.theta = imu.angular_velocity.z;
-  odometry.pose.theta = imu.attitude.yaw;
+  odometry.pose.theta = attitude.yaw;
   // TODO(jerome): body twist too
   // spdlog::info("update_attitude {}, {}", imu.attitude.yaw,  odometry.pose);
 }
@@ -353,7 +353,7 @@ Pose2D Robot::get_pose() {
 }
 
 Attitude Robot::get_attitude() {
-  return imu.attitude;
+  return attitude;
 }
 
 IMU Robot::get_imu() {
@@ -449,7 +449,9 @@ Action::State Robot::submit_action(std::unique_ptr<PlaySoundAction> action) {
 
 
 void MoveAction::do_step(float time_step) {
+  bool first = false;
   if(state == Action::State::started) {
+      first = true;
       goal_odom = robot->get_pose() * goal;
       state = Action::State::running;
       spdlog::info("Start Move Action to {} [odom]", goal_odom);
@@ -460,7 +462,6 @@ void MoveAction::do_step(float time_step) {
     // goal.theta = normalize(goal.theta);
     spdlog::info("Update Move Action to {} [frame] from {} [odom]", goal, robot->get_pose());
     const float tau = 0.5f;
-    float remaining_duration;
     Twist2D twist;
     if (goal.norm() < 0.01) {
       twist = {0, 0, 0};
@@ -476,7 +477,8 @@ void MoveAction::do_step(float time_step) {
         std::clamp(goal.theta / tau, -angular_speed, angular_speed)
       };
       remaining_duration = time_to_goal(goal, linear_speed, angular_speed);
-      spdlog::info("Move Action continue [{:.2f} s]", remaining_duration);
+      if(first) predicted_duration = remaining_duration;
+      spdlog::info("Move Action continue [{:.2f} s / {:.2f} s]", remaining_duration, predicted_duration);
     }
     // current = goal;
     robot->set_target_velocity(twist);
@@ -511,15 +513,16 @@ void MoveArmAction::do_step(float time_step) {
     remaining_duration = (
       abs(normalize(target_angles.right - angles.right)) +
       abs(normalize(target_angles.left - angles.left)));
-      if(first) predicted_duration = remaining_duration;
-      if(remaining_duration < 0.005) {
-        state = Action::State::succeed;
-        remaining_duration = 0;
-        spdlog::info("[Move Arm Action] done");
-      }
-      else {
-        spdlog::info("[Move Arm Action] will continue for {:.2f} rad", remaining_duration);
-      }
+    if(first) predicted_duration = remaining_duration;
+    if(remaining_duration < 0.005) {
+      state = Action::State::succeed;
+      remaining_duration = 0;
+      spdlog::info("[Move Arm Action] done");
+    }
+    else {
+      spdlog::info("[Move Arm Action] will continue for [{:.2f} rad / {:.2f} rad]",
+                    remaining_duration, predicted_duration);
+    }
   }
   // if(state == Action::State::running) {
     // current_position = robot->get_arm_position();

@@ -28,6 +28,9 @@ WheelSpeeds DummyRobot::read_wheel_speeds()
 
 WheelValues<float> DummyRobot::read_wheel_angles()
 {
+  if(last_time_step) {
+    return get_wheel_angles() + target_wheel_speed * last_time_step;
+  }
   return {};
 }
 
@@ -36,8 +39,9 @@ void DummyRobot::update_led_colors(LEDColors &colors) {
 
 IMU DummyRobot::read_imu() {
   IMU imu;
-  imu.attitude.yaw = get_pose().theta;
-  imu.acceleration.z = 9.81;
+  imu.acceleration = {0, 0, 9.81};
+  // use odom as the source of velocity
+  imu.angular_velocity = {0, 0, get_twist(Robot::Frame::body).theta};
   return imu;
 }
 

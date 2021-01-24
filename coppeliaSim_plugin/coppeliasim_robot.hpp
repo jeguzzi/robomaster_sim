@@ -38,7 +38,7 @@ public:
   ServoValues<float> read_servo_speeds();
   void update_target_gripper(GripperStatus state, float power);
   GripperStatus read_gripper_state();
-  detection_t read_detected_objects();
+  DetectedObjects read_detected_objects();
   hit_event_t read_hit_events();
 private:
   WheelValues<simInt> wheel_joint_handles;

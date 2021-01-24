@@ -12,13 +12,13 @@ struct Topic
   Commands * server;
   Robot * robot;
   AddSubMsg::Request request;
-  std::shared_ptr<Subject> subject;
+  std::unique_ptr<Subject> subject;
   float deadline;
   bool active;
 
   Topic(Commands * _server, Robot * _robot, AddSubMsg::Request &_request,
-        std::shared_ptr<Subject> _subject)
-  : server(_server), robot(_robot), request(_request), subject(_subject)
+        std::unique_ptr<Subject> _subject)
+  : server(_server), robot(_robot), request(_request), subject(std::move(_subject))
   {
   }
 

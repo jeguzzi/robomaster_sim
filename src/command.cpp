@@ -15,7 +15,6 @@
 #include "command_messages.hpp"
 #include "subscriber_messages.hpp"
 #include "command_subjects.hpp"
-#include "rt_topic.hpp"
 #include "robomaster.hpp"
 #include "event.hpp"
 
@@ -92,9 +91,13 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMas
   start();
 }
 
+Commands::~Commands() {
+
+}
+
 void Commands::add_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] add subscriber {}", node_id);
-  armor_hit_event = std::make_shared<ArmorHitEvent>(this, robot, node_id);
+  armor_hit_event = std::make_unique<ArmorHitEvent>(this, robot, node_id);
 }
 
 void Commands::reset_subscriber_node(uint8_t node_id) {
@@ -129,10 +132,10 @@ void Commands::create_publisher(uint64_t uid, AddSubMsg::Request &request)
     spdlog::warn("Unknown subject uid {}", uid);
     return;
   }
-  auto subject = subjects[uid]();
-  auto topic= std::make_shared<Topic>(this, robot, request, subject);
-  publishers[key] = topic;
-  topic->start();
+  // auto subject = subjects[uid]();
+  // publishers[key] = topic;
+  publishers.emplace(key, std::make_unique<Topic>(this, robot, request, subjects[uid]()));
+  publishers[key]->start();
 }
 
 void Commands::stop_publisher(DelMsg::Request &request)
@@ -161,5 +164,5 @@ VideoStreamer * Commands::get_video_streamer() {
 }
 
 void Commands::set_vision_request(uint8_t sender, uint8_t request, uint16_t mask) {
-  vision_event = std::make_shared<VisionEvent>(this, robot, sender, request, mask);
+  vision_event = std::make_unique<VisionEvent>(this, robot, sender, request, mask);
 }

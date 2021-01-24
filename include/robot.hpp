@@ -180,12 +180,27 @@ private:
 
 struct Attitude {
   float yaw, pitch, roll;
+
+  template<typename OStream>
+  friend OStream& operator<<(OStream& os, const Attitude& v)
+  {
+    os << "Attitude <" << v.yaw << ", " << v.pitch << ", " << v.roll << " >";
+    return os;
+  }
+
 };
 
 struct IMU {
-  Attitude attitude;
   Vector3 angular_velocity;
   Vector3 acceleration;
+
+  template<typename OStream>
+  friend OStream& operator<<(OStream& os, const IMU& v)
+  {
+    os << "IMU <" << v.angular_velocity << ", " << v.acceleration << " >";
+    return os;
+  }
+
 };
 
 struct Odometry {
@@ -416,8 +431,6 @@ public:
    */
   void set_enable_sdk(bool value);
 
-
-
   Twist2D get_twist(Frame frame);
 
   Pose2D get_pose();
@@ -533,6 +546,7 @@ public:
 
 protected:
   IMU imu;
+  Attitude attitude;  
   Camera camera;
   Vision vision;
   WheelSpeeds target_wheel_speed;

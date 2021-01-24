@@ -51,8 +51,8 @@ void CoppeliaSimRobot::has_read_gyro(float x, float y, float z) {
 }
 
 void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) {
-  imu.attitude.roll = alpha;
-  imu.attitude.pitch = beta;
+  attitude.roll = alpha;
+  attitude.pitch = beta;
 }
 
 std::vector<unsigned char> CoppeliaSimRobot::read_camera_image() {
@@ -138,7 +138,7 @@ Robot::GripperStatus CoppeliaSimRobot::read_gripper_state() {
   return Robot::GripperStatus(value);
 }
 
-detection_t CoppeliaSimRobot::read_detected_objects() {
+DetectedObjects CoppeliaSimRobot::read_detected_objects() {
   return {};
 }
 

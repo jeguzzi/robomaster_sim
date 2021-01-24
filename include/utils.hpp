@@ -158,11 +158,22 @@ struct WheelValues {
   T rear_right;
 
   inline bool operator==(const WheelValues<T>& rhs) const {
-    return front_left == rhs.front_left && front_right == rhs.front_right && rear_left == rhs.rear_left && rear_right == rhs.rear_right;
+    return front_left == rhs.front_left && front_right == rhs.front_right
+           && rear_left == rhs.rear_left && rear_right == rhs.rear_right;
   }
 
   inline bool operator!=(const WheelValues<T>& rhs) {
     return !(*this == rhs);
+  }
+
+  inline WheelValues<T> operator*(const T& rhs) {
+    return {front_left*rhs, front_right*rhs, rear_left*rhs, rear_right*rhs};
+  }
+
+  inline WheelValues<T> operator+(const WheelValues<T>& rhs) {
+    return {front_left+rhs.front_left, front_right+rhs.front_right,
+            rear_left+rhs.rear_left, rear_right+rhs.rear_right};
+
   }
 
   T& operator[](std::size_t idx)       {
@@ -199,12 +210,12 @@ struct WheelValues {
 template<typename OStream, typename T>
 OStream& operator<<(OStream& os, const WheelValues<T>& v)
 {
-  os << "{"
-     << "\n\tfront left: " << v.front_left
-     << "\n\tfront right: " << v.front_right
-     << "\n\trear left: " << v.rear_left
-     << "\n\trear right: " << v.rear_right
-     << "\n}";
+  os << "<"
+     << " front left: " << v.front_left
+     << ", front right: " << v.front_right
+     << ", rear left: " << v.rear_left
+     << ", rear right: " << v.rear_right
+     << " >";
   return os;
 }
 
@@ -257,12 +268,12 @@ struct LEDValues {
 template<typename OStream, typename T>
 OStream& operator<<(OStream& os, const LEDValues<T>& v)
 {
-  os << "{"
-     << "\n\tfront: " << v.front
-     << "\n\tleft: " << v.left
-     << "\n\trear: " << v.rear
-     << "\n\tright: " << v.right
-     << "\n}";
+  os << "<"
+     << "front: " << v.front
+     << ", left: " << v.left
+     << ", rear: " << v.rear
+     << ", right: " << v.right
+     << " >";
   return os;
 }
 
