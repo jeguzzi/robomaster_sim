@@ -1,29 +1,30 @@
-#ifndef ROBOMASTER_HPP_
-#define ROBOMASTER_HPP_
+#ifndef INCLUDE_ROBOMASTER_HPP_
+#define INCLUDE_ROBOMASTER_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include <boost/thread/thread.hpp>
 #include <boost/asio.hpp>
-#include <spdlog/spdlog.h>
+#include <boost/thread/thread.hpp>
 
-#include "connection.hpp"
+#include "spdlog/spdlog.h"
+
 #include "command.hpp"
+#include "connection.hpp"
 #include "discovery.hpp"
-#include "streamer.hpp"
 #include "robot.hpp"
+#include "streamer.hpp"
 
 class RoboMaster {
-public:
-  explicit RoboMaster(std::shared_ptr<boost::asio::io_context> io_context, Robot * robot,
-                      std::string serial_number="RM0001",
-                      bool udp_video_stream=false, long video_stream_bitrate=200000);
+ public:
+  explicit RoboMaster(std::shared_ptr<boost::asio::io_context> io_context, Robot *robot,
+                      std::string serial_number = "RM0001", bool udp_video_stream = false,
+                      unsigned video_stream_bitrate = 200000);
   void spin(bool);
   void do_step(float);
-  ~RoboMaster(){
+  ~RoboMaster() {
     spdlog::info("Will destroy RoboMaster");
-    if(t) {
+    if (t) {
       io_context->stop();
       spdlog::info("IO context stopped");
       t->join();
@@ -33,18 +34,16 @@ public:
       t = nullptr;
     }
   }
-  VideoStreamer * get_video_streamer() {
-    return video.get();
-  }
-private:
+  VideoStreamer *get_video_streamer() { return video.get(); }
+
+ private:
   std::shared_ptr<boost::asio::io_context> io_context;
-  Robot * robot;
+  Robot *robot;
   Discovery discovery;
   Connection conn;
   Commands cmds;
   std::unique_ptr<VideoStreamer> video;
-  boost::thread * t;
+  boost::thread *t;
 };
 
-
-#endif // ROBOMASTER_HPP_
+#endif  // INCLUDE_ROBOMASTER_HPP_

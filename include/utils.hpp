@@ -1,83 +1,66 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef INCLUDE_UTILS_HPP_
+#define INCLUDE_UTILS_HPP_
 
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <cstdint>
-#include <iostream>
-#include <iomanip>
 
-#include <spdlog/spdlog.h>
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/spdlog.h"
 
 // float normalize(float value);
 
 inline float normalize(float value) {
   value = fmod(value + M_PI, 2 * M_PI);
-  if (value < 0) value += 2 * M_PI;
+  if (value < 0)
+    value += 2 * M_PI;
   return value - M_PI;
 }
 
 struct Vector3 {
   float x, y, z;
 
-  Vector3 rotate_around_z(float theta) {
+  Vector3 rotate_around_z(float theta) const {
     float s = sin(theta);
     float c = cos(theta);
     return {x * c - y * s, x * s + y * c, z};
   }
 
-  template<typename OStream>
-  friend OStream& operator<<(OStream& os, const Vector3& r)
-  {
-    os << "Vector3 < " << r.x << ", " << r.y << ", "<< r.z << " >";
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Vector3 &r) {
+    os << "Vector3 < " << r.x << ", " << r.y << ", " << r.z << " >";
     return os;
   }
 
-  inline Vector3 operator*(float v) {
-    return {x * v, y * v, z * v};
-  }
+  inline Vector3 operator*(float v) const { return {x * v, y * v, z * v}; }
 
-  inline Vector3 operator/(float v) {
-    return {x / v, y / v, z / v};
-  }
+  inline Vector3 operator/(float v) const { return {x / v, y / v, z / v}; }
 
-  inline Vector3 operator+(Vector3 v) {
-    return {x + v.x, y + v.y, z + v.z};
-  }
+  inline Vector3 operator+(Vector3 v) const { return {x + v.x, y + v.y, z + v.z}; }
 
-  inline Vector3 operator-(Vector3 v) {
-    return {x - v.x, y - v.y, z - v.z};
-  }
+  inline Vector3 operator-(Vector3 v) const { return {x - v.x, y - v.y, z - v.z}; }
 
-  inline float norm() {
-    return sqrt(x * x + y *y + z * z);
-  }
-
+  inline float norm() const { return sqrt(x * x + y * y + z * z); }
 };
 
 struct Twist2D {
   float x, y, theta;
 
-  inline Twist2D operator*(float f) {
-    return {x * f, y * f, theta * f};
-  }
+  inline Twist2D operator*(float f) const { return {x * f, y * f, theta * f}; }
 
-  Twist2D rotate_around_z(float alpha) {
-    Vector3 p {x, y, 0};
+  Twist2D rotate_around_z(float alpha) const {
+    Vector3 p{x, y, 0};
     p = p.rotate_around_z(alpha);
     return {p.x, p.y, theta};
   }
 
-  template<typename OStream>
-  friend OStream& operator<<(OStream& os, const Twist2D& r)
-  {
-    os << "Twist2D < " << r.x << ", " << r.y << ", "<< r.theta << " >";
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Twist2D &r) {
+    os << "Twist2D < " << r.x << ", " << r.y << ", " << r.theta << " >";
     return os;
   }
-
 };
 
 struct Pose2D {
@@ -87,17 +70,14 @@ struct Pose2D {
   //   return {x + v.x, y + v.y, normalize(theta + v.theta)};
   // }
 
-  inline Pose2D operator+(Twist2D v) {
-    return {x + v.x, y + v.y, theta + v.theta};
-  }
+  inline Pose2D operator+(Twist2D v) const { return {x + v.x, y + v.y, theta + v.theta}; }
 
-  inline Twist2D operator-(Pose2D p) {
-
+  inline Twist2D operator-(Pose2D p) const {
     return {x + p.x, y + p.y, normalize(theta - p.theta)};
   }
 
-  Pose2D rotate_around_z(float alpha) {
-    Vector3 p {x, y, 0};
+  Pose2D rotate_around_z(float alpha) const {
+    Vector3 p{x, y, 0};
     p = p.rotate_around_z(alpha);
     return {p.x, p.y, theta + alpha};
   }
@@ -110,23 +90,19 @@ struct Pose2D {
   //   return {p.x * c - p.y * s + x, p.x * s + p.y * c + y, p.theta + theta};
   // }
   //
-  inline Pose2D operator*(Pose2D p) {
+  inline Pose2D operator*(Pose2D p) const {
     Pose2D q = p.rotate_around_z(theta);
     return {q.x + x, q.y + y, p.theta + theta};
   }
 
-  inline Pose2D inverse() {
+  inline Pose2D inverse() const {
     Pose2D q = rotate_around_z(-theta);
     return {-q.x, -q.y, -theta};
   }
 
-  inline float distance() {
-    return sqrt(x * x + y * y);
-  }
+  inline float distance() const { return sqrt(x * x + y * y); }
 
-  inline float norm() {
-    return distance() + abs(normalize(theta));
-  }
+  inline float norm() const { return distance() + abs(normalize(theta)); }
 
   // Pose2D relative_to(Pose2D pose) {
   //   Twist2D delta = *this - pose;
@@ -135,251 +111,196 @@ struct Pose2D {
   // }
 
   // p^-1 * this
-  Pose2D relative_to(Pose2D pose) {
-    return pose.inverse() * (*this);
-  }
+  Pose2D relative_to(Pose2D pose) { return pose.inverse() * (*this); }
 
-  template<typename OStream>
-  friend OStream& operator<<(OStream& os, const Pose2D& r)
-  {
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Pose2D &r) {
     os << std::setprecision(3);
-    os << "Pose2D < " << r.x << ", " << r.y << ", "<< r.theta << " >";
+    os << "Pose2D < " << r.x << ", " << r.y << ", " << r.theta << " >";
     return os;
   }
-
 };
 
-
-template <typename T>
-struct WheelValues {
+template <typename T> struct WheelValues {
   T front_left;
   T front_right;
   T rear_left;
   T rear_right;
 
-  inline bool operator==(const WheelValues<T>& rhs) const {
-    return front_left == rhs.front_left && front_right == rhs.front_right
-           && rear_left == rhs.rear_left && rear_right == rhs.rear_right;
+  inline bool operator==(const WheelValues<T> &rhs) const {
+    return front_left == rhs.front_left && front_right == rhs.front_right &&
+           rear_left == rhs.rear_left && rear_right == rhs.rear_right;
   }
 
-  inline bool operator!=(const WheelValues<T>& rhs) {
-    return !(*this == rhs);
+  inline bool operator!=(const WheelValues<T> &rhs) { return !(*this == rhs); }
+
+  inline WheelValues<T> operator*(const T &rhs) {
+    return {front_left * rhs, front_right * rhs, rear_left * rhs, rear_right * rhs};
   }
 
-  inline WheelValues<T> operator*(const T& rhs) {
-    return {front_left*rhs, front_right*rhs, rear_left*rhs, rear_right*rhs};
+  inline WheelValues<T> operator+(const WheelValues<T> &rhs) {
+    return {front_left + rhs.front_left, front_right + rhs.front_right, rear_left + rhs.rear_left,
+            rear_right + rhs.rear_right};
   }
 
-  inline WheelValues<T> operator+(const WheelValues<T>& rhs) {
-    return {front_left+rhs.front_left, front_right+rhs.front_right,
-            rear_left+rhs.rear_left, rear_right+rhs.rear_right};
-
-  }
-
-  T& operator[](std::size_t idx)       {
+  T &operator[](std::size_t idx) {
     switch (idx) {
-      case 0:
-        return front_left;
-      case 1:
-        return front_right;
-      case 2:
-        return rear_left;
-      case 3:
-        return rear_right;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return front_left;
+    case 1:
+      return front_right;
+    case 2:
+      return rear_left;
+    case 3:
+      return rear_right;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
-  const T& operator[](std::size_t idx) const {
+  const T &operator[](std::size_t idx) const {
     switch (idx) {
-      case 0:
-        return front_left;
-      case 1:
-        return front_right;
-      case 2:
-        return rear_left;
-      case 3:
-        return rear_right;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return front_left;
+    case 1:
+      return front_right;
+    case 2:
+      return rear_left;
+    case 3:
+      return rear_right;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
-
 };
 
-template<typename OStream, typename T>
-OStream& operator<<(OStream& os, const WheelValues<T>& v)
-{
+template <typename OStream, typename T> OStream &operator<<(OStream &os, const WheelValues<T> &v) {
   os << "<"
-     << " front left: " << v.front_left
-     << ", front right: " << v.front_right
-     << ", rear left: " << v.rear_left
-     << ", rear right: " << v.rear_right
-     << " >";
+     << " front left: " << v.front_left << ", front right: " << v.front_right
+     << ", rear left: " << v.rear_left << ", rear right: " << v.rear_right << " >";
   return os;
 }
 
-template<typename T>
-struct LEDValues {
+template <typename T> struct LEDValues {
   T front;
   T left;
   T rear;
   T right;
 
-  inline bool operator==(const LEDValues<T>& rhs) const {
+  inline bool operator==(const LEDValues<T> &rhs) const {
     return front == rhs.front && left == rhs.left && rear == rhs.rear && right == rhs.right;
   }
 
-  inline bool operator!=(const LEDValues<T>& rhs) {
-    return !(*this == rhs);
-  }
+  inline bool operator!=(const LEDValues<T> &rhs) { return !(*this == rhs); }
 
-  T& operator[](std::size_t idx)       {
+  T &operator[](std::size_t idx) {
     switch (idx) {
-      case 0:
-        return front;
-      case 1:
-        return left;
-      case 2:
-        return rear;
-      case 3:
-        return right;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return front;
+    case 1:
+      return left;
+    case 2:
+      return rear;
+    case 3:
+      return right;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
-  const T& operator[](std::size_t idx) const {
+  const T &operator[](std::size_t idx) const {
     switch (idx) {
-      case 0:
-        return front;
-      case 1:
-        return left;
-      case 2:
-        return rear;
-      case 3:
-        return right;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return front;
+    case 1:
+      return left;
+    case 2:
+      return rear;
+    case 3:
+      return right;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
-
 };
 
-template<typename OStream, typename T>
-OStream& operator<<(OStream& os, const LEDValues<T>& v)
-{
+template <typename OStream, typename T> OStream &operator<<(OStream &os, const LEDValues<T> &v) {
   os << "<"
-     << "front: " << v.front
-     << ", left: " << v.left
-     << ", rear: " << v.rear
-     << ", right: " << v.right
-     << " >";
+     << "front: " << v.front << ", left: " << v.left << ", rear: " << v.rear
+     << ", right: " << v.right << " >";
   return os;
 }
 
+inline unsigned key_from(uint8_t _set, uint8_t _cmd) { return _cmd + 256 * _set; }
 
-inline unsigned key_from(uint8_t _set, uint8_t _cmd)
-{
-  return _cmd + 256 * _set;
+inline float angular_speed_from_rpm(int rpm) { return 2 * M_PI * rpm / 60.0; }
+
+inline int rpm_from_angular_speed(int speed) {
+  return static_cast<int>(round(speed * 60.0 / (2 * M_PI)));
 }
 
-inline float angular_speed_from_rpm(int rpm)
-{
-  return 2 * M_PI * rpm / 60.0;
-}
+inline float deg2rad(float value) { return M_PI * value / 180.0; }
 
-inline int rpm_from_angular_speed(int speed)
-{
-  return int(round(speed * 60.0 / (2 * M_PI)));
-}
+inline float rad2deg(float value) { return 180.0 * value * M_1_PI; }
 
-inline float deg2rad(float value)
-{
-  return M_PI * value / 180.0;
-}
-
-inline float rad2deg(float value)
-{
-  return 180.0 * value * M_1_PI;
-}
-
-template <typename T>
-T read(const uint8_t * buffer)
-{
+template <typename T> T read(const uint8_t *buffer) {
   T value;
-  uint8_t * bytes = (uint8_t *)&value;
+  uint8_t *bytes = reinterpret_cast<uint8_t *>(&value);
   memcpy(bytes, buffer, sizeof(T));
   return value;
 }
 
-template <typename T>
-void write(std::vector<uint8_t> & buffer, short index, T value)
-{
-  uint8_t * bytes = (uint8_t *)&value;
+template <typename T> void write(std::vector<uint8_t> &buffer, size_t index, T value) {
+  uint8_t *bytes = reinterpret_cast<uint8_t *>(&value);
   for (size_t i = 0; i < sizeof(T); i++) {
     buffer[index + i] = bytes[i];
   }
 }
 
-
-template <typename T>
-struct ServoValues {
+template <typename T> struct ServoValues {
   T right;
   T left;
 
-  inline bool operator==(const ServoValues<T>& rhs) const {
+  inline bool operator==(const ServoValues<T> &rhs) const {
     return right == rhs.right && left == rhs.left;
   }
 
-  inline bool operator!=(const ServoValues<T>& rhs) {
-    return !(*this == rhs);
-  }
+  inline bool operator!=(const ServoValues<T> &rhs) const { return !(*this == rhs); }
 
-  inline ServoValues<T> operator+(const ServoValues<T>& rhs) {
+  inline ServoValues<T> operator+(const ServoValues<T> &rhs) const {
     return {right + rhs.right, left + rhs.left};
   }
 
-  inline ServoValues<T> operator-(const ServoValues<T>& rhs) {
+  inline ServoValues<T> operator-(const ServoValues<T> &rhs) const {
     return {right - rhs.right, left - rhs.left};
   }
 
-  T& operator[](std::size_t idx)       {
+  T &operator[](std::size_t idx) {
     switch (idx) {
-      case 0:
-        return right;
-      case 1:
-        return left;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return right;
+    case 1:
+      return left;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
-  const T& operator[](std::size_t idx) const {
+  const T &operator[](std::size_t idx) const {
     switch (idx) {
-      case 0:
-        return right;
-      case 1:
-        return left;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return right;
+    case 1:
+      return left;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
 
-  operator bool() const {
-    return bool(right) && bool(left);
-  }
-
+  operator bool() const { return static_cast<bool>(right) && static_cast<bool>(left); }
 };
 
-template<typename OStream, typename T>
-OStream& operator<<(OStream& os, const ServoValues<T>& v)
-{
+template <typename OStream, typename T> OStream &operator<<(OStream &os, const ServoValues<T> &v) {
   os << "{"
-     << "\n\rright: " << v.right
-     << "\n\rleft: " << v.left
-     << "\n}";
+     << "\n\rright: " << v.right << "\n\rleft: " << v.left << "\n}";
   return os;
 }
-
 
 struct Vector2 {
   float x, y;
@@ -390,59 +311,45 @@ struct Vector2 {
     return {x * c - y * s, x * s + y * c};
   }
 
-  template<typename OStream>
-  friend OStream& operator<<(OStream& os, const Vector2& r)
-  {
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Vector2 &r) {
     os << "Vector2 < " << r.x << ", " << r.y << " >";
     return os;
   }
 
-  inline Vector2 operator*(float v) {
-    return {x * v, y * v};
-  }
+  inline Vector2 operator*(float v) { return {x * v, y * v}; }
 
-  inline Vector2 operator/(float v) {
-    return {x / v, y / v};
-  }
+  inline Vector2 operator/(float v) { return {x / v, y / v}; }
 
-  inline Vector2 operator+(Vector2 v) {
-    return {x + v.x, y + v.y};
-  }
+  inline Vector2 operator+(Vector2 v) { return {x + v.x, y + v.y}; }
 
-  inline Vector2 operator-(Vector2 v) {
-    return {x - v.x, y - v.y};
-  }
+  inline Vector2 operator-(Vector2 v) { return {x - v.x, y - v.y}; }
 
-  inline float norm() {
-    return sqrt(x * x + y *y);
-  }
+  inline float norm() { return sqrt(x * x + y * y); }
 
-  float& operator[](std::size_t idx)       {
+  float &operator[](std::size_t idx) {
     switch (idx) {
-      case 0:
-        return x;
-      case 1:
-        return y;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return x;
+    case 1:
+      return y;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
 
-  const float& operator[](std::size_t idx) const {
+  const float &operator[](std::size_t idx) const {
     switch (idx) {
-      case 0:
-        return x;
-      case 1:
-        return y;
-      default:
-        throw std::out_of_range("Invalid position!");
+    case 0:
+      return x;
+    case 1:
+      return y;
+    default:
+      throw std::out_of_range("Invalid position!");
     }
   }
-
 };
 
 struct Matrix2 {
-
   float values[2][2];
 
   Matrix2(float a, float b, float c, float d) {
@@ -452,16 +359,14 @@ struct Matrix2 {
     values[1][1] = d;
   }
 
-  inline float det() {
-    return values[0][0] * values[1][1] - values[0][1] * values[1][0];
-  }
+  inline float det() { return values[0][0] * values[1][1] - values[0][1] * values[1][0]; }
 
   inline Matrix2 inverse() {
     float d = det();
-    return {values[1][1]/d, -values[0][1]/d, -values[1][0]/d, values[0][0]/d};
+    return {values[1][1] / d, -values[0][1] / d, -values[1][0] / d, values[0][0] / d};
   }
 
-  inline Vector2 operator*(const Vector2& v) {
+  inline Vector2 operator*(const Vector2 &v) {
     Vector2 r;
     for (size_t i = 0; i < 2; i++) {
       r[i] = 0;
@@ -472,14 +377,11 @@ struct Matrix2 {
     return r;
   }
 
-  template<typename OStream>
-  friend OStream& operator<<(OStream& os, const Matrix2& r)
-  {
-    os << "Matrix2 [[" << r.values[0][0] << ", " <<  r.values[0][1] << "], "
-       << "[" << r.values[1][0] << ", " <<  r.values[1][1] << "]]";
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Matrix2 &r) {
+    os << "Matrix2 [[" << r.values[0][0] << ", " << r.values[0][1] << "], "
+       << "[" << r.values[1][0] << ", " << r.values[1][1] << "]]";
     return os;
   }
-
 };
 
 struct BoundingBox {
@@ -487,10 +389,11 @@ struct BoundingBox {
   float y;
   float width;
   float height;
-  BoundingBox(float x, float y, float width, float height) :
-  x(x), y(y), width(width), height(height) {};
+  BoundingBox(float x, float y, float width, float height)
+      : x(x)
+      , y(y)
+      , width(width)
+      , height(height) {}
 };
 
-
-
-#endif /* end of include guard: UTILS_HPP */
+#endif  // INCLUDE_UTILS_HPP_

@@ -1,15 +1,15 @@
-#ifndef COMMAND_SUBJECTS_H
-#define COMMAND_SUBJECTS_H
+#ifndef INCLUDE_COMMAND_SUBJECTS_HPP_
+#define INCLUDE_COMMAND_SUBJECTS_HPP_
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
-#include <spdlog/spdlog.h>
+#include "spdlog/spdlog.h"
 
+#include "robot.hpp"
 #include "subject.hpp"
 #include "utils.hpp"
-#include "robot.hpp"
-
-
 
 // * DDS_BATTERY: 0x000200096862229f,
 // DDS_GIMBAL_BASE: 0x00020009f5882874,
@@ -21,7 +21,7 @@
 // * DDS_SA_STATUS: 0x000200094a2c6d55,
 // * DDS_CHASSIS_MODE: 0x000200094fcb1146,
 // * DDS_SBUS: 0x0002000988223568,
-// DDS_SERVO: 0x000200095f0059e7,
+// * DDS_SERVO: 0x000200095f0059e7,
 // * DDS_ARM: 0x0002000926abd64d,
 // * DDS_GRIPPER: 0x00020009124d156a,
 // DDS_GIMBAL_POS: 0x00020009f79b3c97,
@@ -30,32 +30,23 @@
 // DDS_TOF: 0x0002000986e4c05a,
 // DDS_PINBOARD: 0x00020009eebb9ffc,
 
-// template<typename T>
-// static T from_robot(T twist);
-
-// template<>
 // NOTE(jerome): Currently the firmware set the angular component to 0
-Twist2D from_robot(Twist2D twist) {
-  return {twist.x, -twist.y, rad2deg(0.0)};
-}
+Twist2D from_robot(Twist2D twist) { return {twist.x, -twist.y, rad2deg(0.0)}; }
 
-// template<>
 // NOTE(jerome): Currently the firmware set the angular component to 0
-Pose2D from_robot(Pose2D pose) {
-  return {pose.x, -pose.y, rad2deg(0.0)};
-}
+Pose2D from_robot(Pose2D pose) { return {pose.x, -pose.y, rad2deg(0.0)}; }
 
-// template<>
 Attitude from_robot(Attitude attitude) {
-  return {.yaw=rad2deg(-attitude.yaw), .pitch=rad2deg(-attitude.pitch), .roll=rad2deg(attitude.roll)};
+  return {.yaw = rad2deg(-attitude.yaw),
+          .pitch = rad2deg(-attitude.pitch),
+          .roll = rad2deg(attitude.roll)};
 }
 
+struct VelocitySubject : SubjectWithUID<0x0002000949a4009c> {
+  std::string name() { return "Velocity"; }
 
-struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
-{
-  std::string name() { return "Velocity"; };
-
-  // {vgx, vgy, vgz}: The velocity in the world coordinate system [initialized] at the time of power-on
+  // {vgx, vgy, vgz}: The velocity in the world coordinate system [initialized] at the time of
+  // power-on
   float vgx;
   float vgy;
   float vgz;
@@ -64,10 +55,7 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
   float vby;
   float vbz;
 
-
-
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(4 * 6, 0);
     write<float>(buffer, 4 * 0, vgx);
     write<float>(buffer, 4 * 1, vgy);
@@ -78,7 +66,7 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     Twist2D twist_odom = from_robot(robot->get_twist(Robot::Frame::odom));
     Twist2D twist_body = from_robot(robot->get_twist(Robot::Frame::body));
     vgx = twist_odom.x;
@@ -88,21 +76,17 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c>
     vby = twist_body.y;
     vbz = twist_body.theta;
   }
-
 };
 
-
-struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece>
-{
-  std::string name() { return "Position"; };
+struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece> {
+  std::string name() { return "Position"; }
 
   // position3D in [m, m, m]
   float position_x;
   float position_y;
   float position_z;
 
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(4 * 3, 0);
     write<float>(buffer, 4 * 0, position_x);
     write<float>(buffer, 4 * 1, position_y);
@@ -110,7 +94,7 @@ struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece>
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     Pose2D pose_odom = from_robot(robot->get_pose());
     position_x = pose_odom.x;
     position_y = pose_odom.y;
@@ -118,16 +102,14 @@ struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece>
   }
 };
 
-struct AttiInfoSubject : SubjectWithUID<0x000200096b986306>
-{
-  std::string name() { return "AttiInfo"; };
+struct AttiInfoSubject : SubjectWithUID<0x000200096b986306> {
+  std::string name() { return "AttiInfo"; }
   // degrees
   float yaw;
   float pitch;
   float roll;
 
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(4 * 3, 0);
     write<float>(buffer, 4 * 0, yaw);
     write<float>(buffer, 4 * 1, pitch);
@@ -135,7 +117,7 @@ struct AttiInfoSubject : SubjectWithUID<0x000200096b986306>
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     Attitude attitude_odom = from_robot(robot->get_attitude());
     yaw = attitude_odom.yaw;
     pitch = attitude_odom.pitch;
@@ -143,44 +125,39 @@ struct AttiInfoSubject : SubjectWithUID<0x000200096b986306>
   }
 };
 
-
-struct ChassisModeSubject : SubjectWithUID<0x000200094fcb1146>
-{
-  std::string name() { return "ChassisMode"; };
+struct ChassisModeSubject : SubjectWithUID<0x000200094fcb1146> {
+  std::string name() { return "ChassisMode"; }
   // ? not exposed/documented in the Python client library
   uint8_t mis_cur_type;
   // mode; DONE(jerome): is this the same mode as Robot::Mode?
   // => NO: 8 when stopped, 5 when moving (with an action), ...
   uint8_t sdk_cur_type;
 
-  std::vector<uint8_t> encode()
-  {
-    return {mis_cur_type, sdk_cur_type};
-  }
+  std::vector<uint8_t> encode() { return {mis_cur_type, sdk_cur_type}; }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     sdk_cur_type = robot->get_mode();
     mis_cur_type = 0;
   }
 };
 
-
-struct EscSubject : SubjectWithUID<0x00020009c14cb7c5>
-{
-  std::string name() { return "Esc"; };
+struct EscSubject : SubjectWithUID<0x00020009c14cb7c5> {
+  std::string name() { return "Esc"; }
   constexpr static const int max_speed = 8191;
   constexpr static const int min_speed = -8192;
   constexpr static const int max_angle = 32767;
 
   static int esc_speed(float speed) {
-    return std::clamp<int>(rpm_from_angular_speed(speed), EscSubject::min_speed,  EscSubject::max_speed);
+    return std::clamp<int>(rpm_from_angular_speed(speed), EscSubject::min_speed,
+                           EscSubject::max_speed);
   }
 
   static int esc_angle(float angle) {
     angle = angle / (2 * M_PI);
     angle = fmod(angle, 1.0f);
-    if(angle < 0) angle += 1.0f;
-    return (int) round(angle * EscSubject::max_angle);
+    if (angle < 0)
+      angle += 1.0f;
+    return static_cast<int>(round(angle * EscSubject::max_angle));
   }
 
   // [front right, front left, rear left, rear right]
@@ -196,23 +173,23 @@ struct EscSubject : SubjectWithUID<0x00020009c14cb7c5>
 
   std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(4 * (2 + 2 + 4 + 1), 0);
-    short j = 0;
-    for (size_t i = 0; i < 4; i++, j+=2) {
-        write<int16_t>(buffer, j, speed[i]);
+    size_t j = 0;
+    for (size_t i = 0; i < 4; i++, j += 2) {
+      write<int16_t>(buffer, j, speed[i]);
     }
-    for (size_t i = 0; i < 4; i++, j+=2) {
-        write<int16_t>(buffer, j, angle[i]);
+    for (size_t i = 0; i < 4; i++, j += 2) {
+      write<int16_t>(buffer, j, angle[i]);
     }
-      for (size_t i = 0; i < 4; i++, j+=4) {
-        write<uint32_t>(buffer, j, timestamp[i]);
+    for (size_t i = 0; i < 4; i++, j += 4) {
+      write<uint32_t>(buffer, j, timestamp[i]);
     }
     for (size_t i = 0; i < 4; i++, j++) {
-        buffer[j]=state[i];
+      buffer[j] = state[i];
     }
     return buffer;
   }
 
-  void update(Robot * robot) {
+  void update(Robot *robot) {
     // spdlog::warn("EscSubject not implemented");
     WheelSpeeds speeds = robot->get_wheel_speeds();
     WheelValues<float> angles = robot->get_wheel_angles();
@@ -229,29 +206,24 @@ struct EscSubject : SubjectWithUID<0x00020009c14cb7c5>
     angle[3] = EscSubject::esc_angle(angles.rear_right);
 
     for (size_t i = 0; i < 4; i++) {
-      timestamp[i] = (int32_t) (600 * time_);
+      timestamp[i] = (int32_t)(600 * time_);
       state[i] = 0;
     }
   }
 };
 
-struct ImuSubject : SubjectWithUID<0x00020009a7985b8d>
-{
-  std::string name() { return "Imu"; };
+struct ImuSubject : SubjectWithUID<0x00020009a7985b8d> {
+  std::string name() { return "Imu"; }
   // [m/s^2]
-  //
-  constexpr const static float G = 9.81f;
+  static constexpr float G = 9.81f;
 
-  static float acc(float value) {
-    return value / ImuSubject::G;
-  }
+  static float acc(float value) { return value / ImuSubject::G; }
 
   float acc_x, acc_y, acc_z;
   // angular velocity [deg/s]
   float gyro_x, gyro_y, gyro_z;
 
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(4 * 6, 0);
     write<float>(buffer, 4 * 0, acc_x);
     write<float>(buffer, 4 * 1, acc_y);
@@ -262,7 +234,7 @@ struct ImuSubject : SubjectWithUID<0x00020009a7985b8d>
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     IMU imu_body = robot->get_imu();
     acc_x = acc(imu_body.acceleration.x);
     acc_y = -acc(imu_body.acceleration.y);
@@ -274,13 +246,12 @@ struct ImuSubject : SubjectWithUID<0x00020009a7985b8d>
 };
 
 struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
+  static constexpr float MAX_SPEED_STATIC = 10.0f;
+  static constexpr float MAX_PITCH_FLAT = 0.1f;
+  static constexpr float MAX_ROLL_FLAT = 0.1f;
+  static constexpr float MIN_ROLL_OVER = 1.6f;
 
-  constexpr const static float MAX_SPEED_STATIC = 10.0f;
-  constexpr const static float MAX_PITCH_FLAT = 0.1f;
-  constexpr const static float MAX_ROLL_FLAT = 0.1f;
-  constexpr const static float MIN_ROLL_OVER = 1.6f;
-
-  std::string name() { return "SaStatus"; };
+  std::string name() { return "SaStatus"; }
   // Status standard bit [?]
   bool static_flag;
   bool up_hill;
@@ -294,21 +265,19 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
   bool roll_over;
   bool hill_static;
 
-  std::vector<uint8_t> encode()
-  {
-
-    uint8_t byte1 = (static_flag << 0) | (up_hill << 1)   | (down_hill << 2) | (on_slope << 3) |
-                    (is_pick_up << 4)  | (slip_flag << 5) | (impact_x << 6)  | (impact_y << 7);
-    uint8_t byte2 = (impact_z << 0) | (roll_over << 1)   | (hill_static << 2);
+  std::vector<uint8_t> encode() {
+    uint8_t byte1 = (static_flag << 0) | (up_hill << 1) | (down_hill << 2) | (on_slope << 3) |
+                    (is_pick_up << 4) | (slip_flag << 5) | (impact_x << 6) | (impact_y << 7);
+    uint8_t byte2 = (impact_z << 0) | (roll_over << 1) | (hill_static << 2);
     return {byte1, byte2};
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     // TODO(jerome): Tentative. Some flags are still not clear
     auto speeds = robot->get_wheel_speeds();
     static_flag = true;
     for (size_t i = 0; i < 4; i++) {
-      if(abs(speeds[i]) > MAX_SPEED_STATIC) {
+      if (abs(speeds[i]) > MAX_SPEED_STATIC) {
         static_flag = false;
         break;
       }
@@ -320,41 +289,35 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
     roll_over = (abs(normalize(attitude.roll)) > MIN_ROLL_OVER);
     hill_static = up_hill & static_flag;
   }
-
 };
 
-
-struct SbusSubject : SubjectWithUID<0x0002000988223568>
-{
-  std::string name() { return "Sbus"; };
+struct SbusSubject : SubjectWithUID<0x0002000988223568> {
+  std::string name() { return "Sbus"; }
   uint8_t connect_status;
   int16_t subs_channel[16];
 
-  std::vector<uint8_t> encode()
-  {
-    uint8_t * b = (uint8_t *)&subs_channel;
+  std::vector<uint8_t> encode() {
+    uint8_t *b = reinterpret_cast<uint8_t *>(&subs_channel);
     std::vector<uint8_t> buffer(b, b + 32);
     buffer.insert(buffer.begin(), connect_status);
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     // spdlog::warn("SbusSubject not implemented");
     connect_status = false;
   }
 };
 
-struct BatterySubject : SubjectWithUID<0x000200096862229f>
-{
-  std::string name() { return "Battery"; };
+struct BatterySubject : SubjectWithUID<0x000200096862229f> {
+  std::string name() { return "Battery"; }
 
   uint16_t adc_value;
   int16_t temperature;
   int32_t current;
   uint8_t percent;
 
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(10, 0);
     write<uint16_t>(buffer, 0, adc_value);
     write<int16_t>(buffer, 2, temperature);
@@ -364,7 +327,7 @@ struct BatterySubject : SubjectWithUID<0x000200096862229f>
     return buffer;
   }
 
-  void update(Robot * robot){
+  void update(Robot *robot) {
     // spdlog::warn("BatterySubject update not implemented");
     adc_value = 10987;
     temperature = 321;
@@ -373,90 +336,76 @@ struct BatterySubject : SubjectWithUID<0x000200096862229f>
   }
 };
 
-
-struct GripperSubject : SubjectWithUID<0x00020009124d156a>
-{
-  std::string name() { return "Gripper"; };
+struct GripperSubject : SubjectWithUID<0x00020009124d156a> {
+  std::string name() { return "Gripper"; }
 
   uint8_t status;
 
-  std::vector<uint8_t> encode()
-  {
-    return {status};
-  }
+  std::vector<uint8_t> encode() { return {status}; }
 
-  void update(Robot * robot){
-    status = robot->get_gripper_status();
-  }
+  void update(Robot *robot) { status = robot->get_gripper_status(); }
 };
 
-struct ArmSubject : SubjectWithUID<0x0002000926abd64d>
-{
-  std::string name() { return "Arm"; };
-  // [mm], TODO(jerome): check
+struct ArmSubject : SubjectWithUID<0x0002000926abd64d> {
+  std::string name() { return "Arm"; }  // [mm], TODO(jerome): check
   uint32_t pos_x, pos_y;
 
-  std::vector<uint8_t> encode()
-  {
+  std::vector<uint8_t> encode() {
     std::vector<uint8_t> buffer(9, 0);
     write<uint32_t>(buffer, 1, pos_x);
     write<uint32_t>(buffer, 5, pos_y);
     return buffer;
   }
 
-  void update(Robot * robot) {
+  void update(Robot *robot) {
     Vector3 position = robot->get_arm_position();
     pos_x = static_cast<uint32_t>(1000 * position.x);
     pos_y = static_cast<uint32_t>(1000 * position.z);
   }
 };
 
-
 struct ServoSubject : SubjectWithUID<0x000200095f0059e7> {
-    std::string name() { return "Servo"; };
+  std::string name() { return "Servo"; }
 
-    constexpr static int NUMBER_OF_SERVOS = 4;
-    // The values at the RM reset position (maximal flexion)
-    constexpr static ServoValues<float> reset_angles = {.right=-0.274016f, .left=0.073304f};
-    constexpr static ServoValues<int> reset_values = {.right=1273, .left=1242};
-    constexpr static float rad2unit = 325.95f;
-    constexpr static ServoValues<float> biases = {
-        .right=reset_values.right +  rad2unit * reset_angles.right,
-        .left=reset_values.left + rad2unit * reset_angles.left
-      };
-    // value = - angle * rad2unit + bias
-    // reset_value = - reset_angle * rad2unit + bias =>
-    // bias = reset_value + reset_angle * rad2unit
+  constexpr static int NUMBER_OF_SERVOS = 4;
+  // The values at the RM reset position (maximal flexion)
+  constexpr static ServoValues<float> reset_angles = {.right = -0.274016f, .left = 0.073304f};
+  constexpr static ServoValues<int> reset_values = {.right = 1273, .left = 1242};
+  constexpr static float rad2unit = 325.95f;
+  constexpr static ServoValues<float> biases = {
+      .right = reset_values.right + rad2unit * reset_angles.right,
+      .left = reset_values.left + rad2unit * reset_angles.left};
+  // value = - angle * rad2unit + bias
+  // reset_value = - reset_angle * rad2unit + bias =>
+  // bias = reset_value + reset_angle * rad2unit
 
-    uint8_t valid[NUMBER_OF_SERVOS];
-    uint16_t speed[NUMBER_OF_SERVOS];
-    uint16_t angle[NUMBER_OF_SERVOS];
+  uint8_t valid[NUMBER_OF_SERVOS];
+  uint16_t speed[NUMBER_OF_SERVOS];
+  uint16_t angle[NUMBER_OF_SERVOS];
 
-    std::vector<uint8_t> encode()
-    {
-      std::vector<uint8_t> buffer(NUMBER_OF_SERVOS * 4 + 1, 0);
-      buffer[0] = 0;
-      for (size_t i = 0; i < NUMBER_OF_SERVOS; i++) {
-          buffer[0] += valid[i] << i;
-          write<uint16_t>(buffer, 1 + 2 * i, speed[i]);
-          write<uint16_t>(buffer, 9 + 2 * i, angle[i]);
-      }
-      return buffer;
+  std::vector<uint8_t> encode() {
+    std::vector<uint8_t> buffer(NUMBER_OF_SERVOS * 4 + 1, 0);
+    buffer[0] = 0;
+    for (size_t i = 0; i < NUMBER_OF_SERVOS; i++) {
+      buffer[0] += valid[i] << i;
+      write<uint16_t>(buffer, 1 + 2 * i, speed[i]);
+      write<uint16_t>(buffer, 9 + 2 * i, angle[i]);
     }
+    return buffer;
+  }
 
-    void update(Robot * robot) {
-      ServoValues<float> _speeds = robot->get_servo_speeds();
-      speed[0] = round(rad2unit * _speeds.left);
-      speed[1] = round(rad2unit * _speeds.right);
-      ServoValues<float> _angles = robot->get_servo_angles();
-      // spdlog::info("Servo angles {}", _angles);
-      angle[0] = round(-rad2unit * _angles.left + biases.left);
-      angle[1] = round(-rad2unit * _angles.right + biases.right);
-      valid[0] = valid[1] = 1;
-      valid[2] = valid[3] = 0;
-      // spdlog::info("-> Servo values {} {}", angle[0], angle[1]);
-    }
-
+  void update(Robot *robot) {
+    ServoValues<float> _speeds = robot->get_servo_speeds();
+    speed[0] = round(rad2unit * _speeds.left);
+    speed[1] = round(rad2unit * _speeds.right);
+    ServoValues<float> _angles = robot->get_servo_angles();
+    // spdlog::info("Servo angles {}", _angles);
+    angle[0] = round(-rad2unit * _angles.left + biases.left);
+    angle[1] = round(-rad2unit * _angles.right + biases.right);
+    valid[0] = valid[1] = 1;
+    valid[2] = valid[3] = 0;
+    // spdlog::info("-> Servo values {} {}", angle[0], angle[1]);
+  }
 };
 
-#endif /* end of include guard: COMMAND_SUBJECTS_H */
+#endif  // INCLUDE_COMMAND_SUBJECTS_HPP_

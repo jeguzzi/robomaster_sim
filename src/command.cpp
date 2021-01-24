@@ -1,28 +1,22 @@
-
-// #include <cstdlib>
-// #include <functional>
-// #include <optional>
 #include <cstdint>
 
 #include <boost/asio.hpp>
-// #include <boost/ref.hpp>
 
 #include "spdlog/spdlog.h"
+
 #include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/fmt/ostr.h"
 
 #include "command.hpp"
 #include "command_messages.hpp"
-#include "subscriber_messages.hpp"
 #include "command_subjects.hpp"
-#include "robomaster.hpp"
 #include "event.hpp"
-
+#include "robomaster.hpp"
+#include "subscriber_messages.hpp"
 
 using boost::asio::ip::udp;
 
-bool AddSubMsg::answer(Request &request, Response &response, Robot  * robot, Commands * server)
-{
+bool AddSubMsg::answer(const Request &request, Response &response, Robot *robot, Commands *server) {
   for (size_t i = 0; i < request.sub_data_num; i++) {
     uint64_t uid = request.sub_uid_list[i];
     server->create_publisher(uid, request);
@@ -30,15 +24,15 @@ bool AddSubMsg::answer(Request &request, Response &response, Robot  * robot, Com
   return true;
 }
 
-bool DelMsg::answer(Request &request, Response &response, Robot  * robot, Commands * server)
-{
+bool DelMsg::answer(const Request &request, Response &response, Robot *robot, Commands *server) {
   server->stop_publisher(request);
   return true;
 }
 
-Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMaster * rm, short port)
-: Server(_io_context, robot, port), robomaster(rm)
-{
+Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaster *rm,
+                   unsigned short port)
+    : Server(_io_context, robot, port)
+    , robomaster(rm) {
   register_message<SdkHeartBeat>();
   register_message<SetSdkMode, Commands *>(this);
   register_message<SetRobotMode>();
@@ -87,9 +81,7 @@ Commands::Commands(boost::asio::io_context * _io_context, Robot * robot, RoboMas
   start();
 }
 
-Commands::~Commands() {
-
-}
+Commands::~Commands() {}
 
 void Commands::add_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] add subscriber {}", node_id);
@@ -103,13 +95,10 @@ void Commands::reset_subscriber_node(uint8_t node_id) {
   publishers.clear();
 }
 
-
 void Commands::set_enable_sdk(bool value) {
-
-  if(value) {
+  if (value) {
     spdlog::info("[Commands] enabled the SDK");
-  }
-  else {
+  } else {
     spdlog::info("[Commands] disabled the SDK");
     armor_hit_event = nullptr;
     vision_event = nullptr;
@@ -117,14 +106,11 @@ void Commands::set_enable_sdk(bool value) {
     vision_event = nullptr;
     publishers.clear();
   }
-
 }
 
-void Commands::create_publisher(uint64_t uid, AddSubMsg::Request &request)
-{
+void Commands::create_publisher(uint64_t uid, const AddSubMsg::Request &request) {
   uint16_t key = key_from(request.node_id, request.msg_id);
-  if(!subjects.count(uid))
-  {
+  if (!subjects.count(uid)) {
     spdlog::warn("Unknown subject uid {}", uid);
     return;
   }
@@ -134,30 +120,24 @@ void Commands::create_publisher(uint64_t uid, AddSubMsg::Request &request)
   publishers[key]->start();
 }
 
-void Commands::stop_publisher(DelMsg::Request &request)
-{
+void Commands::stop_publisher(const DelMsg::Request &request) {
   uint16_t key = key_from(request.node_id, request.msg_id);
   publishers.erase(key);
 }
 
-
-void Commands::do_step(float time_step)
-{
+void Commands::do_step(float time_step) {
   // spdlog::debug("[Commands] do_step");
-  for (auto const& [key, pub] : publishers)
-  {
+  for (auto const &[key, pub] : publishers) {
     // spdlog::debug("[Pub] do_step");
     pub->do_step(time_step);
   }
-  if(vision_event)
+  if (vision_event)
     vision_event->do_step(time_step);
-  if(armor_hit_event)
+  if (armor_hit_event)
     armor_hit_event->do_step(time_step);
 }
 
-VideoStreamer * Commands::get_video_streamer() {
-  return robomaster->get_video_streamer();
-}
+VideoStreamer *Commands::get_video_streamer() { return robomaster->get_video_streamer(); }
 
 void Commands::set_vision_request(uint8_t sender, uint8_t request, uint16_t mask) {
   vision_event = std::make_unique<VisionEvent>(this, robot, sender, request, mask);

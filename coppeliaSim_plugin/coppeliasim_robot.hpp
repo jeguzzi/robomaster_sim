@@ -1,21 +1,18 @@
-#ifndef COPPELIASIM_ROBOT_HPP
-#define COPPELIASIM_ROBOT_HPP
+#ifndef COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_
+#define COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_
+
+#include <string>
+#include <vector>
 
 #include <simPlusPlus/Lib.h>
-#include  "robot.hpp"
 
-class CoppeliaSimRobot : public Robot
-{
+#include "robot.hpp"
 
-public:
-  CoppeliaSimRobot(
-      WheelValues<simInt> _wheel_joint_handles,
-      LEDValues<simInt> _led_handles,
-      simInt _camera_handle,
-      ServoValues<simInt> _servo_motor,
-      std::string _gripper_state_signal,
-      std::string _gripper_target_signal
-  ) {
+class CoppeliaSimRobot : public Robot {
+ public:
+  CoppeliaSimRobot(WheelValues<simInt> _wheel_joint_handles, LEDValues<simInt> _led_handles,
+                   simInt _camera_handle, ServoValues<simInt> _servo_motor,
+                   std::string _gripper_state_signal, std::string _gripper_target_signal) {
     wheel_joint_handles = _wheel_joint_handles;
     led_handles = _led_handles;
     camera_handle = _camera_handle;
@@ -33,14 +30,15 @@ public:
   void has_read_accelerometer(float, float, float);
   void has_read_gyro(float, float, float);
   void update_orientation(float, float, float);
-  void update_target_servo_angles(ServoValues<float> &angles);
+  void update_target_servo_angles(const ServoValues<float> &angles);
   ServoValues<float> read_servo_angles();
   ServoValues<float> read_servo_speeds();
   void update_target_gripper(GripperStatus state, float power);
   GripperStatus read_gripper_state();
   DetectedObjects read_detected_objects();
   hit_event_t read_hit_events();
-private:
+
+ private:
   WheelValues<simInt> wheel_joint_handles;
   LEDValues<simInt> led_handles;
   simInt camera_handle;
@@ -49,4 +47,4 @@ private:
   std::string gripper_target_signal;
 };
 
-#endif /* end of include guard: COPPELIASIM_ROBOT_HPP */
+#endif  // COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_

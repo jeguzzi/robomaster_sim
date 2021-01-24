@@ -1,30 +1,31 @@
-#ifndef TOPIC_H
-#define TOPIC_H
+#ifndef INCLUDE_TOPIC_HPP_
+#define INCLUDE_TOPIC_HPP_
 
 #include <memory>
-#include "subscriber_messages.hpp"
+#include <utility>
+#include <vector>
+
 #include "subject.hpp"
+#include "subscriber_messages.hpp"
 
 class Commands;
 
-struct Topic
-{
-  Commands * server;
-  Robot * robot;
+struct Topic {
+  Commands *server;
+  Robot *robot;
   AddSubMsg::Request request;
   std::unique_ptr<Subject> subject;
   float deadline;
   bool active;
 
-  Topic(Commands * _server, Robot * _robot, AddSubMsg::Request &_request,
+  Topic(Commands *_server, Robot *_robot, const AddSubMsg::Request &_request,
         std::unique_ptr<Subject> _subject)
-  : server(_server), robot(_robot), request(_request), subject(std::move(_subject))
-  {
-  }
+      : server(_server)
+      , robot(_robot)
+      , request(_request)
+      , subject(std::move(_subject)) {}
 
-  virtual ~Topic() {
-    stop();
-  }
+  virtual ~Topic() { stop(); }
   void do_step(float time_step);
   virtual void start();
   virtual void stop();
@@ -32,4 +33,4 @@ struct Topic
   std::vector<uint8_t> subject_data();
 };
 
-#endif /* end of include guard: TOPIC_H */
+#endif  // INCLUDE_TOPIC_HPP_

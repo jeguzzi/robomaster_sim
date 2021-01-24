@@ -1,13 +1,15 @@
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#ifndef INCLUDE_SERVER_HPP_
+#define INCLUDE_SERVER_HPP_
 
 #include <cstdint>
-#include <vector>
 #include <map>
+#include <vector>
 
 #include <boost/asio.hpp>
-#include <spdlog/spdlog.h>
-#include <spdlog/fmt/bin_to_hex.h>
+
+#include "spdlog/spdlog.h"
+
+#include "spdlog/fmt/bin_to_hex.h"
 
 // #include "robot.hpp"
 
@@ -15,58 +17,48 @@ class Robot;
 
 using boost::asio::ip::udp;
 
-class Server
-{
+class Server {
+  using Callback =
+      std::function<std::vector<uint8_t>(uint8_t, uint8_t, uint16_t, uint8_t, const uint8_t *)>;
 
-  using Callback = std::function<std::vector<uint8_t>(uint8_t, uint8_t, uint16_t, uint8_t, const uint8_t *)>;
+  static constexpr size_t kMaxLength = 1024;
 
-public:
-  Server(boost::asio::io_context * io_context, Robot * robot, short port = 30030);
-  ~Server() {
-
-  }
+ public:
+  Server(boost::asio::io_context *io_context, Robot *robot, unsigned short port = 30030);
+  ~Server() {}
   void start();
-  void send(const std::vector<uint8_t> & data);
+  void send(const std::vector<uint8_t> &data);
 
-  boost::asio::io_context * get_io_context() {
-    return io_context;
-  }
+  boost::asio::io_context *get_io_context() { return io_context; }
 
-  udp::endpoint sender_endpoint() {
-    return sender_endpoint_;
-  }
+  udp::endpoint sender_endpoint() { return sender_endpoint_; }
 
-protected:
-  boost::asio::io_context * io_context;
-  Robot * robot;
-  template<typename R, typename ... Args>
-  void register_message(Args ... args)
-  {
-    Robot * r = robot;
-    callbacks[R::key] = [r, args ...](uint8_t sender, uint8_t receiver, uint16_t seq_id, uint8_t attri, const uint8_t * buffer) -> std::vector<uint8_t>
-    {
+ protected:
+  boost::asio::io_context *io_context;
+  Robot *robot;
+  template <typename R, typename... Args> void register_message(Args... args) {
+    Robot *r = robot;
+    callbacks[R::key] = [r, args...](uint8_t sender, uint8_t receiver, uint16_t seq_id,
+                                     uint8_t attri, const uint8_t *buffer) -> std::vector<uint8_t> {
       typename R::Request request(sender, receiver, seq_id, attri, buffer);
       typename R::Response response(request);
       spdlog::debug("Got {} ({})", request, request.need_ack());
-      bool valid = R::answer(request, response, r, args ...);
-      if(valid)
-      {
+      bool valid = R::answer(request, response, r, args...);
+      if (valid) {
         return response.encode_msg(R::set, R::cmd);
       }
       return {};
     };
   }
 
-
-private:
+ private:
   udp::socket socket_;
   udp::endpoint sender_endpoint_;
-  enum { max_length = 1024 };
-  uint8_t data_[max_length];
+  uint8_t data_[kMaxLength];
   std::map<int, Callback> callbacks;
-  std::vector<uint8_t> answer_request(const uint8_t * buffer, size_t length);
-  void has_received_bytes(const uint8_t * raw_request, size_t length);
+  std::vector<uint8_t> answer_request(const uint8_t *buffer, size_t length);
+  void has_received_bytes(const uint8_t *raw_request, size_t length);
   void do_receive();
 };
 
-#endif /* end of include guard: SERVER_HPP */
+#endif  // INCLUDE_SERVER_HPP_
