@@ -15,12 +15,13 @@ namespace ba = boost::asio;
 class VideoStreamer {
 public:
   VideoStreamer(Robot * robot, long bitrate=DEFAULT_BITRATE);
-  static std::shared_ptr<VideoStreamer> create_video_streamer(
+  static std::unique_ptr<VideoStreamer> create_video_streamer(
       ba::io_context * io_context, Robot * robot, bool udp=false, long bitrate=DEFAULT_BITRATE);
   void send(unsigned char * buffer);
   void stop();
   void start(ba::ip::address & address, unsigned image_width, unsigned image_height, int fps);
   void do_step(float);
+  virtual ~VideoStreamer();
 protected:
   bool active;
   long bitrate;

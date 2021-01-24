@@ -31,13 +31,11 @@ private:
   void stop_socket();
 };
 
-std::shared_ptr<VideoStreamer> VideoStreamer::create_video_streamer(
+std::unique_ptr<VideoStreamer> VideoStreamer::create_video_streamer(
     ba::io_context * io_context, Robot * robot, bool udp, long bitrate) {
   if(udp)
-    return std::dynamic_pointer_cast<VideoStreamer>(
-        std::make_shared<UDPVideoStreamer>(io_context, robot, bitrate));
-  return std::dynamic_pointer_cast<VideoStreamer>(
-        std::make_shared<TCPVideoStreamer>(io_context, robot, bitrate));
+    return std::make_unique<UDPVideoStreamer>(io_context, robot, bitrate);
+  return std::make_unique<TCPVideoStreamer>(io_context, robot, bitrate);
 }
 
 
@@ -50,6 +48,8 @@ VideoStreamer::VideoStreamer(Robot * _robot, long _bitrate)
   robot(_robot),
   seq(0) {
 }
+
+VideoStreamer::~VideoStreamer(){};
 
 void VideoStreamer::do_step(float time_step) {
   auto camera = robot->get_camera();

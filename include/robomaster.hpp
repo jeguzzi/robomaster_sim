@@ -45,7 +45,7 @@ private:
   Discovery discovery;
   Connection conn;
   Commands cmds;
-  std::shared_ptr<VideoStreamer> video;
+  std::unique_ptr<VideoStreamer> video;
   boost::thread * t;
 };
 
