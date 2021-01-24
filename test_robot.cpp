@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   DummyRobot robot;
   spdlog::info("Start run loop");
   spdlog::info("Will play sound? {}", robot.play_sound(1, 1));
-  spdlog::info("Will move? {}", robot.move({.x = 1.0f}, 1.0f, 1.0f));
+  spdlog::info("Will move? {}", robot.move_base({.x = 1.0f}, 1.0f, 1.0f));
   spdlog::info("Will move arm? {}", robot.move_arm(0.1f, 0.0f, true));
   for (size_t i = 0; i < 100; i++) {
     robot.do_step(0.1);

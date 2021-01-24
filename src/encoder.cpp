@@ -10,7 +10,7 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   // uint8_t endcode[] = { 0, 0, 1, 0xb7 };
   spdlog::info("Initializing an H264 encoder with input ({}, {}), fps {} and bitrate {}", width,
                height, fps, bitrate);
-  avcodec_register_all();
+  // avcodec_register_all();
   /* find the h264 encoder */
   // codec = avcodec_find_encoder(AV_CODEC_ID_H264);
   codec = avcodec_find_encoder_by_name("libx264rgb");

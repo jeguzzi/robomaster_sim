@@ -438,7 +438,7 @@ class Robot {
 
   Camera *get_camera() { return &camera; }
 
-  Action::State move(const Pose2D &pose, float linear_speed, float angular_speed);
+  Action::State move_base(const Pose2D &pose, float linear_speed, float angular_speed);
   Action::State move_arm(float x, float z, bool absolute);
   Action::State play_sound(uint32_t sound_id, uint8_t times);
 

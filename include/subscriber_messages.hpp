@@ -49,9 +49,9 @@ struct AddSubMsg : Proto<0x48, 0x03> {
          << " sub_data_num=" << int(r.sub_data_num) << " sub_uid_list=[" << std::hex;
 
       for (size_t i = 0; i < r.sub_data_num; i++) {
-        os << "0x" << long(r.sub_uid_list[i]) << ", ";
+        os << "0x" << std::hex << r.sub_uid_list[i] << ", ";
       }
-      os << "] sub_freq=" << std::dec << int(r.sub_freq) << " }";
+      os << "] sub_freq=" << std::dec << int(r.sub_freq) << " }" << std::dec;
       return os;
     }
   };

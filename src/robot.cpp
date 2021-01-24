@@ -402,7 +402,7 @@ bool Robot::stop_streaming() {
   return true;
 }
 
-Action::State Robot::move(const Pose2D &pose, float linear_speed, float angular_speed) {
+Action::State Robot::move_base(const Pose2D &pose, float linear_speed, float angular_speed) {
   auto a = std::make_unique<MoveAction>(this, pose, linear_speed, angular_speed);
   return submit_action(std::move(a));
 }
