@@ -408,4 +408,45 @@ struct ServoSubject : SubjectWithUID<0x000200095f0059e7> {
   }
 };
 
+struct TofSubject : SubjectWithUID<0x0002000986e4c05a> {
+  std::string name() { return "ToF"; }
+
+  constexpr static size_t NUMBER_OF_TOF = 4;
+
+  static inline uint16_t encode_distance(float value) { return uint16_t(1000 * value); }
+
+  uint8_t cmd_id[NUMBER_OF_TOF];
+  uint8_t direct[NUMBER_OF_TOF];
+  uint8_t flag[NUMBER_OF_TOF];
+  uint16_t distance[NUMBER_OF_TOF];
+
+  std::vector<uint8_t> encode() {
+    std::vector<uint8_t> buffer(NUMBER_OF_TOF * 5 + 1, 0);
+    for (size_t i = 0; i < NUMBER_OF_TOF; i++) {
+      buffer[i * 5] = cmd_id[i];
+      buffer[i * 5 + 1] = direct[i];
+      buffer[i * 5 + 2] = flag[i];
+      buffer[i * 5 + 3] = (distance[i] >> 8) & 0xFF;
+      buffer[i * 5 + 4] = distance[i] & 0xFF;
+      // spdlog::info("dist {}", distance[i]);
+      // write<uint16_t>(buffer, i * 5 + 3, distance[i]);
+    }
+    return buffer;
+  }
+
+  void update(Robot *robot) {
+    std::vector<ToFReading> readings = robot->get_tof_readings();
+    for (size_t i = 0; i < std::min(NUMBER_OF_TOF, readings.size()); i++) {
+      if (readings[i].active) {
+        cmd_id[i] = 20;
+        direct[i] = 65;
+        flag[i] = 0xFF;
+        distance[i] = encode_distance(readings[i].distance);
+      } else {
+        cmd_id[i] = direct[i] = flag[i] = distance[i] = 0;
+      }
+    }
+  }
+};
+
 #endif  // INCLUDE_COMMAND_SUBJECTS_HPP_

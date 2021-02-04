@@ -251,6 +251,7 @@ void Robot::do_step(float time_step) {
   //   vision.detected_objects = {};
   // }
   hit_events = read_hit_events();
+  tof_readings = read_tof();
 
   // Update Publishers
 

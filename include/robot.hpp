@@ -268,6 +268,11 @@ struct DetectedObjects {
   template <> const std::vector<Robot> &get() const { return robots; }
 };
 
+struct ToFReading {
+  float distance;
+  bool active;
+};
+
 class Robot {
   friend struct MoveAction;
   friend struct MoveArmAction;
@@ -460,6 +465,9 @@ class Robot {
       vision.color[DetectedObjects::Type::MARKER] = color;
   }
 
+  const std::vector<ToFReading> &get_tof_readings() { return tof_readings; }
+  virtual std::vector<ToFReading> read_tof() = 0;
+
  protected:
   IMU imu;
   Attitude attitude;
@@ -504,6 +512,8 @@ class Robot {
   std::map<std::string, std::unique_ptr<Action>> actions;
 
   hit_event_t hit_events;
+
+  std::vector<ToFReading> tof_readings;
 };
 
 #endif  // INCLUDE_ROBOT_HPP_

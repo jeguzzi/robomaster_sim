@@ -76,6 +76,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_subject<ArmSubject>();
   register_subject<GripperSubject>();
   register_subject<ServoSubject>();
+  register_subject<TofSubject>();
 
   spdlog::info("[Commands] Start listening on port {}", port);
   start();

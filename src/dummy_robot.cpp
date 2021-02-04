@@ -85,3 +85,5 @@ DetectedObjects DummyRobot::read_detected_objects() {
 }
 
 hit_event_t DummyRobot::read_hit_events() { return {{.index = 0, .type = 0}}; }
+
+std::vector<ToFReading> DummyRobot::read_tof() { return {{.active = true, .distance = 0.89}}; }
