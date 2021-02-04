@@ -59,6 +59,8 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_message<SetArmorParam>();
   register_message<VisionSetColor>();
   register_message<SensorGetData>();
+  register_message<ChassisSerialSet>();
+  register_message<ChassisSerialMsgSend>();
 
   // Currently not used by the robomaster Python library
   // register_message<ChassisSetWorkMode>();
@@ -88,6 +90,8 @@ Commands::~Commands() {}
 void Commands::add_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] add subscriber {}", node_id);
   armor_hit_event = std::make_unique<ArmorHitEvent>(this, robot, node_id);
+  // Disabled
+  // uart_event = std::make_unique<UARTEvent>(this, robot);
 }
 
 void Commands::reset_subscriber_node(uint8_t node_id) {
@@ -137,6 +141,8 @@ void Commands::do_step(float time_step) {
     vision_event->do_step(time_step);
   if (armor_hit_event)
     armor_hit_event->do_step(time_step);
+  if (uart_event)
+    uart_event->do_step(time_step);
 }
 
 VideoStreamer *Commands::get_video_streamer() { return robomaster->get_video_streamer(); }

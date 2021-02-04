@@ -14,6 +14,7 @@
 class RoboMaster;
 struct VisionEvent;
 struct ArmorHitEvent;
+struct UARTEvent;
 
 using boost::asio::ip::udp;
 
@@ -43,6 +44,7 @@ class Commands : public Server {
   RoboMaster *robomaster;
   std::unique_ptr<VisionEvent> vision_event;
   std::unique_ptr<ArmorHitEvent> armor_hit_event;
+  std::unique_ptr<UARTEvent> uart_event;
 };
 
 #endif  // INCLUDE_COMMAND_HPP__

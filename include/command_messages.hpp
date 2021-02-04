@@ -10,6 +10,7 @@
 
 #include <boost/asio.hpp>
 
+#include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
 
@@ -1032,6 +1033,84 @@ struct SensorGetData : Proto<0x3f, 0xf0> {
   static bool answer(const Request &request, Response &response, Robot *robot) {
     // NOTE: We are not simulating the sensors, just answering the query
     response.port = request.port;
+    return true;
+  }
+};
+
+struct ChassisSerialSet : Proto<0x3f, 0xc0> {
+  struct Request : RequestT {
+    uint8_t baud_rate = 0;
+    uint8_t data_bit = 0;
+    uint8_t odd_even = 0;
+    uint8_t stop_bit = 0;
+    uint8_t tx_en = 0;
+    uint8_t rx_en = 0;
+    uint16_t rx_size = 0;
+    uint16_t tx_size = 0;
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "SensorGetData::Request {"
+         << " baud_rate=" << (int)r.baud_rate << " data_bit=" << (int)r.data_bit
+         << " odd_even=" << (int)r.odd_even << " tx_en=" << (int)r.tx_en
+         << " rx_en=" << (int)r.rx_en << " rx_size=" << (int)r.rx_size
+         << " tx_size=" << (int)r.tx_size << " }";
+      return os;
+    }
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      stop_bit = (buffer[0] >> 7) & 0x1;
+      odd_even = (buffer[0] >> 5) & 0x3;
+      data_bit = (buffer[0] >> 3) & 0x3;
+      baud_rate = buffer[0] & 0x7;
+      tx_en = (buffer[1] >> 1) & 1;
+      rx_en = buffer[1] & 1;
+      rx_size = read<uint16_t>(buffer + 2);
+      tx_size = read<uint16_t>(buffer + 4);
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    // NOTE: We are not simulating the UART, just answering the query
+    return true;
+  }
+};
+
+struct ChassisSerialMsgSend : Proto<0x3f, 0xc1> {
+  struct Request : RequestT {
+    uint8_t msg_len;
+    uint8_t msg_type;
+    const uint8_t *msg_buf;
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "ChassisSerialMsgSend::Request {"
+         << " msg_type=" << (int)r.msg_type << " msg_len=" << (int)r.msg_len << " msg_buf=... }";
+      return os;
+    }
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      msg_type = buffer[0];
+      msg_len = read<uint16_t>(buffer + 1);
+      msg_buf = buffer + 3;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    // NOTE: We are not simulating the UART, just answering the query
+    spdlog::info(
+        "Received {} bytes to forward to UART {:n}", request.msg_len,
+        spdlog::to_hex(std::vector<uint8_t>(request.msg_buf, request.msg_buf + request.msg_len)));
     return true;
   }
 };

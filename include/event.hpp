@@ -1,6 +1,7 @@
 #ifndef INCLUDE_EVENT_HPP_
 #define INCLUDE_EVENT_HPP_
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -167,6 +168,36 @@ struct ArmorHitEvent : Event<ArmorHitEventMsg> {
   }
 
   uint8_t type;
+};
+
+struct UARTMessage : Proto<0x3f, 0xc1> {
+  struct Response : ResponseT {
+    Response(uint8_t sender, uint8_t receiver, uint16_t length, const uint8_t *buffer)
+        : ResponseT(sender, receiver)
+        , length(length)
+        , buffer(buffer, buffer + length) {}
+
+    uint16_t length;
+    std::vector<uint8_t> buffer;
+
+    std::vector<uint8_t> encode() {
+      buffer.insert(buffer.begin(), length & 0xFF);
+      buffer.insert(buffer.begin(), length >> 8);
+      buffer.insert(buffer.begin(), 1);
+      return buffer;
+    }
+  };
+};
+
+struct UARTEvent : Event<UARTMessage> {
+  UARTEvent(Commands *cmd, Robot *robot, uint8_t sender = 0xc9, uint8_t receiver = 0x66)
+      : Event(cmd, robot, sender, receiver) {}
+
+  std::vector<UARTMessage::Response> update_msg() {
+    std::vector<UARTMessage::Response> msgs;
+    msgs.emplace_back(sender, receiver, 5, (const uint8_t *)"Hello");
+    return msgs;
+  }
 };
 
 #endif  // INCLUDE_EVENT_HPP_
