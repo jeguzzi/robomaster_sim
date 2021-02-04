@@ -994,4 +994,46 @@ struct SetArmorParam : Proto<0x3f, 0x7> {
   static bool answer(const Request &request, Response &response, Robot *robot) { return true; }
 };
 
+struct SensorGetData : Proto<0x3f, 0xf0> {
+  struct Request : RequestT {
+    uint8_t port;
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "SensorGetData::Request {"
+         << " port=" << (int)r.port << " }";
+      return os;
+    }
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      port = buffer[0];
+    }
+  };
+
+  struct Response : ResponseT {
+    uint16_t adc;
+    uint8_t io;
+    uint32_t time;
+    uint8_t port;
+
+    std::vector<uint8_t> encode() {
+      std::vector<uint8_t> buffer(9, 0);
+      buffer[1] = port;
+      write<uint16_t>(buffer, 1, adc);
+      buffer[3] = io;
+      write<uint32_t>(buffer, 4, time);
+      return buffer;
+    }
+
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    // NOTE: We are not simulating the sensors, just answering the query
+    response.port = request.port;
+    return true;
+  }
+};
+
 #endif  // INCLUDE_COMMAND_MESSAGES_HPP_

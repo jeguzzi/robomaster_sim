@@ -58,6 +58,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_message<VisionDetectStatus>();
   register_message<SetArmorParam>();
   register_message<VisionSetColor>();
+  register_message<SensorGetData>();
 
   // Currently not used by the robomaster Python library
   // register_message<ChassisSetWorkMode>();
