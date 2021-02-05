@@ -1032,7 +1032,11 @@ struct SensorGetData : Proto<0x3f, 0xf0> {
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
     // NOTE: We are not simulating the sensors, just answering the query
+    // with values that mimic an unconnected sensor
     response.port = request.port;
+    response.adc = 548;
+    response.io = 0;
+    response.time = 793503;
     return true;
   }
 };
