@@ -1218,7 +1218,11 @@ struct ServoControl : Proto<0x33, 0x17> {
       value = read<uint16_t>(buffer + 2);
     }
 
-    inline float angular_speed() const { return angular_speed_from_rpm(value * 98 / 900 - 49); }
+    inline float angular_speed() const {
+      float v = static_cast<float>(value);
+      v = (v * 98) / 900 - 49;
+      return angular_speed_from_rpm(round(v));
+    }
   };
 
   struct Response : ResponseT {
@@ -1232,7 +1236,9 @@ struct ServoControl : Proto<0x33, 0x17> {
     }
     size_t servo_id = request.id - 1;
     robot->enable_servo(servo_id, request.enable);
-    robot->set_target_servo_angle(servo_id, request.angular_speed());
+    float speed = request.angular_speed();
+    spdlog::info("Should set target speed of servo {} to {}", servo_id, speed);
+    robot->set_target_servo_speed(servo_id, speed);
     return true;
   }
 };

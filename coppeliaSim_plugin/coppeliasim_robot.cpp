@@ -113,6 +113,7 @@ void CoppeliaSimRobot::update_servo_mode(size_t index, Servo::Mode mode) {
 
 void CoppeliaSimRobot::update_target_servo_speed(size_t index, float speed) {
   if (servo_motor) {
+    // spdlog::info("update_target_servo_speed {} {}", index, speed);
     simSetJointTargetVelocity(servo_motor[index], speed);
   }
 }

@@ -4,6 +4,8 @@
 
 #include "robot.hpp"
 
+#define CHECK_SERVO_LIMITS
+
 // TODO(jerome) [later] expose methods in lua to start an action (and enquire state)
 
 static Color breath_led(float _time, Color color, float period_1, float period_2) {
@@ -253,6 +255,7 @@ void Robot::do_step(float time_step) {
   }
 
   // Servos
+#ifndef CHECK_SERVO_LIMITS
   for (size_t i = 0; i < 2; i++) {
     Servo *servo = &servos[i];
     if (servo->mode != servo->desired_mode) {
@@ -272,17 +275,47 @@ void Robot::do_step(float time_step) {
       }
     }
   }
-
+#else
+  // TODO(J) we should prevent self collision too.
+  ServoValues<float> desired_angles;
+  for (size_t i = 0; i < 2; i++) {
+    Servo *servo = &servos[i];
+    if (servo->mode != servo->desired_mode) {
+      servo->mode = servo->desired_mode;
+      update_servo_mode(i, servo->mode);
+    }
+    if (servo->mode == Servo::SPEED) {
+      float desired_speed = servo->enabled ? servo->desired_speed : 0.0;
+      desired_angles[i] = servo->angle + desired_speed * time_step;
+    } else {
+      desired_angles[i] = servo->desired_angle;
+    }
+  }
+  desired_angles = limit_servo_angles(desired_angles);
+  for (size_t i = 0; i < 2; i++) {
+    Servo *servo = &servos[i];
+    if (servo->mode == Servo::SPEED) {
+      float desired_speed = servo->enabled ? (desired_angles[i] - servo->angle) / time_step : 0.0;
+      if (servo->target_speed != desired_speed) {
+        servo->target_speed = desired_speed;
+        update_target_servo_speed(i, desired_speed);
+      }
+    } else {
+      float desired_angle = desired_angles[i];
+      if (desired_angle != servo->target_angle) {
+        servo->target_angle = desired_angle;
+        update_target_servo_angle(i, servo->target_angle);
+      }
+    }
+  }
+#endif
+  // Gripper
   if (target_gripper_state != desired_gripper_state ||
       target_gripper_power != desired_gripper_power) {
     target_gripper_state = desired_gripper_state;
     target_gripper_power = desired_gripper_power;
     update_target_gripper(target_gripper_state, target_gripper_power);
   }
-
-  // arm
-  // Gripper
-  //
 
   if (vision.enabled) {
     vision.detected_objects = read_detected_objects();
