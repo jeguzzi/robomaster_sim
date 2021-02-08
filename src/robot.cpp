@@ -142,14 +142,41 @@ static ServoValues<float> inverse_arm_kinematics(const Vector3 &position,
   return angles;
 }
 
+ServoValues<float> limit_servo_angles(const ServoValues<float> &target_values) {
+  // spdlog::info("set_target_servo_angles {}", values);
+  // Limits:
+  // -0.2740 < right < 1.3840
+  // -0.7993 < left (< 1.7313)
+  // -0.3473 < right - left < 1.2147
+  ServoValues<float> values = target_values;
+  values.right = std::clamp(values.right, -0.2740f, 1.3840f);
+  values.left = std::clamp(values.left, -0.7993f, 1.7313f);
+  // distance from the (right - left) upper line
+  float dist = (values.right - values.left - 1.2147) / sqrt(2);
+  if (dist > 0) {
+    // compute nearest point on the line by moving down along (1, -1) by distance
+    values.right -= dist;
+    values.left += dist;
+  }
+  // distance from the (right - left) lower line
+  dist = (values.right - values.left + 0.3473) / sqrt(2);
+  if (dist < 0) {
+    // compute nearest point on the line by moving down along (1, -1) by distance
+    values.right -= dist;
+    values.left += dist;
+  }
+  return values;
+}
+
 Robot::Robot()
     : imu()
     , attitude()
     , camera()
     , vision()
     , target_wheel_speed()
-    , target_servo_angles()
+    , servos()
     , target_gripper_state(Robot::GripperStatus::pause)
+    , wheel_angles()
     , mode(Mode::FREE)
     , axis_x(0.1)
     , axis_y(0.1)
@@ -159,14 +186,11 @@ Robot::Robot()
     , body_twist()
     , desired_target_wheel_speed()
     , wheel_speeds()
-    , wheel_angles()
     , leds()
     , led_colors()
     , time_(0.0f)
     , desired_gripper_state(target_gripper_state)
     , callbacks()
-    , servo_angles()
-    , desired_servo_angles()
     , actions()
 // actions({{"move", nullptr}, {"move_arm", nullptr}, {"play_sound", nullptr}})
 {}
@@ -183,8 +207,11 @@ void Robot::do_step(float time_step) {
   // spdlog::info("imu {}", imu);
   update_attitude(time_step);
 
-  servo_angles = read_servo_angles();
-  servo_speeds = read_servo_speeds();
+  for (size_t i = 0; i < 2; i++) {
+    servos[i].angle = read_servo_angle(i);
+    servos[i].speed = read_servo_speed(i);
+  }
+
   update_arm_position(time_step);
 
   gripper_state = read_gripper_state();
@@ -225,11 +252,25 @@ void Robot::do_step(float time_step) {
     update_target_wheel_speeds(target_wheel_speed);
   }
 
-  // Arm
-  if (desired_servo_angles != target_servo_angles) {
-    // spdlog::debug("target_servo_angles -> desired_servo_angles = {}", desired_servo_angles);
-    target_servo_angles = desired_servo_angles;
-    update_target_servo_angles(target_servo_angles);
+  // Servos
+  for (size_t i = 0; i < 2; i++) {
+    Servo *servo = &servos[i];
+    if (servo->mode != servo->desired_mode) {
+      servo->mode = servo->desired_mode;
+      update_servo_mode(i, servo->mode);
+    }
+    if (servo->mode == Servo::SPEED) {
+      float desired_speed = servo->enabled ? servo->desired_speed : 0.0;
+      if (servo->target_speed != desired_speed) {
+        servo->target_speed = desired_speed;
+        update_target_servo_speed(i, desired_speed);
+      }
+    } else {
+      if (servo->desired_angle != servo->target_angle) {
+        servo->target_angle = servo->desired_angle;
+        update_target_servo_angle(i, servo->target_angle);
+      }
+    }
   }
 
   if (target_gripper_state != desired_gripper_state ||
@@ -288,7 +329,7 @@ void Robot::update_attitude(float time_step) {
 }
 
 void Robot::update_arm_position(float time_step) {
-  arm_position = forward_arm_kinematics(servo_angles);
+  arm_position = forward_arm_kinematics(get_servo_angles());
 }
 
 void Robot::set_target_wheel_speeds(const WheelSpeeds &speeds) {
@@ -316,37 +357,26 @@ void Robot::set_target_velocity(const Twist2D &twist) {
   set_target_wheel_speeds(speeds);
 }
 
-void Robot::set_target_servo_angles(const ServoValues<float> &target_values) {
-  // spdlog::info("set_target_servo_angles {}", values);
-  // Limits:
-  // -0.2740 < right < 1.3840
-  // -0.7993 < left (< 1.7313)
-  // -0.3473 < right - left < 1.2147
-  ServoValues<float> values = target_values;
-  values.right = std::clamp(values.right, -0.2740f, 1.3840f);
-  values.left = std::clamp(values.left, -0.7993f, 1.7313f);
-  // distance from the (right - left) upper line
-  float dist = (values.right - values.left - 1.2147) / sqrt(2);
-  if (dist > 0) {
-    // compute nearest point on the line by moving down along (1, -1) by distance
-    values.right -= dist;
-    values.left += dist;
-  }
-  // distance from the (right - left) lower line
-  dist = (values.right - values.left + 0.3473) / sqrt(2);
-  if (dist < 0) {
-    // compute nearest point on the line by moving down along (1, -1) by distance
-    values.right -= dist;
-    values.left += dist;
-  }
-  // spdlog::info("-> {}", values);
-  desired_servo_angles = values;
+void Robot::set_target_servo_angle(size_t index, float angle) {
+  // No limit checking
+  servos[index].desired_angle = angle;
+  servos[index].mode = Servo::ANGLE;
 }
 
-void Robot::set_target_arm_position(const Vector3 &position) {
+void Robot::set_target_servo_speed(size_t index, float speed) {
+  servos[index].desired_speed = speed;
+}
+
+void Robot::set_servo_mode(size_t index, Servo::Mode mode) { servos[index].desired_mode = mode; }
+
+void Robot::enable_servo(size_t index, bool value) { servos[index].enabled = value; }
+
+void Robot::control_arm_position(const Vector3 &position) {
   // no planning, just a dummy (direct) controller based on inverse kinematic
-  ServoValues<float> angles = inverse_arm_kinematics(position, arm_position, servo_angles);
-  set_target_servo_angles(angles);
+  ServoValues<float> angles = inverse_arm_kinematics(position, arm_position, get_servo_angles());
+  angles = limit_servo_angles(angles);
+  servos.left.desired_angle = angles.left;
+  servos.right.desired_angle = angles.right;
 }
 
 void Robot::set_enable_sdk(bool value) {
@@ -418,6 +448,11 @@ Action::State Robot::play_sound(uint32_t sound_id, uint8_t times) {
   return submit_action(std::move(a));
 }
 
+Action::State Robot::move_servo(uint8_t id, float target_angle) {
+  auto a = std::make_unique<MoveServoAction>(this, id, target_angle);
+  return submit_action(std::move(a));
+}
+
 Action::State Robot::submit_action(std::unique_ptr<MoveAction> action) {
   // TODO(jerome): What should we do if an action is already active?
   if (actions.count("move"))
@@ -441,7 +476,6 @@ Action::State Robot::submit_action(std::unique_ptr<MoveArmAction> action) {
 }
 
 Action::State Robot::submit_action(std::unique_ptr<PlaySoundAction> action) {
-  spdlog::info("here");
   // TODO(jerome): What should we do if an action is already active?
   if (actions.count("play_sound"))
     return Action::State::rejected;
@@ -450,6 +484,17 @@ Action::State Robot::submit_action(std::unique_ptr<PlaySoundAction> action) {
   actions.emplace("play_sound", std::move(action));
   spdlog::info("Start new PlaySoundAction");
   return actions["play_sound"]->state;
+}
+
+Action::State Robot::submit_action(std::unique_ptr<MoveServoAction> action) {
+  // TODO(jerome): What should we do if an action is already active?
+  if (actions.count("move_servo"))
+    return Action::State::rejected;
+  // actions["play_sound"] = action;
+  action->state = Action::State::started;
+  actions.emplace("move_servo", std::move(action));
+  spdlog::info("Start new MoveServoAction");
+  return actions["move_servo"]->state;
 }
 
 // Actions
@@ -512,11 +557,9 @@ void MoveArmAction::do_step(float time_step) {
     first = true;
   }
   if (state == Action::State::running) {
-    robot->set_target_arm_position(goal_position);
-    ServoValues<float> angles = robot->get_servo_angles();
-    ServoValues<float> target_angles = robot->desired_servo_angles;
-    remaining_duration = (abs(normalize(target_angles.right - angles.right)) +
-                          abs(normalize(target_angles.left - angles.left)));
+    robot->control_arm_position(goal_position);
+    Servos servos = robot->servos;
+    remaining_duration = servos.right.distance() + servos.left.distance();
     if (first)
       predicted_duration = remaining_duration;
     if (remaining_duration < 0.005) {
@@ -566,4 +609,27 @@ void PlaySoundAction::do_step(float time_step) {
       play_times--;
     }
   }
+}
+
+void MoveServoAction::do_step(float time_step) {
+  Servo *servo = &robot->servos[servo_id];
+  if (state == Action::State::started) {
+    state = Action::State::running;
+    spdlog::info("[Move Servo Action] set goal to {}", target_angle);
+    servo->desired_angle = target_angle;
+    predicted_duration = servo->distance();
+  }
+  if (state == Action::State::running) {
+    remaining_duration = servo->distance();
+    if (remaining_duration < 0.005 || time_left < 0) {
+      state = Action::State::succeed;
+      remaining_duration = 0;
+      spdlog::info("[Move Servo Action] done {} ~= {}", servo->angle, servo->desired_angle);
+    } else {
+      spdlog::info("[Move Servo Action] will continue for [{:.2f} rad / {:.2f} rad]",
+                   remaining_duration, predicted_duration);
+    }
+  }
+  current_angle = servo->angle;
+  time_left -= time_step;
 }

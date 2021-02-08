@@ -230,15 +230,15 @@ template <typename OStream, typename T> OStream &operator<<(OStream &os, const L
 
 inline unsigned key_from(uint8_t _set, uint8_t _cmd) { return _cmd + 256 * _set; }
 
-inline float angular_speed_from_rpm(int rpm) { return 2 * M_PI * rpm / 60.0; }
+constexpr float angular_speed_from_rpm(int rpm) { return 2 * M_PI * rpm / 60.0; }
 
 inline int rpm_from_angular_speed(int speed) {
   return static_cast<int>(round(speed * 60.0 / (2 * M_PI)));
 }
 
-inline float deg2rad(float value) { return M_PI * value / 180.0; }
+constexpr float deg2rad(float value) { return M_PI * value / 180.0; }
 
-inline float rad2deg(float value) { return 180.0 * value * M_1_PI; }
+constexpr float rad2deg(float value) { return 180.0 * value * M_1_PI; }
 
 template <typename T> T read(const uint8_t *buffer) {
   T value;
@@ -275,9 +275,9 @@ template <typename T> struct ServoValues {
   T &operator[](std::size_t idx) {
     switch (idx) {
     case 0:
-      return right;
-    case 1:
       return left;
+    case 1:
+      return right;
     default:
       throw std::out_of_range("Invalid position!");
     }
@@ -285,9 +285,9 @@ template <typename T> struct ServoValues {
   const T &operator[](std::size_t idx) const {
     switch (idx) {
     case 0:
-      return right;
-    case 1:
       return left;
+    case 1:
+      return right;
     default:
       throw std::out_of_range("Invalid position!");
     }
@@ -395,5 +395,26 @@ struct BoundingBox {
       , width(width)
       , height(height) {}
 };
+
+// The values at the RM reset position (maximal flexion)
+constexpr ServoValues<float> SERVO_RESET_ANGLES = {.right = -0.274016f, .left = 0.073304f};
+constexpr ServoValues<int> SERVO_RESET_VALUES = {.right = 1273, .left = 1242};
+constexpr float SERVO_RAD2UNIT = 325.95f;
+constexpr float SERVO_RAD_PER_SECOND2UNIT = 325.95f * 5.0f;
+constexpr ServoValues<float> SERVO_RESET_EXT_ANGLES = {
+    .right = static_cast<float>(SERVO_RESET_VALUES.right / SERVO_RAD2UNIT),
+    .left = static_cast<float>(SERVO_RESET_VALUES.left / SERVO_RAD2UNIT)};
+
+constexpr ServoValues<float> SERVO_BIASES = {
+    .right = SERVO_RESET_VALUES.right + SERVO_RAD2UNIT * SERVO_RESET_ANGLES.right,
+    .left = SERVO_RESET_VALUES.left + SERVO_RAD2UNIT * SERVO_RESET_ANGLES.left};
+
+inline int servo_speed_value(float speed) {
+  return static_cast<int>(round(-SERVO_RAD_PER_SECOND2UNIT * speed));
+}
+
+inline int servo_angle_value(size_t index, float angle) {
+  return static_cast<int>(round(-SERVO_RAD2UNIT * angle + SERVO_BIASES[index]));
+}
 
 #endif  // INCLUDE_UTILS_HPP_

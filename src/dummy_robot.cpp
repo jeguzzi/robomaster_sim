@@ -14,6 +14,20 @@ static std::vector<uint8_t> generate_strip_image(unsigned i0, unsigned i1, unsig
   return buffer;
 }
 
+void DummyRobot::do_step(float time_step) {
+  wheel_angles = get_wheel_angles() + target_wheel_speed * last_time_step;
+  ServoValues<float> angles;
+  for (size_t i = 0; i < 2; i++) {
+    angles[i] = servos[i].angle + servos[i].target_speed * time_step;
+  }
+  angles = limit_servo_angles(angles);
+  for (size_t i = 0; i < 2; i++) {
+    servos[i].speed = (angles[i] - servos[i].angle) / time_step;
+    servos[i].angle = angles[i];
+  }
+  Robot::do_step(time_step);
+}
+
 std::vector<uint8_t> DummyRobot::read_camera_image() {
   static unsigned seq = 0;
   seq = (seq + 1) % camera.width;
@@ -24,12 +38,7 @@ void DummyRobot::update_target_wheel_speeds(WheelSpeeds &speeds) {}
 
 WheelSpeeds DummyRobot::read_wheel_speeds() { return target_wheel_speed; }
 
-WheelValues<float> DummyRobot::read_wheel_angles() {
-  if (last_time_step) {
-    return get_wheel_angles() + target_wheel_speed * last_time_step;
-  }
-  return {};
-}
+WheelValues<float> DummyRobot::read_wheel_angles() { return wheel_angles; }
 
 void DummyRobot::update_led_colors(LEDColors &colors) {}
 
@@ -47,17 +56,26 @@ bool DummyRobot::set_camera_resolution(unsigned width, unsigned height) {
   return true;
 }
 
-void DummyRobot::update_target_servo_angles(const ServoValues<float> &angles) {}
+#define TAU 0.25
 
-ServoValues<float> DummyRobot::read_servo_angles() {
-  return {0.5f * (get_servo_angles().right + target_servo_angles.right),
-          0.5f * (get_servo_angles().left + target_servo_angles.left)};
+void DummyRobot::update_target_servo_angle(size_t index, float angle) {
+  Servo *servo = &servos[index];
+  float speed = (angle - servo->angle) / TAU;
+  update_target_servo_speed(index, speed);
+  // Hack to force control update
+  servo->target_angle = nanf("");
 }
 
-ServoValues<float> DummyRobot::read_servo_speeds() {
-  return {0.5f * (get_servo_angles().right + target_servo_angles.right) / last_time_step,
-          0.5f * (get_servo_angles().left + target_servo_angles.left) / last_time_step};
+void DummyRobot::update_target_servo_speed(size_t index, float speed) {
+  Servo *servo = &servos[index];
+  servo->target_speed = std::clamp(speed, -Servo::MAX_SPEED, Servo::MAX_SPEED);
 }
+
+float DummyRobot::read_servo_angle(size_t index) { return servos[index].angle; }
+
+float DummyRobot::read_servo_speed(size_t index) { return servos[index].speed; }
+
+void DummyRobot::update_servo_mode(size_t index, Servo::Mode mode) {}
 
 void DummyRobot::update_target_gripper(Robot::GripperStatus state, float power) {}
 

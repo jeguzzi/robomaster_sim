@@ -368,13 +368,6 @@ struct ServoSubject : SubjectWithUID<0x000200095f0059e7> {
   std::string name() { return "Servo"; }
 
   constexpr static int NUMBER_OF_SERVOS = 4;
-  // The values at the RM reset position (maximal flexion)
-  constexpr static ServoValues<float> reset_angles = {.right = -0.274016f, .left = 0.073304f};
-  constexpr static ServoValues<int> reset_values = {.right = 1273, .left = 1242};
-  constexpr static float rad2unit = 325.95f;
-  constexpr static ServoValues<float> biases = {
-      .right = reset_values.right + rad2unit * reset_angles.right,
-      .left = reset_values.left + rad2unit * reset_angles.left};
   // value = - angle * rad2unit + bias
   // reset_value = - reset_angle * rad2unit + bias =>
   // bias = reset_value + reset_angle * rad2unit
@@ -395,16 +388,14 @@ struct ServoSubject : SubjectWithUID<0x000200095f0059e7> {
   }
 
   void update(Robot *robot) {
-    ServoValues<float> _speeds = robot->get_servo_speeds();
-    speed[0] = round(rad2unit * _speeds.left);
-    speed[1] = round(rad2unit * _speeds.right);
-    ServoValues<float> _angles = robot->get_servo_angles();
-    // spdlog::info("Servo angles {}", _angles);
-    angle[0] = round(-rad2unit * _angles.left + biases.left);
-    angle[1] = round(-rad2unit * _angles.right + biases.right);
-    valid[0] = valid[1] = 1;
-    valid[2] = valid[3] = 0;
-    // spdlog::info("-> Servo values {} {}", angle[0], angle[1]);
+    for (size_t i = 0; i < 2; i++) {
+      angle[i] = servo_angle_value(i, robot->get_servo_angle(i));
+      speed[i] = servo_speed_value(robot->get_servo_speed(i));
+      valid[i] = 1;
+    }
+    for (size_t i = 2; i < 4; i++) {
+      angle[i] = speed[i] = valid[i] = 0;
+    }
   }
 };
 

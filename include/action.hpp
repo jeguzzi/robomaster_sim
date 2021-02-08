@@ -186,4 +186,40 @@ struct PlaySoundActionSDK : PlaySoundAction, ActionSDK<PlaySoundPush> {
   }
 };
 
+struct ServoCtrlPush : Proto<0x3f, 0xb8> {
+  struct Response : ResponseT {
+    uint8_t action_id;
+    uint8_t percent;
+    uint8_t action_state;
+    int32_t value;
+
+    std::vector<uint8_t> encode() {
+      std::vector<uint8_t> buffer(11, 7);
+      buffer[0] = action_id;
+      buffer[1] = percent;
+      buffer[2] = action_state;
+      write<int32_t>(buffer, 3, value);
+      return buffer;
+    }
+    using ResponseT::ResponseT;
+  };
+};
+
+struct MoveServoActionSDK : MoveServoAction, ActionSDK<ServoCtrlPush> {
+  MoveServoActionSDK(Commands *cmd, uint8_t id, float frequency,
+                     std::unique_ptr<ServoCtrlPush::Response> push, Robot *robot, uint8_t servo_id,
+                     int32_t angle)
+      : MoveServoAction(robot, servo_id, angle)
+      , ActionSDK<ServoCtrlPush>(cmd, id, frequency, std::move(push), this) {
+    action = this;
+  }
+
+  void update_msg() {
+    push_msg->value = servo_angle_value(servo_id, current_angle);
+    push_msg->percent = std::max(
+        0, static_cast<int>(100 - round(100.0f * remaining_duration / predicted_duration)));
+    push_msg->action_state = state;
+  }
+};
+
 #endif  // INCLUDE_ACTION_HPP_

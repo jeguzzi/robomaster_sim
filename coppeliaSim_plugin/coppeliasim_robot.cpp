@@ -95,31 +95,42 @@ bool CoppeliaSimRobot::set_camera_resolution(unsigned width, unsigned height) {
   return true;
 }
 
-void CoppeliaSimRobot::update_target_servo_angles(const ServoValues<float> &angles) {
+void CoppeliaSimRobot::update_target_servo_angle(size_t index, float angle) {
   if (servo_motor) {
-    simSetJointTargetPosition(servo_motor.right, angles.right);
-    simSetJointTargetPosition(servo_motor.left, angles.left);
+    simSetJointTargetPosition(servo_motor[index], angle);
   }
 }
 
-ServoValues<float> CoppeliaSimRobot::read_servo_angles() {
+void CoppeliaSimRobot::update_servo_mode(size_t index, Servo::Mode mode) {
   if (servo_motor) {
-    ServoValues<float> angles;
-    simGetJointPosition(servo_motor.right, &angles.right);
-    simGetJointPosition(servo_motor.left, &angles.left);
-    return angles;
+    if (mode == Servo::ANGLE) {
+      simSetObjectInt32Parameter(servo_motor[index], sim_jointintparam_ctrl_enabled, 1);
+    } else {
+      simSetObjectInt32Parameter(servo_motor[index], sim_jointintparam_ctrl_enabled, 0);
+    }
   }
-  return {};
 }
 
-ServoValues<float> CoppeliaSimRobot::read_servo_speeds() {
+void CoppeliaSimRobot::update_target_servo_speed(size_t index, float speed) {
   if (servo_motor) {
-    ServoValues<float> speeds;
-    simGetObjectFloatParameter(servo_motor.right, sim_jointfloatparam_velocity, &speeds.right);
-    simGetObjectFloatParameter(servo_motor.left, sim_jointfloatparam_velocity, &speeds.left);
-    return speeds;
+    simSetJointTargetVelocity(servo_motor[index], speed);
   }
-  return {};
+}
+
+float CoppeliaSimRobot::read_servo_angle(size_t index) {
+  float angle = 0;
+  if (servo_motor) {
+    simGetJointPosition(servo_motor[index], &angle);
+  }
+  return angle;
+}
+
+float CoppeliaSimRobot::read_servo_speed(size_t index) {
+  float speed = 0;
+  if (servo_motor) {
+    simGetObjectFloatParameter(servo_motor[index], sim_jointfloatparam_velocity, &speed);
+  }
+  return speed;
 }
 
 void CoppeliaSimRobot::update_target_gripper(Robot::GripperStatus state, float power) {

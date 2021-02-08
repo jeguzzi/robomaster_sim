@@ -99,6 +99,20 @@ struct PlaySoundAction : Action {
   uint8_t play_times;
 };
 
+struct MoveServoAction : Action {
+  static constexpr float MAX_DURATION = 5.0;
+  MoveServoAction(Robot *robot, size_t servo_id, float target_angle)
+      : Action(robot)
+      , servo_id(servo_id)
+      , target_angle(target_angle)
+      , time_left(MAX_DURATION) {}
+  virtual void do_step(float time_step);
+  size_t servo_id;
+  float target_angle;
+  float current_angle;
+  float time_left;
+};
+
 // static unsigned char multiply(unsigned char value, float factor)
 // {
 //   float v = (float) value * factor;
@@ -273,10 +287,33 @@ struct ToFReading {
   bool active;
 };
 
+struct Servo {
+  enum Mode { SPEED = 1, ANGLE = 0 };
+
+  constexpr static float MAX_SPEED = angular_speed_from_rpm(49);
+
+  inline float distance() { return abs(normalize(angle - desired_angle)); }
+
+  float angle;
+  float target_angle;
+  float desired_angle;
+  float speed;
+  float target_speed;
+  float desired_speed;
+  Mode mode;
+  Mode desired_mode;
+  bool enabled;
+};
+
+using Servos = ServoValues<Servo>;
+
+ServoValues<float> limit_servo_angles(const ServoValues<float> &target_values);
+
 class Robot {
   friend struct MoveAction;
   friend struct MoveArmAction;
   friend struct PlaySoundAction;
+  friend struct MoveServoAction;
 
  public:
   struct Camera {
@@ -335,7 +372,7 @@ class Robot {
   virtual IMU read_imu() = 0;
   // virtual void control_gripper(GripperStatus state, float power) = 0;
 
-  void do_step(float time_step);
+  virtual void do_step(float time_step);
 
   void update_odometry(float time_step);
   void update_attitude(float time_step);
@@ -411,6 +448,7 @@ class Robot {
   Action::State submit_action(std::unique_ptr<MoveAction> action);
   Action::State submit_action(std::unique_ptr<MoveArmAction> action);
   Action::State submit_action(std::unique_ptr<PlaySoundAction> action);
+  Action::State submit_action(std::unique_ptr<MoveServoAction> action);
 
   bool start_streaming(unsigned width, unsigned height);
   bool stop_streaming();
@@ -420,16 +458,23 @@ class Robot {
   virtual Image read_camera_image() = 0;
 
   void set_target_servo_angles(const ServoValues<float> &angles);
+  void set_target_servo_angle(size_t index, float angle);
+  void set_target_servo_speed(size_t index, float speed);
+  void set_servo_mode(size_t index, Servo::Mode mode);
+  void enable_servo(size_t index, bool value);
+  float get_servo_angle(size_t index) { return servos[index].angle; }
+  float get_servo_speed(size_t index) { return servos[index].speed; }
+  ServoValues<float> get_servo_angles() {
+    return {.left = servos.left.angle, .right = servos.right.angle};
+  }
+  virtual void update_servo_mode(size_t index, Servo::Mode mode) = 0;
 
-  ServoValues<float> get_servo_angles() { return servo_angles; }
+  void control_arm_position(const Vector3 &position);
 
-  ServoValues<float> get_servo_speeds() { return servo_speeds; }
-
-  void set_target_arm_position(const Vector3 &position);
-
-  virtual void update_target_servo_angles(const ServoValues<float> &angles) = 0;
-  virtual ServoValues<float> read_servo_angles() = 0;
-  virtual ServoValues<float> read_servo_speeds() = 0;
+  virtual void update_target_servo_angle(size_t index, float angle) = 0;
+  virtual void update_target_servo_speed(size_t index, float speed) = 0;
+  virtual float read_servo_angle(size_t index) = 0;
+  virtual float read_servo_speed(size_t index) = 0;
 
   void update_arm_position(float time_step);
 
@@ -446,6 +491,7 @@ class Robot {
   Action::State move_base(const Pose2D &pose, float linear_speed, float angular_speed);
   Action::State move_arm(float x, float z, bool absolute);
   Action::State play_sound(uint32_t sound_id, uint8_t times);
+  Action::State move_servo(uint8_t id, float target_angle);
 
   void add_callback(Callback callback) { callbacks.push_back(callback); }
 
@@ -474,10 +520,11 @@ class Robot {
   Camera camera;
   Vision vision;
   WheelSpeeds target_wheel_speed;
-  ServoValues<float> target_servo_angles;
+  ServoValues<Servo> servos;
   GripperStatus target_gripper_state;
   float target_gripper_power;
   float last_time_step;
+  WheelValues<float> wheel_angles;
 
  private:
   Mode mode;
@@ -492,7 +539,6 @@ class Robot {
   Twist2D body_twist;
   WheelSpeeds desired_target_wheel_speed;
   WheelSpeeds wheel_speeds;
-  WheelValues<float> wheel_angles;
   LED leds;
   LEDColors led_colors;
 
@@ -506,9 +552,6 @@ class Robot {
 
   std::vector<Callback> callbacks;
 
-  ServoValues<float> servo_angles;
-  ServoValues<float> desired_servo_angles;
-  ServoValues<float> servo_speeds;
   std::map<std::string, std::unique_ptr<Action>> actions;
 
   hit_event_t hit_events;

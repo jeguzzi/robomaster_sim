@@ -30,9 +30,11 @@ class CoppeliaSimRobot : public Robot {
   void has_read_accelerometer(float, float, float);
   void has_read_gyro(float, float, float);
   void update_orientation(float, float, float);
-  void update_target_servo_angles(const ServoValues<float> &angles);
-  ServoValues<float> read_servo_angles();
-  ServoValues<float> read_servo_speeds();
+  void update_target_servo_angle(size_t index, float angle);
+  void update_target_servo_speed(size_t index, float speed);
+  void update_servo_mode(size_t index, Servo::Mode mode);
+  float read_servo_angle(size_t index);
+  float read_servo_speed(size_t index);
   void update_target_gripper(GripperStatus state, float power);
   GripperStatus read_gripper_state();
   DetectedObjects read_detected_objects();

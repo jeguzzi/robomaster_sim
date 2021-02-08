@@ -1085,7 +1085,7 @@ struct ChassisSerialSet : Proto<0x3f, 0xc0> {
   }
 };
 
-struct ChassisSerialMsgSend : Proto<0x3f, 0xc1> {
+struct ChassisSerialMsgSend : Proto<0x3f, 0x15> {
   struct Request : RequestT {
     uint8_t msg_len;
     uint8_t msg_type;
@@ -1116,6 +1116,187 @@ struct ChassisSerialMsgSend : Proto<0x3f, 0xc1> {
         "Received {} bytes to forward to UART {:n}", request.msg_len,
         spdlog::to_hex(std::vector<uint8_t>(request.msg_buf, request.msg_buf + request.msg_len)));
     return true;
+  }
+};
+
+struct ServoGetAngle : Proto<0x33, 0x15> {
+  struct Request : RequestT {
+    uint8_t id;
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "ServoGetAngle::Request {"
+         << " id=" << (int)r.id << " }";
+      return os;
+    }
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      id = (buffer[0] >> 5);
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+    uint32_t angle;
+
+    std::vector<uint8_t> encode() {
+      std::vector<uint8_t> buffer(5, 0);
+      uint32_t value = 10 * angle;
+      for (size_t i = 0; i < 4; i++) {
+        buffer[i + 1] = (value >> (8 * i)) & 0xFF;
+      }
+      return buffer;
+    }
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    if (request.id != 1 && request.id != 2) {
+      // Should I return false?
+      return true;
+    }
+    // Attention!
+    uint8_t servo_id = request.id - 1;
+    response.angle = servo_angle_value(servo_id, robot->get_servo_angle(servo_id));
+    return true;
+  }
+};
+
+struct ServoModeSet : Proto<0x33, 0x16> {
+  struct Request : RequestT {
+    uint8_t id;
+    uint8_t mode;
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "ServoModeSet::Request {"
+         << " id=" << (int)r.id << " mode=" << (int)r.mode << " }";
+      return os;
+    }
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      id = buffer[0] >> 5;
+      mode = buffer[1];
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    if (request.id != 1 && request.id != 2) {
+      // Should I return false?
+      return true;
+    }
+    Servo::Mode mode = Servo::ANGLE;
+    if (request.mode)
+      mode = Servo::SPEED;
+    robot->set_servo_mode(request.id - 1, mode);
+    return true;
+  }
+};
+
+struct ServoControl : Proto<0x33, 0x17> {
+  struct Request : RequestT {
+    uint8_t id;
+    uint8_t enable;
+    uint16_t value;
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "ServoModeSet::Request {"
+         << " id=" << (int)r.id << " enable=" << (int)r.enable << " value=" << (int)r.value << " }";
+      return os;
+    }
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      id = buffer[0] >> 5;
+      enable = buffer[1];
+      value = read<uint16_t>(buffer + 2);
+    }
+
+    inline float angular_speed() const { return angular_speed_from_rpm(value * 98 / 900 - 49); }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    if (request.id != 1 && request.id != 2) {
+      // Should I return false?
+      return true;
+    }
+    size_t servo_id = request.id - 1;
+    robot->enable_servo(servo_id, request.enable);
+    robot->set_target_servo_angle(servo_id, request.angular_speed());
+    return true;
+  }
+};
+
+struct ServoCtrlSet : Proto<0x3f, 0xb7> {
+  struct Request : RequestT {
+    uint8_t action_id;
+    uint8_t action_ctrl;
+    uint8_t freq;
+    uint8_t servo_id;
+    int32_t value;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      action_id = buffer[0];
+      action_ctrl = buffer[1] & 0x3;
+      freq = buffer[1] >> 2;
+      servo_id = buffer[2] >> 5;
+      value = read<int32_t>(buffer + 3);
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "SetSystemLed::Request {"
+         << " action_id=" << (int)r.action_id << " action_ctrl=" << (int)r.action_ctrl
+         << " freq=" << (int)r.freq << " servo_id=" << (int)r.servo_id << " value=" << r.value
+         << "}";
+      return os;
+    }
+
+    inline float angle() const {
+      return SERVO_RESET_ANGLES[servo_id] + SERVO_RESET_EXT_ANGLES[servo_id] -
+             deg2rad(value / 10.0 - 180.0);
+    }
+  };
+
+  struct Response : ResponseT {
+    bool accept;
+
+    std::vector<uint8_t> encode() { return {0, accept}; }
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
+    if (request.servo_id != 1 && request.servo_id != 2) {
+      // Should I return false?
+      return true;
+    }
+    size_t servo_index = request.servo_id - 1;
+    if (request.action_ctrl == 0) {
+      auto push = std::make_unique<ServoCtrlPush::Response>(request);
+      push->is_ack = false;
+      push->need_ack = 0;
+      push->seq_id = 0;
+      auto a = std::make_unique<MoveServoActionSDK>(
+          cmd, request.action_id, static_cast<float>(request.freq), std::move(push), robot,
+          servo_index, request.angle());
+      response.accept = accept_code(robot->submit_action(std::move(a)));
+      return true;
+    } else {
+      // Cancel (not implemented in client yet)
+      spdlog::warn("Cancel action not implemented yet");
+      return true;
+    }
   }
 };
 

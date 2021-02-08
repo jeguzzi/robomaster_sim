@@ -61,6 +61,10 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_message<SensorGetData>();
   register_message<ChassisSerialSet>();
   register_message<ChassisSerialMsgSend>();
+  register_message<ServoGetAngle>();
+  register_message<ServoModeSet>();
+  register_message<ServoControl>();
+  register_message<ServoCtrlSet, Commands *>(this);
 
   // Currently not used by the robomaster Python library
   // register_message<ChassisSetWorkMode>();
