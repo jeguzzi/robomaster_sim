@@ -490,8 +490,8 @@ class Robot {
 
   Action::State move_base(const Pose2D &pose, float linear_speed, float angular_speed);
   Action::State move_arm(float x, float z, bool absolute);
-  Action::State play_sound(uint32_t sound_id, uint8_t times);
-  Action::State move_servo(uint8_t id, float target_angle);
+  Action::State play_sound(unsigned sound_id, unsigned times);
+  Action::State move_servo(size_t id, float target_angle);
 
   void add_callback(Callback callback) { callbacks.push_back(callback); }
 

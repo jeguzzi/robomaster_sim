@@ -1270,8 +1270,10 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
     }
 
     inline float angle() const {
-      return SERVO_RESET_ANGLES[servo_id] + SERVO_RESET_EXT_ANGLES[servo_id] -
-             deg2rad(value / 10.0 - 180.0);
+      if (servo_id == 1 || servo_id == 2)
+        return SERVO_RESET_ANGLES[servo_id - 1] + SERVO_RESET_EXT_ANGLES[servo_id - 1] -
+               deg2rad(value / 10.0 - 180.0);
+      return 0.0;
     }
   };
 
@@ -1283,6 +1285,7 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
+    spdlog::info("Move servo action? {}", request);
     if (request.servo_id != 1 && request.servo_id != 2) {
       // Should I return false?
       return true;

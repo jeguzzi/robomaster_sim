@@ -207,8 +207,8 @@ struct ServoCtrlPush : Proto<0x3f, 0xb8> {
 
 struct MoveServoActionSDK : MoveServoAction, ActionSDK<ServoCtrlPush> {
   MoveServoActionSDK(Commands *cmd, uint8_t id, float frequency,
-                     std::unique_ptr<ServoCtrlPush::Response> push, Robot *robot, uint8_t servo_id,
-                     int32_t angle)
+                     std::unique_ptr<ServoCtrlPush::Response> push, Robot *robot, size_t servo_id,
+                     float angle)
       : MoveServoAction(robot, servo_id, angle)
       , ActionSDK<ServoCtrlPush>(cmd, id, frequency, std::move(push), this) {
     action = this;

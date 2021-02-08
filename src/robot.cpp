@@ -476,12 +476,12 @@ Action::State Robot::move_arm(float x, float z, bool absolute) {
   return submit_action(std::move(a));
 }
 
-Action::State Robot::play_sound(uint32_t sound_id, uint8_t times) {
+Action::State Robot::play_sound(unsigned sound_id, unsigned times) {
   auto a = std::make_unique<PlaySoundAction>(this, sound_id, times);
   return submit_action(std::move(a));
 }
 
-Action::State Robot::move_servo(uint8_t id, float target_angle) {
+Action::State Robot::move_servo(size_t id, float target_angle) {
   auto a = std::make_unique<MoveServoAction>(this, id, target_angle);
   return submit_action(std::move(a));
 }
@@ -645,6 +645,7 @@ void PlaySoundAction::do_step(float time_step) {
 }
 
 void MoveServoAction::do_step(float time_step) {
+  // spdlog::info("[Move Servo Action] update {}", servo_id);
   Servo *servo = &robot->servos[servo_id];
   if (state == Action::State::started) {
     state = Action::State::running;
