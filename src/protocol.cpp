@@ -68,7 +68,7 @@ static uint16_t crc16_calc(const uint8_t *data, unsigned length) {
 }
 
 std::vector<uint8_t> ResponseT::encode_msg(uint8_t set, uint8_t id) {
-  // TODO(jerome): do I need to treat differently the request/no-ack case?
+  // TODO(Jerome): do I need to treat differently the request/no-ack case?
   auto payload = encode();
   // spdlog::debug("Payload of size {}", payload.size());
   size_t len = 13 + payload.size();

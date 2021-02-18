@@ -1,7 +1,7 @@
 #ifndef INCLUDE_ROBOT_HPP_
 #define INCLUDE_ROBOT_HPP_
 
-// TODO(jerome): make sure we are not uselessly copying images
+// TODO(Jerome): make sure we are not uselessly copying images
 
 #include <algorithm>
 #include <array>
@@ -114,7 +114,7 @@ struct MoveServoAction : Action {
 };
 
 struct MoveGimbalAction : Action {
-  // TODO(jerome): coordinate frame is tentative
+  // TODO(Jerome): coordinate frame is tentative
   MoveGimbalAction(Robot *robot, float target_yaw, float target_pitch, float yaw_speed,
                    float pitch_speed, bool absolute = false)
       : Action(robot)
@@ -265,7 +265,7 @@ struct DetectedObjects {
     BoundingBox bounding_box;
     uint16_t id;
     uint16_t distance;
-    // TODO(I don't know the distance encoding)
+    // TODO(Jerome): I don't know the distance encoding
     Marker(BoundingBox bounding_box, uint16_t id, float distance)
         : bounding_box(bounding_box)
         , id(id)
@@ -539,7 +539,7 @@ class Robot {
   // ignored for now:
   // color {1: red, 2: green, 3: blue}
   // type {1: line, 2: marker}
-  // TODO(jerome): attention that this enum is different that the one used in vision type
+  // TODO(Jerome): attention that this enum is different that the one used in vision type
   void set_vision_color(uint8_t type, uint8_t _color) {
     Vision::Color color = static_cast<Vision::Color>(_color);
     if (type == 1)

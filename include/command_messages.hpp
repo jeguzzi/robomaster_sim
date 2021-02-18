@@ -138,7 +138,7 @@ struct GetSn : Proto<0x0, 0x51> {
     }
   };
 
-  // TODO(jerome): not sure about the string serialization (should be utf-8)
+  // TODO(Jerome): not sure about the string serialization (should be utf-8)
   struct Response : ResponseT {
     std::string serial_number;
 
@@ -598,7 +598,7 @@ struct ChassisSpeedMode : Proto<0x3f, 0x21> {
   static bool answer(const Request &request, Response &response, Robot *robot) {
     Twist2D value{request.x_spd, -request.y_spd, -deg2rad(request.z_spd)};
     robot->set_target_velocity(value);
-    // TODO(jerome): check if it's a bug that it send a request that does not require an ack
+    // TODO(Jerome): check if it's a bug that it send a request that does not require an ack
     response.is_ack = true;
     response.need_ack = 0;
     return true;
@@ -1455,7 +1455,6 @@ struct GimbalCtrl : Proto<0x4, 0xd> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    // TODO(jerome): complete
     if (request.order_code == SUSPEND) {
       robot->enable_gimbal(false);
       return true;
@@ -1476,7 +1475,7 @@ struct GimbalRotate : Proto<0x3f, 0xb0> {
     uint8_t yaw_valid;
     uint8_t roll_valid;
     uint8_t pitch_valid;
-    // TODO(jerome): complete (as currently ignored)
+    // TODO(Jerome): complete as `coordinate` is currently ignored
     uint8_t coordinate;
     int16_t yaw;
     int16_t roll;

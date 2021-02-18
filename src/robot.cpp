@@ -6,7 +6,7 @@
 
 #define CHECK_SERVO_LIMITS
 
-// TODO(jerome) [later] expose methods in lua to start an action (and enquire state)
+// TODO(Jerome) [later] expose methods in lua to start an action (and enquire state)
 
 static Color breath_led(float _time, Color color, float period_1, float period_2) {
   float f;
@@ -63,7 +63,7 @@ void ActiveLED::do_step(float time_step) {
   _time = _time + time_step;
   if (!loop && _time > period) {
     active = false;
-    // TODO(jerome): Check which color at the end of an effect
+    // TODO(Jerome): Check which color at the end of an effect
     return;
   }
   _time = fmod(_time, period);
@@ -277,7 +277,7 @@ void Robot::do_step(float time_step) {
     }
   }
 #else
-  // TODO(J) we should prevent self collision too.
+  // TODO(Jerome): we should prevent self collision too.
   ServoValues<float> desired_angles;
   for (size_t i = 0; i < 2; i++) {
     Servo *servo = &servos[i];
@@ -317,7 +317,7 @@ void Robot::do_step(float time_step) {
     target_gripper_power = desired_gripper_power;
     update_target_gripper(target_gripper_state, target_gripper_power);
   }
-  // TODO(jerome): complete Gimbal. Can we use the same interface as servos?
+  // TODO(Jerome): complete Gimbal. Can we use the same interface as servos?
   //
   // if (gimbal->mode == Gimbal::SPEED) {
   //   Vector3 desired_gimbal_speed = gimbal->enabled ? gimbal->desired_angular_speed : {};
@@ -329,10 +329,7 @@ void Robot::do_step(float time_step) {
   if (vision.enabled) {
     vision.detected_objects = read_detected_objects();
   }
-  // else {
-  //   // TODO(J) inefficiant?
-  //   vision.detected_objects = {};
-  // }
+
   hit_events = read_hit_events();
   ir_events = read_ir_events();
   tof_readings = read_tof();
@@ -367,7 +364,7 @@ void Robot::update_attitude(float time_step) {
   // use [imu] attitude as a source for odometry angular data:
   odometry.twist.theta = imu.angular_velocity.z;
   odometry.pose.theta = attitude.yaw;
-  // TODO(jerome): body twist too
+  // TODO(Jerome): body twist too
   // spdlog::info("update_attitude {}, {}", imu.attitude.yaw,  odometry.pose);
 }
 
@@ -518,7 +515,7 @@ Action::State Robot::move_gimbal(float target_yaw, float target_pitch, float yaw
 }
 
 Action::State Robot::submit_action(std::unique_ptr<MoveAction> action) {
-  // TODO(jerome): What should we do if an action is already active?
+  // TODO(Jerome): What should we do if an action is already active?
   if (actions.count("move"))
     return Action::State::rejected;
   // actions["move"] = std::move(action);
@@ -529,7 +526,7 @@ Action::State Robot::submit_action(std::unique_ptr<MoveAction> action) {
 }
 
 Action::State Robot::submit_action(std::unique_ptr<MoveArmAction> action) {
-  // TODO(jerome): What should we do if an action is already active?
+  // TODO(Jerome): What should we do if an action is already active?
   if (actions.count("move_arm"))
     return Action::State::rejected;
   // actions["move_arm"] = action;
@@ -540,7 +537,7 @@ Action::State Robot::submit_action(std::unique_ptr<MoveArmAction> action) {
 }
 
 Action::State Robot::submit_action(std::unique_ptr<PlaySoundAction> action) {
-  // TODO(jerome): What should we do if an action is already active?
+  // TODO(Jerome): What should we do if an action is already active?
   if (actions.count("play_sound"))
     return Action::State::rejected;
   // actions["play_sound"] = action;
@@ -551,7 +548,7 @@ Action::State Robot::submit_action(std::unique_ptr<PlaySoundAction> action) {
 }
 
 Action::State Robot::submit_action(std::unique_ptr<MoveServoAction> action) {
-  // TODO(jerome): What should we do if an action is already active?
+  // TODO(Jerome): What should we do if an action is already active?
   if (actions.count("move_servo"))
     return Action::State::rejected;
   // actions["play_sound"] = action;
@@ -562,7 +559,7 @@ Action::State Robot::submit_action(std::unique_ptr<MoveServoAction> action) {
 }
 
 Action::State Robot::submit_action(std::unique_ptr<MoveGimbalAction> action) {
-  // TODO(jerome): What should we do if an action is already active?
+  // TODO(Jerome): What should we do if an action is already active?
   if (actions.count("move_gimbal"))
     return Action::State::rejected;
   // actions["move"] = std::move(action);
@@ -724,8 +721,6 @@ void MoveGimbalAction::do_step(float time_step) {
   }
   if (state == Action::State::running) {
     remaining_duration = gimbal->distance();
-    // TODO(jerome): remove, just for test
-    remaining_duration = 0.0;
     if (remaining_duration < 0.005) {
       state = Action::State::succeed;
       remaining_duration = 0;

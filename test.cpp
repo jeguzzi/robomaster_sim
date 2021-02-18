@@ -58,14 +58,9 @@ int main(int argc, char **argv) {
       return 0;
     }
   }
-  // TODO(spdlog bug?): not working here vs in robomaster constructor whyyyy?
-  // spdlog::set_level(spdlog::level::debug);
-  // spdlog::cfg::load_env_levels();
-  // std::cout << "LOG_LEVEL " << spdlog::level::from_str(log_level) << std::endl;
+
   auto io_context = std::make_shared<boost::asio::io_context>();
-  // Get ignored
   spdlog::set_level(spdlog::level::from_str(log_level));
-  // std::cout << "LOG_LEVEL" << spdlog::get_level() << std::endl;
   RealTimeDummyRobot dummy(io_context.get(), 0.05);
   RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, armor_hits,
                    ir_hits);

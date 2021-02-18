@@ -92,7 +92,7 @@ struct MoveActionSDK : MoveAction, ActionSDK<PositionPush> {
     }
     push_msg->action_state = state;
     // std::cout << "current: " << current << std::endl;
-    // TODO(jerome): check if coherent with real robot
+    // TODO(Jerome): check if coherent with real robot
     Pose2D current = robot->get_pose();
     push_msg->pos_x = (int16_t)round(100 * current.x);
     push_msg->pos_y = -(int16_t)round(100 * current.y);
@@ -142,7 +142,7 @@ struct MoveArmActionSDK : MoveArmAction, ActionSDK<RoboticArmMovePush> {
     }
     push_msg->action_state = state;
     // std::cout << "current: " << current_position << std::endl;
-    // TODO(jerome): check if coherent with real robot
+    // TODO(Jerome): check if coherent with real robot
     Vector3 current_position = robot->get_arm_position();
     push_msg->x = (int32_t)round(1000 * current_position.x);
     push_msg->y = (int32_t)round(1000 * current_position.z);

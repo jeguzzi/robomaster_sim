@@ -273,7 +273,7 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
   }
 
   void update(Robot *robot) {
-    // TODO(jerome): Tentative. Some flags are still not clear
+    // TODO(Jerome): Tentative. Some flags are still not clear
     auto speeds = robot->get_wheel_speeds();
     static_flag = true;
     for (size_t i = 0; i < 4; i++) {
@@ -347,7 +347,8 @@ struct GripperSubject : SubjectWithUID<0x00020009124d156a> {
 };
 
 struct ArmSubject : SubjectWithUID<0x0002000926abd64d> {
-  std::string name() { return "Arm"; }  // [mm], TODO(jerome): check
+  std::string name() { return "Arm"; }
+  // [mm], TODO(Jerome): check
   uint32_t pos_x, pos_y;
 
   std::vector<uint8_t> encode() {
