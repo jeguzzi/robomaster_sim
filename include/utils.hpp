@@ -46,6 +46,19 @@ struct Vector3 {
   inline float norm() const { return sqrt(x * x + y * y + z * z); }
 };
 
+struct Attitude {
+  float yaw, pitch, roll;
+
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Attitude &v) {
+    os << "Attitude <" << v.yaw << ", " << v.pitch << ", " << v.roll << " >";
+    return os;
+  }
+
+  inline Attitude operator+(Attitude v) const {
+    return {yaw + v.yaw, pitch + v.pitch, roll + v.roll};
+  }
+};
+
 struct Twist2D {
   float x, y, theta;
 

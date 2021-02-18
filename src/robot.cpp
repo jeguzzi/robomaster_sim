@@ -179,6 +179,7 @@ Robot::Robot()
     , servos()
     , target_gripper_state(Robot::GripperStatus::pause)
     , wheel_angles()
+    , gimbal()
     , mode(Mode::FREE)
     , axis_x(0.1)
     , axis_y(0.1)
@@ -316,6 +317,14 @@ void Robot::do_step(float time_step) {
     target_gripper_power = desired_gripper_power;
     update_target_gripper(target_gripper_state, target_gripper_power);
   }
+  // TODO(jerome): complete Gimbal. Can we use the same interface as servos?
+  //
+  // if (gimbal->mode == Gimbal::SPEED) {
+  //   Vector3 desired_gimbal_speed = gimbal->enabled ? gimbal->desired_angular_speed : {};
+  //
+  // } else {
+  //   desired_angles[i] = servo->desired_angle;
+  // }
 
   if (vision.enabled) {
     vision.detected_objects = read_detected_objects();
@@ -466,6 +475,20 @@ bool Robot::stop_streaming() {
   return true;
 }
 
+void Robot::set_gimbal_speed(float yaw_speed, float pitch_speed) {
+  gimbal.desired_angular_speed.z = yaw_speed;
+  gimbal.desired_angular_speed.y = pitch_speed;
+}
+
+void Robot::enable_gimbal(bool value) { gimbal.enabled = value; }
+
+Attitude Robot::get_gimbal_attitude(bool absolute) {
+  if (absolute) {
+    return get_gimbal_attitude(false) + attitude;
+  }
+  return gimbal.current;
+}
+
 Action::State Robot::move_base(const Pose2D &pose, float linear_speed, float angular_speed) {
   auto a = std::make_unique<MoveAction>(this, pose, linear_speed, angular_speed);
   return submit_action(std::move(a));
@@ -483,6 +506,13 @@ Action::State Robot::play_sound(unsigned sound_id, unsigned times) {
 
 Action::State Robot::move_servo(size_t id, float target_angle) {
   auto a = std::make_unique<MoveServoAction>(this, id, target_angle);
+  return submit_action(std::move(a));
+}
+
+Action::State Robot::move_gimbal(float target_yaw, float target_pitch, float yaw_speed,
+                                 float pitch_speed, bool absolute) {
+  auto a = std::make_unique<MoveGimbalAction>(this, target_yaw, target_pitch, yaw_speed,
+                                              pitch_speed, absolute);
   return submit_action(std::move(a));
 }
 
@@ -528,6 +558,17 @@ Action::State Robot::submit_action(std::unique_ptr<MoveServoAction> action) {
   actions.emplace("move_servo", std::move(action));
   spdlog::info("Start new MoveServoAction");
   return actions["move_servo"]->state;
+}
+
+Action::State Robot::submit_action(std::unique_ptr<MoveGimbalAction> action) {
+  // TODO(jerome): What should we do if an action is already active?
+  if (actions.count("move_gimbal"))
+    return Action::State::rejected;
+  // actions["move"] = std::move(action);
+  action->state = Action::State::started;
+  actions.emplace("move_gimbal", std::move(action));
+  spdlog::info("Start new MoveGimbalAction");
+  return actions["move_gimbal"]->state;
 }
 
 // Actions
@@ -666,4 +707,32 @@ void MoveServoAction::do_step(float time_step) {
   }
   current_angle = servo->angle;
   time_left -= time_step;
+}
+
+void MoveGimbalAction::do_step(float time_step) {
+  Gimbal *gimbal = &(robot->gimbal);
+  if (state == Action::State::started) {
+    state = Action::State::running;
+    gimbal->target = target;
+    gimbal->desired_angular_speed = speed;
+    if (absolute) {
+      target = target + robot->get_attitude();
+    }
+    spdlog::info("[Move Gimbal Action] set goal to {}", target);
+    predicted_duration = gimbal->distance();
+  }
+  if (state == Action::State::running) {
+    remaining_duration = gimbal->distance();
+    // TODO(jerome): remove, just for test
+    remaining_duration = 0.0;
+    if (remaining_duration < 0.005) {
+      state = Action::State::succeed;
+      remaining_duration = 0;
+      spdlog::info("[Move Gimbal Action] done {} ~= {}", gimbal->current, gimbal->desired);
+    } else {
+      spdlog::info("[Move Gimbal Action] will continue for [{:.2f} rad / {:.2f} rad]",
+                   remaining_duration, predicted_duration);
+    }
+  }
+  current = gimbal->current;
 }

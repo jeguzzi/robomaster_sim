@@ -65,6 +65,11 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_message<ServoModeSet>();
   register_message<ServoControl>();
   register_message<ServoCtrlSet, Commands *>(this);
+  register_message<GimbalSetWorkMode>();
+  register_message<GimbalCtrlSpeed>();
+  register_message<GimbalCtrl>();
+  register_message<GimbalRotate, Commands *>(this);
+  register_message<GimbalRecenter, Commands *>(this);
 
   // Currently not used by the robomaster Python library
   // register_message<ChassisSetWorkMode>();
@@ -84,6 +89,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_subject<GripperSubject>();
   register_subject<ServoSubject>();
   register_subject<TofSubject>();
+  register_subject<GimbalPosSubject>();
 
   spdlog::info("[Commands] Start listening on {}", local_endpoint());
   start();

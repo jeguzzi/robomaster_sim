@@ -32,6 +32,19 @@ uint8_t accept_code(Action::State state) {
   }
 }
 
+float push_freq(uint8_t freq) {
+  switch (freq) {
+  case 0:
+    return 1.0;
+  case 1:
+    return 5.0;
+  case 2:
+    return 10.0;
+  default:
+    return 1.0;
+  }
+}
+
 struct GetVersion : Proto<0x0, 0x1> {
   struct Request : RequestT {
     Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
@@ -320,9 +333,9 @@ struct PlaySound : Proto<0x3f, 0xb3> {
       push->is_ack = false;
       push->need_ack = 0;
       push->seq_id = 0;
-      auto a = std::make_unique<PlaySoundActionSDK>(
-          cmd, request.action_id, static_cast<float>(request.push_freq), std::move(push), robot,
-          request.sound_id, request.play_times);
+      auto a = std::make_unique<PlaySoundActionSDK>(cmd, request.action_id,
+                                                    push_freq(request.push_freq), std::move(push),
+                                                    robot, request.sound_id, request.play_times);
       response.accept = accept_code(robot->submit_action(std::move(a)));
       return true;
     } else {
@@ -399,9 +412,9 @@ struct PositionMove : Proto<0x3f, 0x25> {
       push->is_ack = false;
       push->need_ack = 0;
       push->seq_id = 0;
-      auto a = std::make_unique<MoveActionSDK>(
-          cmd, request.action_id, static_cast<float>(request.freq), std::move(push), robot,
-          request.pose(), request.linear_speed(), request.angular_speed());
+      auto a = std::make_unique<MoveActionSDK>(cmd, request.action_id, push_freq(request.freq),
+                                               std::move(push), robot, request.pose(),
+                                               request.linear_speed(), request.angular_speed());
       response.accept = accept_code(robot->submit_action(std::move(a)));
       return true;
     } else {
@@ -809,7 +822,7 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5> {
       push->seq_id = 0;
       // spdlog::info("Creating MoveArmAction");
       auto a = std::make_unique<MoveArmActionSDK>(
-          cmd, request.action_id, static_cast<float>(request.freq), std::move(push), robot,
+          cmd, request.action_id, push_freq(request.freq), std::move(push), robot,
           request.x * 0.001, request.y * 0.001, static_cast<bool>(request.mode));
       // spdlog::info("Submitting MoveArmAction");
       response.accept = accept_code(robot->submit_action(std::move(a)));
@@ -1296,13 +1309,263 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
       push->is_ack = false;
       push->need_ack = 0;
       push->seq_id = 0;
-      auto a = std::make_unique<MoveServoActionSDK>(
-          cmd, request.action_id, static_cast<float>(request.freq), std::move(push), robot,
-          servo_index, request.angle());
+      auto a = std::make_unique<MoveServoActionSDK>(cmd, request.action_id, push_freq(request.freq),
+                                                    std::move(push), robot, servo_index,
+                                                    request.angle());
       response.accept = accept_code(robot->submit_action(std::move(a)));
       return true;
     } else {
       // Cancel (not implemented in client yet)
+      spdlog::warn("Cancel action not implemented yet");
+      return true;
+    }
+  }
+};
+
+// ---- Gimbal
+
+struct GimbalCtrlSpeed : Proto<0x4, 0xc> {
+  struct Request : RequestT {
+    int16_t yaw_speed;
+    int16_t pitch_speed;
+    int16_t roll_speed;
+    uint8_t ctrl_byte;  // constant 0xdc
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      yaw_speed = read<int16_t>(buffer);
+      roll_speed = read<int16_t>(buffer + 2);
+      pitch_speed = read<int16_t>(buffer + 4);
+      ctrl_byte = buffer[6];
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "GimbalCtrlSpeed::Request {"
+         << " ctrl_byte=" << (int)r.ctrl_byte << " yaw_speed=" << (int)r.yaw_speed
+         << " roll_speed=" << (int)r.roll_speed << " pitch_speed=" << (int)r.pitch_speed << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    robot->set_gimbal_speed(deg2rad(request.yaw_speed * 0.1), deg2rad(request.pitch_speed * 0.1));
+    return true;
+  }
+};
+
+struct GimbalSetWorkMode : Proto<0x4, 0x4c> {
+  struct Request : RequestT {
+    uint8_t workmode;
+    uint8_t recenter;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      workmode = buffer[0];
+      recenter = buffer[1];
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "GimbalSetWorkMode::Request {"
+         << " workmode=" << (int)r.workmode << " recenter=" << (int)r.recenter << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    // Client is not using this request!
+    spdlog::warn("Anwer to {} not implemented yet", request);
+    return true;
+  }
+};
+
+struct GimbalCtrl : Proto<0x4, 0xd> {
+  constexpr static uint16_t SUSPEND = 0x2ab5;
+  constexpr static uint16_t RESUME = 0x7ef2;
+
+  struct Request : RequestT {
+    uint16_t order_code;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      order_code = read<uint16_t>(buffer);
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "GimbalCtrl::Request {"
+         << " order_code=" << (int)r.order_code << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    // TODO(jerome): complete
+    if (request.order_code == SUSPEND) {
+      robot->enable_gimbal(false);
+      return true;
+    } else if (request.order_code == RESUME) {
+      robot->enable_gimbal(true);
+      return true;
+    }
+    spdlog::warn("Unexpect order_code in {}", request);
+    return false;
+  }
+};
+
+struct GimbalRotate : Proto<0x3f, 0xb0> {
+  struct Request : RequestT {
+    uint8_t action_id;
+    uint8_t action_ctrl;
+    uint8_t freq;
+    uint8_t yaw_valid;
+    uint8_t roll_valid;
+    uint8_t pitch_valid;
+    // TODO(jerome): complete (as currently ignored)
+    uint8_t coordinate;
+    int16_t yaw;
+    int16_t roll;
+    int16_t pitch;
+    uint16_t error;
+    uint16_t yaw_speed;
+    uint16_t roll_speed;
+    uint16_t pitch_speed;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      action_id = buffer[0];
+      action_ctrl = buffer[1] & 0x3;
+      freq = buffer[1] >> 2;
+      yaw_valid = buffer[2] & 0x1;
+      roll_valid = (buffer[2] >> 1) & 0x1;
+      pitch_valid = (buffer[2] >> 2) & 0x1;
+      coordinate = buffer[2] >> 3;
+      yaw = read<int16_t>(buffer + 3);
+      roll = read<int16_t>(buffer + 5);
+      pitch = read<int16_t>(buffer + 7);
+      error = read<uint16_t>(buffer + 9);
+      yaw_speed = read<uint16_t>(buffer + 11);
+      roll_speed = read<uint16_t>(buffer + 13);
+      pitch_speed = read<uint16_t>(buffer + 15);
+    }
+
+    inline float get_yaw() const { return deg2rad(yaw * 0.1); }
+    inline float get_pitch() const { return deg2rad(pitch * 0.1); }
+    inline float get_yaw_speed() const { return deg2rad(yaw_speed); }
+    inline float get_pitch_speed() const { return deg2rad(pitch_speed); }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "GimbalRotate::Request {"
+         << " action_id=" << (int)r.action_id << " action_ctrl=" << (int)r.action_ctrl
+         << " freq=" << (int)r.freq << " yaw_valid=" << (int)r.yaw_valid
+         << " roll_valid=" << (int)r.roll_valid << " pitch_valid=" << (int)r.pitch_valid
+         << " coordinate=" << (int)r.coordinate << " yaw=" << (int)r.yaw << " roll=" << (int)r.roll
+         << " pitch=" << (int)r.pitch << " error=" << (int)r.error
+         << " yaw_speed=" << (int)r.yaw_speed << " roll_speed=" << (int)r.roll_speed
+         << " pitch_speed=" << (int)r.pitch_speed << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    bool accept;
+
+    std::vector<uint8_t> encode() { return {0, accept}; }
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
+    if (request.action_ctrl == 0) {
+      auto push = std::make_unique<GimbalActionPush::Response>(request);
+      push->is_ack = false;
+      push->need_ack = 0;
+      push->seq_id = 0;
+      auto a = std::make_unique<GimbalActionSDK>(cmd, request.action_id, push_freq(request.freq),
+                                                 std::move(push), robot, request.get_yaw(),
+                                                 request.get_pitch(), request.get_yaw_speed(),
+                                                 request.get_pitch_speed(), false);
+      response.accept = accept_code(robot->submit_action(std::move(a)));
+      return true;
+    } else {
+      spdlog::warn("Cancel action not implemented yet");
+      return true;
+    }
+  }
+};
+
+struct GimbalRecenter : Proto<0x3f, 0xb2> {
+  struct Request : RequestT {
+    uint8_t action_id;
+    uint8_t action_ctrl;
+    uint8_t freq;
+    uint8_t yaw_valid;
+    uint8_t roll_valid;
+    uint8_t pitch_valid;
+    uint16_t yaw_speed;
+    uint16_t roll_speed;
+    uint16_t pitch_speed;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      action_id = buffer[0];
+      action_ctrl = buffer[1] & 0x3;
+      freq = buffer[1] >> 2;
+      yaw_valid = buffer[2] & 0x1;
+      roll_valid = (buffer[2] >> 1) & 0x1;
+      pitch_valid = (buffer[2] >> 2) & 0x1;
+      yaw_speed = read<uint16_t>(buffer + 3);
+      roll_speed = read<uint16_t>(buffer + 5);
+      pitch_speed = read<uint16_t>(buffer + 7);
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "GimbalRecenter::Request {"
+         << " action_id=" << (int)r.action_id << " action_ctrl=" << (int)r.action_ctrl
+         << " freq=" << (int)r.freq << " yaw_valid=" << (int)r.yaw_valid
+         << " roll_valid=" << (int)r.roll_valid << " pitch_valid=" << (int)r.pitch_valid
+         << " yaw_speed=" << (int)r.yaw_speed << " roll_speed=" << (int)r.roll_speed
+         << " pitch_speed=" << (int)r.pitch_speed << "}";
+      return os;
+    }
+
+    inline float get_yaw_speed() const { return deg2rad(yaw_speed); }
+    inline float get_pitch_speed() const { return deg2rad(pitch_speed); }
+  };
+
+  struct Response : ResponseT {
+    bool accept;
+
+    std::vector<uint8_t> encode() { return {0, accept}; }
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
+    if (request.action_ctrl == 0) {
+      auto push = std::make_unique<GimbalActionPush::Response>(request);
+      push->is_ack = false;
+      push->need_ack = 0;
+      push->seq_id = 0;
+      auto a = std::make_unique<GimbalActionSDK>(
+          cmd, request.action_id, push_freq(request.freq), std::move(push), robot, 0.0, 0.0,
+          request.get_yaw_speed(), request.get_pitch_speed(), false);
+      response.accept = accept_code(robot->submit_action(std::move(a)));
+      return true;
+    } else {
       spdlog::warn("Cancel action not implemented yet");
       return true;
     }

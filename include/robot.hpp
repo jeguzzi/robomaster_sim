@@ -113,6 +113,22 @@ struct MoveServoAction : Action {
   float time_left;
 };
 
+struct MoveGimbalAction : Action {
+  // TODO(jerome): coordinate frame is tentative
+  MoveGimbalAction(Robot *robot, float target_yaw, float target_pitch, float yaw_speed,
+                   float pitch_speed, bool absolute = false)
+      : Action(robot)
+      , target({.yaw = target_yaw, .pitch = target_pitch})
+      , speed({.y = pitch_speed, .z = yaw_speed})
+      , absolute(absolute) {}
+
+  virtual void do_step(float time_step);
+  Attitude target;
+  Attitude current;
+  Vector3 speed;
+  bool absolute;
+};
+
 // static unsigned char multiply(unsigned char value, float factor)
 // {
 //   float v = (float) value * factor;
@@ -170,15 +186,6 @@ class ActiveLED {
   float period;
   bool loop;
   float _time;
-};
-
-struct Attitude {
-  float yaw, pitch, roll;
-
-  template <typename OStream> friend OStream &operator<<(OStream &os, const Attitude &v) {
-    os << "Attitude <" << v.yaw << ", " << v.pitch << ", " << v.roll << " >";
-    return os;
-  }
 };
 
 struct IMU {
@@ -309,11 +316,26 @@ using Servos = ServoValues<Servo>;
 
 ServoValues<float> limit_servo_angles(const ServoValues<float> &target_values);
 
+struct Gimbal {
+  Attitude current;
+  Attitude desired;
+  Attitude target;
+  Vector3 target_angular_speed;
+  Vector3 desired_angular_speed;
+  bool enabled;
+
+  inline float distance() {
+    return std::max(abs(normalize(current.yaw - desired.yaw)) / target_angular_speed.z,
+                    abs(normalize(current.pitch - desired.pitch)) / target_angular_speed.y);
+  }
+};
+
 class Robot {
   friend struct MoveAction;
   friend struct MoveArmAction;
   friend struct PlaySoundAction;
   friend struct MoveServoAction;
+  friend struct MoveGimbalAction;
 
  public:
   struct Camera {
@@ -449,6 +471,7 @@ class Robot {
   Action::State submit_action(std::unique_ptr<MoveArmAction> action);
   Action::State submit_action(std::unique_ptr<PlaySoundAction> action);
   Action::State submit_action(std::unique_ptr<MoveServoAction> action);
+  Action::State submit_action(std::unique_ptr<MoveGimbalAction> action);
 
   bool start_streaming(unsigned width, unsigned height);
   bool stop_streaming();
@@ -492,6 +515,8 @@ class Robot {
   Action::State move_arm(float x, float z, bool absolute);
   Action::State play_sound(unsigned sound_id, unsigned times);
   Action::State move_servo(size_t id, float target_angle);
+  Action::State move_gimbal(float target_yaw, float target_pitch, float yaw_speed,
+                            float pitch_speed, bool absolute = false);
 
   void add_callback(Callback callback) { callbacks.push_back(callback); }
 
@@ -514,6 +539,10 @@ class Robot {
   const std::vector<ToFReading> &get_tof_readings() { return tof_readings; }
   virtual std::vector<ToFReading> read_tof() = 0;
 
+  void set_gimbal_speed(float, float);
+  void enable_gimbal(bool);
+  Attitude get_gimbal_attitude(bool absolute = false);
+
  protected:
   IMU imu;
   Attitude attitude;
@@ -525,6 +554,7 @@ class Robot {
   float target_gripper_power;
   float last_time_step;
   WheelValues<float> wheel_angles;
+  Gimbal gimbal;
 
  private:
   Mode mode;

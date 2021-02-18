@@ -194,7 +194,7 @@ struct ServoCtrlPush : Proto<0x3f, 0xb8> {
     int32_t value;
 
     std::vector<uint8_t> encode() {
-      std::vector<uint8_t> buffer(11, 7);
+      std::vector<uint8_t> buffer(7, 0);
       buffer[0] = action_id;
       buffer[1] = percent;
       buffer[2] = action_state;
@@ -216,6 +216,47 @@ struct MoveServoActionSDK : MoveServoAction, ActionSDK<ServoCtrlPush> {
 
   void update_msg() {
     push_msg->value = servo_angle_value(servo_id, current_angle);
+    push_msg->percent = std::max(
+        0, static_cast<int>(100 - round(100.0f * remaining_duration / predicted_duration)));
+    push_msg->action_state = state;
+  }
+};
+
+struct GimbalActionPush : Proto<0x3f, 0xb1> {
+  struct Response : ResponseT {
+    uint8_t action_id;
+    uint8_t percent;
+    uint8_t action_state;
+    int16_t yaw;
+    int16_t roll;
+    int16_t pitch;
+
+    std::vector<uint8_t> encode() {
+      std::vector<uint8_t> buffer(9, 0);
+      buffer[0] = action_id;
+      buffer[1] = percent;
+      buffer[2] = action_state;
+      write<int16_t>(buffer, 3, yaw);
+      write<int16_t>(buffer, 5, roll);
+      write<int16_t>(buffer, 7, pitch);
+      return buffer;
+    }
+    using ResponseT::ResponseT;
+  };
+};
+
+struct GimbalActionSDK : MoveGimbalAction, ActionSDK<GimbalActionPush> {
+  GimbalActionSDK(Commands *cmd, uint8_t id, float frequency,
+                  std::unique_ptr<GimbalActionPush::Response> push, Robot *robot, size_t servo_id,
+                  float yaw, float pitch, float yaw_speed, float pitch_speed, bool absolute = false)
+      : MoveGimbalAction(robot, yaw, pitch, yaw_speed, pitch_speed, absolute)
+      , ActionSDK<GimbalActionPush>(cmd, id, frequency, std::move(push), this) {
+    action = this;
+  }
+
+  void update_msg() {
+    push_msg->yaw = round(rad2deg(10 * current.yaw));
+    push_msg->pitch = round(rad2deg(10 * current.pitch));
     push_msg->percent = std::max(
         0, static_cast<int>(100 - round(100.0f * remaining_duration / predicted_duration)));
     push_msg->action_state = state;

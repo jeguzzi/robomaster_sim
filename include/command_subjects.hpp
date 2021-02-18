@@ -24,10 +24,10 @@
 // * DDS_SERVO: 0x000200095f0059e7,
 // * DDS_ARM: 0x0002000926abd64d,
 // * DDS_GRIPPER: 0x00020009124d156a,
-// DDS_GIMBAL_POS: 0x00020009f79b3c97,
+// * DDS_GIMBAL_POS: 0x00020009f79b3c97,
 // DDS_STICK: 0x0002000955e9a0fa,
 // DDS_MOVE_MODE: 0x00020009784c7bfd,
-// DDS_TOF: 0x0002000986e4c05a,
+// * DDS_TOF: 0x0002000986e4c05a,
 // DDS_PINBOARD: 0x00020009eebb9ffc,
 
 // NOTE(jerome): Currently the firmware set the angular component to 0
@@ -437,6 +437,40 @@ struct TofSubject : SubjectWithUID<0x0002000986e4c05a> {
         cmd_id[i] = direct[i] = flag[i] = distance[i] = 0;
       }
     }
+  }
+};
+
+struct GimbalPosSubject : SubjectWithUID<0x00020009f79b3c97> {
+  std::string name() { return "Gimbal"; }
+
+  constexpr static size_t NUMBER_OF_TOF = 4;
+
+  static inline uint16_t encode_distance(float value) { return uint16_t(1000 * value); }
+
+  int16_t yaw_ground_angle;
+  int16_t pitch_ground_angle;
+  int16_t yaw_angle;
+  int16_t pitch_angle;
+  uint8_t option_mode;
+  uint8_t return_center;
+
+  std::vector<uint8_t> encode() {
+    std::vector<uint8_t> buffer(9, 0);
+    write<int16_t>(buffer, 0, yaw_ground_angle);
+    write<int16_t>(buffer, 2, pitch_ground_angle);
+    write<int16_t>(buffer, 4, yaw_angle);
+    write<int16_t>(buffer, 6, pitch_angle);
+    buffer[8] = (return_center << 2) | option_mode;
+    return buffer;
+  }
+
+  void update(Robot *robot) {
+    auto attitude = robot->get_gimbal_attitude();
+    yaw_angle = round(rad2deg(10 * attitude.yaw));
+    pitch_angle = round(rad2deg(10 * attitude.pitch));
+    attitude = robot->get_gimbal_attitude(true);
+    yaw_ground_angle = round(rad2deg(10 * attitude.yaw));
+    pitch_ground_angle = round(rad2deg(10 * attitude.pitch));
   }
 };
 
