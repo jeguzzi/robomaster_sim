@@ -39,6 +39,7 @@ class CoppeliaSimRobot : public Robot {
   GripperStatus read_gripper_state();
   DetectedObjects read_detected_objects();
   hit_event_t read_hit_events();
+  ir_event_t read_ir_events();
   std::vector<ToFReading> read_tof();
 
  private:

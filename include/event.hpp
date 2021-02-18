@@ -170,6 +170,44 @@ struct ArmorHitEvent : Event<ArmorHitEventMsg> {
   uint8_t type;
 };
 
+struct IRHitEventMsg : Proto<0x3f, 0x10> {
+  struct Response : ResponseT {
+    uint8_t skill_id;
+    uint8_t role_id;
+    uint8_t recv_dev;
+    uint8_t recv_ir_pin;
+
+    Response(uint8_t sender, uint8_t receiver, uint8_t skill_id = 0, uint8_t role_id = 0,
+             uint16_t recv_dev = 0, uint16_t recv_ir_pin = 0)
+        : ResponseT(sender, receiver)
+        , skill_id(skill_id)
+        , role_id(role_id)
+        , recv_dev(recv_dev)
+        , recv_ir_pin(recv_ir_pin) {}
+
+    std::vector<uint8_t> encode() {
+      uint8_t b = (role_id << 4) | skill_id;
+      return {b, recv_dev, recv_ir_pin};
+    }
+  };
+};
+
+struct IRHitEvent : Event<IRHitEventMsg> {
+  IRHitEvent(Commands *cmd, Robot *robot, uint8_t sender = 0xc9, uint8_t receiver = 0x38)
+      : Event(cmd, robot, sender, receiver) {}
+
+  std::vector<IRHitEventMsg::Response> update_msg() {
+    auto hits = robot->get_ir_events();
+    std::vector<IRHitEventMsg::Response> msgs;
+    for (auto const &hit : hits) {
+      msgs.emplace_back(sender, receiver, hit.skill_id, hit.role_id, hit.recv_dev, hit.recv_ir_pin);
+    }
+    return msgs;
+  }
+
+  uint8_t type;
+};
+
 struct UARTMessage : Proto<0x3f, 0xc1> {
   struct Response : ResponseT {
     Response(uint8_t sender, uint8_t receiver, uint16_t length, const uint8_t *buffer)

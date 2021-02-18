@@ -70,11 +70,17 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_message<GimbalCtrl>();
   register_message<GimbalRotate, Commands *>(this);
   register_message<GimbalRecenter, Commands *>(this);
-
+  register_message<BlasterFire>();
+  register_message<BlasterSetLed>();
   // Currently not used by the robomaster Python library
-  // register_message<ChassisSetWorkMode>();
+  register_message<ChassisSetWorkMode>();
+  register_message<RoboticArmGetPostion>();
+  register_message<GetZoom>();
+  register_message<TakePhoto>();
+  register_message<SetWhiteBalance>();
+  register_message<SetZoom>();
+
   // register_message<ChassisWheelSpeed>();
-  //
 
   register_subject<VelocitySubject>();
   register_subject<EscSubject>();
@@ -100,6 +106,7 @@ Commands::~Commands() {}
 void Commands::add_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] add subscriber {}", node_id);
   armor_hit_event = std::make_unique<ArmorHitEvent>(this, robot, node_id);
+  ir_hit_event = std::make_unique<IRHitEvent>(this, robot, node_id);
   // Disabled
   // uart_event = std::make_unique<UARTEvent>(this, robot);
 }
@@ -107,6 +114,7 @@ void Commands::add_subscriber_node(uint8_t node_id) {
 void Commands::reset_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] reset subscriber {}", node_id);
   armor_hit_event = nullptr;
+  ir_hit_event = nullptr;
   vision_event = nullptr;
   publishers.clear();
 }
@@ -117,6 +125,7 @@ void Commands::set_enable_sdk(bool value) {
   } else {
     spdlog::info("[Commands] disabled the SDK");
     armor_hit_event = nullptr;
+    ir_hit_event = nullptr;
     vision_event = nullptr;
     armor_hit_event = nullptr;
     vision_event = nullptr;
@@ -151,6 +160,8 @@ void Commands::do_step(float time_step) {
     vision_event->do_step(time_step);
   if (armor_hit_event)
     armor_hit_event->do_step(time_step);
+  if (ir_hit_event)
+    ir_hit_event->do_step(time_step);
   if (uart_event)
     uart_event->do_step(time_step);
 }

@@ -156,3 +156,5 @@ DetectedObjects CoppeliaSimRobot::read_detected_objects() { return {}; }
 hit_event_t CoppeliaSimRobot::read_hit_events() { return {}; }
 
 std::vector<ToFReading> CoppeliaSimRobot::read_tof() { return {}; }
+
+ir_event_t CoppeliaSimRobot::read_ir_events() { return {}; }

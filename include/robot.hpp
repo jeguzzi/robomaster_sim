@@ -218,6 +218,15 @@ struct HitEvent {
 
 using hit_event_t = std::vector<HitEvent>;
 
+struct RobotIREvent {
+  uint8_t skill_id;
+  uint8_t role_id;
+  uint8_t recv_dev;
+  uint8_t recv_ir_pin;
+};
+
+using ir_event_t = std::vector<RobotIREvent>;
+
 struct DetectedObjects {
   enum Type : uint8_t { PERSON = 1, GESTURE = 2, LINE = 4, MARKER = 5, ROBOT = 7 };
 
@@ -522,7 +531,10 @@ class Robot {
 
   hit_event_t get_hit_events() { return hit_events; }
 
+  ir_event_t get_ir_events() { return ir_events; }
+
   virtual hit_event_t read_hit_events() = 0;
+  virtual ir_event_t read_ir_events() = 0;
 
   // ignored for now:
   // color {1: red, 2: green, 3: blue}
@@ -585,6 +597,7 @@ class Robot {
   std::map<std::string, std::unique_ptr<Action>> actions;
 
   hit_event_t hit_events;
+  ir_event_t ir_events;
 
   std::vector<ToFReading> tof_readings;
 };

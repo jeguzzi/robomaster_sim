@@ -737,31 +737,29 @@ struct GripperCtrl : Proto<0x33, 0x11> {
   }
 };
 
-/* Not used
-struct ChassisSetWorkMode : Proto<0x3f, 0x19>
-{
+// Not used
+struct ChassisSetWorkMode : Proto<0x3f, 0x19> {
   struct Request : RequestT {
-
     uint8_t mode;
 
-    Request (uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri, const uint8_t *
-buffer) : RequestT(_sender, _receiver, _seq_id, _attri)
-    {
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
       mode = buffer[0];
-    };
+    }
 
-    template<typename OStream>
-    friend OStream& operator<<(OStream& os, const Request& r)
-    {
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
       os << "ChassisSetWorkMode::Request {"
-         << " mode=" << (int)r.mode
-         << " }";
+         << " mode=" << (int)r.mode << " }";
       return os;
     }
   };
 
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Answer to {} not implemented", request);
+    return true;
+  }
 };
-*/
 
 struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5> {
   struct Request : RequestT {
@@ -833,6 +831,50 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5> {
       spdlog::warn("Cancel action not implemented yet");
       return true;
     }
+  }
+};
+
+struct RoboticArmGetPostion : Proto<0x33, 0x14> {
+  struct Request : RequestT {
+    uint8_t id;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      id = buffer[0];
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "RoboticArmGetPostion::Request {"
+         << " id=" << (int)r.id << " }";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    // front [mm]
+    int32_t x;
+    // up [mm]
+    int32_t y;
+    // always 0
+    int32_t z;
+
+    std::vector<uint8_t> encode() {
+      std::vector<uint8_t> buffer(12, 0);
+      write<int32_t>(buffer, 0, x);
+      write<int32_t>(buffer, 4, y);
+      write<int32_t>(buffer, 8, z);
+      return buffer;
+    }
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    auto p = robot->get_arm_position();
+    response.x = round(1000 * p.x);
+    response.y = round(1000 * p.z);
+    response.z = 0;
+    return true;
   }
 };
 
@@ -1569,6 +1611,194 @@ struct GimbalRecenter : Proto<0x3f, 0xb2> {
       spdlog::warn("Cancel action not implemented yet");
       return true;
     }
+  }
+};
+
+struct BlasterFire : Proto<0x3f, 0x51> {
+  struct Request : RequestT {
+    uint8_t times;
+    uint8_t type;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      times = buffer[0] & 0xF;
+      type = buffer[0] >> 4;
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "BlasterFire::Request {"
+         << " times=" << (int)r.times << " type=" << (int)r.type << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Ignoring {}", request);
+    return true;
+  }
+};
+
+struct BlasterSetLed : Proto<0x3f, 0x55> {
+  struct Request : RequestT {
+    uint8_t mode;
+    uint8_t effect;
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t times;
+    uint8_t t1;
+    uint8_t t2;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      mode = buffer[0] >> 4;
+      effect = buffer[0] & 0xF;
+      r = buffer[1];
+      g = buffer[2];
+      b = buffer[3];
+      times = buffer[4];
+      t1 = read<uint16_t>(buffer + 5);
+      t2 = read<uint16_t>(buffer + 5);
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "BlasterSetLed::Request {"
+         << " mode=" << (int)r.mode << " effect=" << (int)r.effect << " r=" << (int)r.r
+         << " g=" << (int)r.g << " b=" << (int)r.b << " times=" << (int)r.times
+         << " t1=" << (int)r.t1 << " t2=" << (int)r.t2 << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Ignoring {}", request);
+    return true;
+  }
+};
+
+struct TakePhoto : Proto<0x2, 0x1> {
+  struct Request : RequestT {
+    uint8_t type;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      type = buffer[0];
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "TakePhoto::Request {"
+         << " type=" << (int)r.type << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Ignoring {}", request);
+    return true;
+  }
+};
+
+struct SetZoom : Proto<0x2, 0x34> {
+  struct Request : RequestT {
+    uint8_t digital_enable;
+    uint8_t digital_type;
+    uint16_t digital_value;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      digital_enable = buffer[0] >> 3;
+      digital_type = buffer[0] & 0x7;
+      digital_value = read<uint16_t>(buffer + 4);
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "SetZoom::Request {"
+         << " digital_enable=" << (int)r.digital_enable << " digital_type=" << (int)r.digital_type
+         << " digital_value=" << (int)r.digital_value << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Ignoring {}", request);
+    return true;
+  }
+};
+
+struct GetZoom : Proto<0x2, 0x35> {
+  struct Request : RequestT {
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {}
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "GetZoom::Request { }";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Ignoring {}", request);
+    return true;
+  }
+};
+
+struct SetWhiteBalance : Proto<0x2, 0x2c> {
+  struct Request : RequestT {
+    // 0 for auto, 6 for manual
+    uint8_t type;
+    uint8_t temp1;
+    uint8_t temp2;
+    uint8_t tint;
+
+    Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
+            const uint8_t *buffer)
+        : RequestT(_sender, _receiver, _seq_id, _attri) {
+      type = buffer[0];
+      temp1 = buffer[1];
+      temp2 = buffer[2];
+      tint = read<int16_t>(buffer + 3);
+    }
+
+    template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
+      os << "SetWhiteBalance::Request {"
+         << " type=" << (int)r.type << " temp1=" << (int)r.temp1 << " temp2=" << (int)r.temp2
+         << " tint=" << (int)r.tint << "}";
+      return os;
+    }
+  };
+
+  struct Response : ResponseT {
+    using ResponseT::ResponseT;
+  };
+
+  static bool answer(const Request &request, Response &response, Robot *robot) {
+    spdlog::warn("Ignoring {}", request);
+    return true;
   }
 };
 
