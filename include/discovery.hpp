@@ -6,11 +6,14 @@
 
 #include <boost/asio.hpp>
 
-using boost::asio::ip::udp;
+namespace ba = boost::asio;
+
+using ba::ip::udp;
 
 class Discovery {
  public:
-  Discovery(boost::asio::io_context *io_context, std::string serial_number, float period = 1.0);
+  Discovery(boost::asio::io_context *io_context, std::string serial_number, std::string ip = "",
+            float period = 1.0);
   void start();
   void stop();
   void do_step(float time_step);

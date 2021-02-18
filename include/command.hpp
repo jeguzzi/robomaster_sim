@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 
 #include <boost/asio.hpp>
 
@@ -20,7 +21,7 @@ using boost::asio::ip::udp;
 
 class Commands : public Server {
  public:
-  Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaster *rm,
+  Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaster *rm, std::string ip = "",
            unsigned short port = 20020);
   ~Commands();
   void create_publisher(uint64_t uid, const AddSubMsg::Request &request);

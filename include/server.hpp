@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <map>
+#include <string>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -15,7 +16,8 @@
 
 class Robot;
 
-using boost::asio::ip::udp;
+namespace ba = boost::asio;
+using ba::ip::udp;
 
 class Server {
   using Callback =
@@ -24,7 +26,8 @@ class Server {
   static constexpr size_t kMaxLength = 1024;
 
  public:
-  Server(boost::asio::io_context *io_context, Robot *robot, unsigned short port = 30030);
+  Server(boost::asio::io_context *io_context, Robot *robot, std::string ip = "",
+         unsigned short port = 30030);
   ~Server() {}
   void start();
   void send(const std::vector<uint8_t> &data);
@@ -32,6 +35,8 @@ class Server {
   boost::asio::io_context *get_io_context() { return io_context; }
 
   udp::endpoint sender_endpoint() { return sender_endpoint_; }
+
+  udp::endpoint local_endpoint() { return socket_.local_endpoint(); }
 
  protected:
   boost::asio::io_context *io_context;

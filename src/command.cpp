@@ -30,8 +30,8 @@ bool DelMsg::answer(const Request &request, Response &response, Robot *robot, Co
 }
 
 Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaster *rm,
-                   unsigned short port)
-    : Server(_io_context, robot, port)
+                   std::string ip, unsigned short port)
+    : Server(_io_context, robot, ip, port)
     , robomaster(rm) {
   register_message<SdkHeartBeat>();
   register_message<SetSdkMode, Commands *>(this);
@@ -85,7 +85,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_subject<ServoSubject>();
   register_subject<TofSubject>();
 
-  spdlog::info("[Commands] Start listening on port {}", port);
+  spdlog::info("[Commands] Start listening on {}", local_endpoint());
   start();
 }
 

@@ -2,6 +2,7 @@
 #define INCLUDE_STREAMER_HPP_
 
 #include <memory>
+#include <string>
 
 #include <boost/asio.hpp>
 
@@ -16,7 +17,8 @@ class VideoStreamer {
  public:
   explicit VideoStreamer(Robot *robot, unsigned bitrate = DEFAULT_BITRATE);
   static std::unique_ptr<VideoStreamer> create_video_streamer(ba::io_context *io_context,
-                                                              Robot *robot, bool udp = false,
+                                                              Robot *robot, std::string ip = "",
+                                                              bool udp = false,
                                                               unsigned bitrate = DEFAULT_BITRATE);
   void send(uint8_t *buffer);
   void stop();

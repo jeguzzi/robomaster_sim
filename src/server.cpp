@@ -13,10 +13,12 @@
 
 using boost::asio::ip::udp;
 
-Server::Server(boost::asio::io_context *_io_context, Robot *_robot, unsigned short port)
+Server::Server(boost::asio::io_context *_io_context, Robot *_robot, std::string ip,
+               unsigned short port)
     : io_context(_io_context)
     , robot(_robot)
-    , socket_(*io_context, udp::endpoint(udp::v4(), port))
+    , socket_(*io_context, ip.size() ? udp::endpoint(ba::ip::address::from_string(ip), port)
+                                     : udp::endpoint(udp::v4(), port))
     , callbacks() {}
 
 std::vector<uint8_t> Server::answer_request(const uint8_t *buffer, size_t length) {

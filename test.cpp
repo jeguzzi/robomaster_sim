@@ -11,6 +11,7 @@ int main(int argc, char **argv) {
   unsigned bitrate = 200000;
   char serial[100] = "RM0001";
   char log_level[100] = "info";
+  char ip[100] = "";
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--udp") == 0) {
       use_udp = true;
@@ -22,7 +23,7 @@ int main(int argc, char **argv) {
     if (sscanf(argv[i], "--serial_number=%s", serial)) {
       continue;
     }
-    if (sscanf(argv[i], "--serial_number=%s", serial)) {
+    if (sscanf(argv[i], "--ip=%s", ip)) {
       continue;
     }
     if (sscanf(argv[i], "--log_level=%s", log_level)) {
@@ -38,7 +39,7 @@ int main(int argc, char **argv) {
   // Get ignored
   spdlog::set_level(spdlog::level::from_str(log_level));
   RealTimeDummyRobot dummy(io_context.get(), 0.05);
-  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate);
+  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip);
   spdlog::info("Start spinning");
   robot.spin(false);
   std::cout << "Goodbye" << std::endl;
