@@ -27,20 +27,20 @@ static std::string pad_serial(std::string value) {
 
 RoboMaster::RoboMaster(std::shared_ptr<boost::asio::io_context> _io_context, Robot *_robot,
                        std::string serial_number, bool udp_video_stream,
-                       unsigned video_stream_bitrate, std::string ip)
+                       unsigned video_stream_bitrate, std::string ip, bool enable_armor_hits,
+                       bool enable_ir_hits)
     : io_context(_io_context ? _io_context : std::make_shared<boost::asio::io_context>())
     , robot(_robot)
     , discovery(io_context.get(), pad_serial(serial_number), ip)
     , conn(io_context.get(), robot, ip, 30030)
-    , cmds(io_context.get(), robot, this, ip, 20020) {
-  spdlog::set_level(spdlog::level::info);
-  spdlog::info("Creating a RobotMaster with serial number {}", serial_number);
+    , cmds(io_context.get(), robot, this, ip, 20020, enable_armor_hits, enable_ir_hits) {
+  // spdlog::set_level(spdlog::level::info);
   video = VideoStreamer::create_video_streamer(io_context.get(), robot, ip, udp_video_stream,
                                                video_stream_bitrate);
   // spdlog::cfg::load_env_levels();
   discovery.start();
-
   robot->add_callback(std::bind(&RoboMaster::do_step, this, std::placeholders::_1));
+  spdlog::info("Created a RobotMaster with serial number {}", serial_number);
 }
 
 void RoboMaster::do_step(float time_step) {

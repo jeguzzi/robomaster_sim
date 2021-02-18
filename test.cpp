@@ -2,12 +2,28 @@
 
 #include "robomaster.hpp"
 #include "rt_dummy_robot.hpp"
+#include "spdlog/spdlog.h"
 
 // #include "spdlog/cfg/env.h"
 
+static void show_usage(std::string name) {
+  std::cout << "Usage: " << name << " <option(s)>" << std::endl
+            << "Options:" << std::endl
+            << "  --help\t\t\tShow this help message" << std::endl
+            << "  --log_level=<LEVEL>\t\tLog level (default: info)" << std::endl
+            << "  --ip=<IP>\t\t\tRobot ip (default: 0.0.0.0)" << std::endl
+            << "  --serial_number=<SERIAL>\tRobot serial number (default: RM0001)" << std::endl
+            << "  --udp\t\t\t\tVideo stream via UDP" << std::endl
+            << "  --bitrate=<BITRATE>\t\tVideo stream bitrate (default: 200000)" << std::endl
+            << "  --armor_hits\t\t\tPublish armor hits" << std::endl
+            << "  --ir_hits\t\t\tPublish IR hits" << std::endl;
+}
+
 int main(int argc, char **argv) {
-  std::cout << "Welcome to the robomaster simulation" << std::endl;
+  std::cout << std::endl << "Welcome to the robomaster simulation" << std::endl << std::endl;
   bool use_udp = false;
+  bool armor_hits = false;
+  bool ir_hits = false;
   unsigned bitrate = 200000;
   char serial[100] = "RM0001";
   char log_level[100] = "info";
@@ -29,17 +45,30 @@ int main(int argc, char **argv) {
     if (sscanf(argv[i], "--log_level=%s", log_level)) {
       continue;
     }
+    if (strcmp(argv[i], "--armor_hits") == 0) {
+      armor_hits = true;
+      continue;
+    }
+    if (strcmp(argv[i], "--ir_hits") == 0) {
+      ir_hits = true;
+      continue;
+    }
+    if (strcmp(argv[i], "--help") == 0) {
+      show_usage(argv[0]);
+      return 0;
+    }
   }
   // TODO(spdlog bug?): not working here vs in robomaster constructor whyyyy?
   // spdlog::set_level(spdlog::level::debug);
   // spdlog::cfg::load_env_levels();
-  std::cout << "LOG_LEVEL " << spdlog::level::from_str(log_level) << std::endl;
+  // std::cout << "LOG_LEVEL " << spdlog::level::from_str(log_level) << std::endl;
   auto io_context = std::make_shared<boost::asio::io_context>();
-  spdlog::info("Welcome to the RoboMaster test");
   // Get ignored
   spdlog::set_level(spdlog::level::from_str(log_level));
+  // std::cout << "LOG_LEVEL" << spdlog::get_level() << std::endl;
   RealTimeDummyRobot dummy(io_context.get(), 0.05);
-  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip);
+  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, armor_hits,
+                   ir_hits);
   spdlog::info("Start spinning");
   robot.spin(false);
   std::cout << "Goodbye" << std::endl;

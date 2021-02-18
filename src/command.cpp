@@ -30,9 +30,11 @@ bool DelMsg::answer(const Request &request, Response &response, Robot *robot, Co
 }
 
 Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaster *rm,
-                   std::string ip, unsigned short port)
+                   std::string ip, unsigned short port, bool enable_armor_hits, bool enable_ir_hits)
     : Server(_io_context, robot, ip, port)
-    , robomaster(rm) {
+    , robomaster(rm)
+    , enable_armor_hits(enable_armor_hits)
+    , enable_ir_hits(enable_ir_hits) {
   register_message<SdkHeartBeat>();
   register_message<SetSdkMode, Commands *>(this);
   register_message<SetRobotMode>();
@@ -105,8 +107,10 @@ Commands::~Commands() {}
 
 void Commands::add_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] add subscriber {}", node_id);
-  armor_hit_event = std::make_unique<ArmorHitEvent>(this, robot, node_id);
-  ir_hit_event = std::make_unique<IRHitEvent>(this, robot, node_id);
+  if (enable_armor_hits)
+    armor_hit_event = std::make_unique<ArmorHitEvent>(this, robot, node_id);
+  if (enable_ir_hits)
+    ir_hit_event = std::make_unique<IRHitEvent>(this, robot, node_id);
   // Disabled
   // uart_event = std::make_unique<UARTEvent>(this, robot);
 }

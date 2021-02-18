@@ -23,7 +23,8 @@ using boost::asio::ip::udp;
 class Commands : public Server {
  public:
   Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaster *rm, std::string ip = "",
-           unsigned short port = 20020);
+           unsigned short port = 20020, bool enable_armor_hits = false,
+           bool enable_ir_hits = false);
   ~Commands();
   void create_publisher(uint64_t uid, const AddSubMsg::Request &request);
   void stop_publisher(const DelMsg::Request &request);
@@ -48,6 +49,8 @@ class Commands : public Server {
   std::unique_ptr<ArmorHitEvent> armor_hit_event;
   std::unique_ptr<IRHitEvent> ir_hit_event;
   std::unique_ptr<UARTEvent> uart_event;
+  bool enable_armor_hits;
+  bool enable_ir_hits;
 };
 
 #endif  // INCLUDE_COMMAND_HPP__

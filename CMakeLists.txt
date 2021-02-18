@@ -45,8 +45,12 @@ include_directories(
   include
 )
 
-add_library(robot
+add_library(robot SHARED
   src/robot
+)
+
+target_link_libraries(robot PRIVATE
+  spdlog::spdlog
 )
 
 add_executable(test_robot test_robot.cpp src/dummy_robot.cpp)
@@ -54,10 +58,9 @@ add_executable(test_robot test_robot.cpp src/dummy_robot.cpp)
 target_link_libraries(test_robot PRIVATE
   robot
   spdlog::spdlog
-  ${Boost_LIBRARIES}
 )
 
-add_library(robomaster
+add_library(robomaster SHARED
   src/robomaster.cpp
   src/server.cpp
   src/command.cpp
@@ -74,22 +77,27 @@ add_library(robomaster
   src/streamer.cpp
   src/discovery.cpp
 )
-add_executable(test test.cpp )
+
+target_link_libraries(robomaster PRIVATE
+  spdlog::spdlog
+  ${AVCODEC_LIBRARY}
+  ${AVFORMAT_LIBRARY}
+  ${AVUTIL_LIBRARY}
+  ${AVDEVICE_LIBRARY}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(test test.cpp)
 
 add_executable(test_encoder test_encoder.cpp src/encoder.cpp)
 
 target_link_libraries(test PRIVATE
   robomaster
   spdlog::spdlog
-  ${AVCODEC_LIBRARY}
-  ${AVFORMAT_LIBRARY}
-  ${AVUTIL_LIBRARY}
-  ${AVDEVICE_LIBRARY}
-  # PRIVATE spdlog::spdlog_header_only
   ${Boost_LIBRARIES}
 )
 
-message("${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY}")
+# message("${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY}")
 
 target_link_libraries(test_encoder PRIVATE
   ${AVCODEC_LIBRARY}
@@ -109,10 +117,6 @@ target_link_libraries(simExtRobomaster
   robomaster
   spdlog::spdlog
   ${Boost_LIBRARIES}
-  ${AVCODEC_LIBRARY}
-  ${AVFORMAT_LIBRARY}
-  ${AVUTIL_LIBRARY}
-  ${AVDEVICE_LIBRARY}
 )
 
 # set_target_properties( PROPERTIES COMPILE_FLAGS "Wno-reorder-ctor")
