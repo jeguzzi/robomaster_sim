@@ -12,7 +12,7 @@
 #include "spdlog/spdlog.h"
 
 #include "protocol.hpp"
-#include "robot.hpp"
+#include "robot/robot.hpp"
 #include "utils.hpp"
 
 class Commands;
@@ -93,7 +93,7 @@ struct MoveActionSDK : MoveAction, ActionSDK<PositionPush> {
     push_msg->action_state = state;
     // std::cout << "current: " << current << std::endl;
     // TODO(Jerome): check if coherent with real robot
-    Pose2D current = robot->get_pose();
+    Pose2D current = robot->chassis.get_pose();
     push_msg->pos_x = (int16_t)round(100 * current.x);
     push_msg->pos_y = -(int16_t)round(100 * current.y);
     push_msg->pos_z = (int16_t)round(10 * rad2deg(current.theta));
@@ -143,7 +143,7 @@ struct MoveArmActionSDK : MoveArmAction, ActionSDK<RoboticArmMovePush> {
     push_msg->action_state = state;
     // std::cout << "current: " << current_position << std::endl;
     // TODO(Jerome): check if coherent with real robot
-    Vector3 current_position = robot->get_arm_position();
+    Vector3 current_position = robot->arm.get_position();
     push_msg->x = (int32_t)round(1000 * current_position.x);
     push_msg->y = (int32_t)round(1000 * current_position.z);
   }
@@ -247,9 +247,10 @@ struct GimbalActionPush : Proto<0x3f, 0xb1> {
 
 struct GimbalActionSDK : MoveGimbalAction, ActionSDK<GimbalActionPush> {
   GimbalActionSDK(Commands *cmd, uint8_t id, float frequency,
-                  std::unique_ptr<GimbalActionPush::Response> push, Robot *robot, size_t servo_id,
-                  float yaw, float pitch, float yaw_speed, float pitch_speed, bool absolute = false)
-      : MoveGimbalAction(robot, yaw, pitch, yaw_speed, pitch_speed, absolute)
+                  std::unique_ptr<GimbalActionPush::Response> push, Robot *robot, float yaw,
+                  float pitch, float yaw_speed, float pitch_speed, Gimbal::Frame yaw_frame,
+                  Gimbal::Frame pitch_frame)
+      : MoveGimbalAction(robot, yaw, pitch, yaw_speed, pitch_speed, yaw_frame, pitch_frame)
       , ActionSDK<GimbalActionPush>(cmd, id, frequency, std::move(push), this) {
     action = this;
   }

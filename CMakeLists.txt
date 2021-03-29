@@ -46,7 +46,12 @@ include_directories(
 )
 
 add_library(robot SHARED
-  src/robot
+  src/robot/action.cpp
+  src/robot/arm.cpp
+  src/robot/chassis.cpp
+  src/robot/led.cpp
+  src/robot/gimbal.cpp
+  src/robot/robot.cpp
 )
 
 target_link_libraries(robot PRIVATE
@@ -60,7 +65,13 @@ target_link_libraries(test_robot PRIVATE
   spdlog::spdlog
 )
 
-add_library(robomaster SHARED
+add_library(robomaster STATIC
+  src/robot/action.cpp
+  src/robot/arm.cpp
+  src/robot/chassis.cpp
+  src/robot/led.cpp
+  src/robot/gimbal.cpp
+  src/robot/robot.cpp
   src/robomaster.cpp
   src/server.cpp
   src/command.cpp
@@ -70,7 +81,6 @@ add_library(robomaster SHARED
   src/protocol.cpp
   src/topic.cpp
   # src/rt_topic.cpp
-  src/robot.cpp
   # src/action.cpp
   # src/utils.cpp
   src/encoder.cpp

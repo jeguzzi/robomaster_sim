@@ -9,7 +9,10 @@
 
 class RealTimeDummyRobot : public DummyRobot {
  public:
-  explicit RealTimeDummyRobot(boost::asio::io_context *io_context, float control_step = 0.05);
+  explicit RealTimeDummyRobot(boost::asio::io_context *io_context, float control_step = 0.05,
+                              bool _has_arm = false, bool _has_gripper = false,
+                              ServoValues<bool> _has_servo = {}, bool _has_gimbal = false,
+                              bool _has_camera = false, bool _has_tof = false);
   ~RealTimeDummyRobot();
 
  private:

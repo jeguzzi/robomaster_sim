@@ -4,32 +4,55 @@
 
 #include "coppeliasim_robot.hpp"
 
-void CoppeliaSimRobot::update_target_wheel_speeds(WheelSpeeds &speeds) {
-  for (size_t i = 0; i < 4; i++) {
+void CoppeliaSimRobot::forward_target_wheel_speeds(const WheelSpeeds &speeds) {
+  for (size_t i = 0; i < speeds.size; i++) {
     spdlog::debug("Set wheel joint {} speed to {}", i, speeds[i]);
     simSetJointTargetVelocity(wheel_joint_handles[i], speeds[i]);
   }
 }
 
-void CoppeliaSimRobot::update_led_colors(LEDColors &colors) {
-  for (size_t i = 0; i < 4; i++) {
-    simFloat color[3] = {colors[i].r, colors[i].g, colors[i].b};
-    spdlog::debug("Set led {} color to {} {} {}", i, color[0], color[1], color[2]);
-    simSetShapeColor(led_handles[i], nullptr, sim_colorcomponent_emission, color);
+void CoppeliaSimRobot::forward_chassis_led(size_t index, const Color &rgb) {
+  if (index >= chassis_led_handles.size) {
+    spdlog::warn("Unknown chassis led {}", index);
+    return;
   }
+  simFloat color[3] = {rgb.r, rgb.g, rgb.b};
+  spdlog::debug("Set led {} color to {} {} {}", index, color[0], color[1], color[2]);
+  simSetShapeColor(chassis_led_handles[index], nullptr, sim_colorcomponent_emission, color);
 }
 
-WheelSpeeds CoppeliaSimRobot::read_wheel_speeds() {
+void CoppeliaSimRobot::forward_gimbal_led(size_t index, size_t part, const Color &rgb) {
+  if (index >= gimbal_led_handles.size || gimbal_led_handles[index].size() <= part) {
+    spdlog::warn("Unknown gimbal led {}[{}]", index, part);
+    return;
+  }
+  simFloat color[3] = {rgb.r, rgb.g, rgb.b};
+  spdlog::debug("Set gimbal led {}-{} color to {} {} {} [{}]", index, part, color[0], color[1],
+                color[2], gimbal_led_handles[index][part]);
+  simSetShapeColor(gimbal_led_handles[index][part], nullptr, sim_colorcomponent_emission, color);
+}
+
+void CoppeliaSimRobot::forward_blaster_led(float value) const {
+  if (blaster_light_handle <= 0)
+    return;
+  const simFloat rgb[3] = {0.0f, std::clamp(value, 0.0f, 1.0f), 0.0f};
+  if (value)
+    simSetLightParameters(blaster_light_handle, 1, nullptr, rgb, nullptr);
+  else
+    simSetLightParameters(blaster_light_handle, 0, nullptr, nullptr, nullptr);
+}
+
+WheelSpeeds CoppeliaSimRobot::read_wheel_speeds() const {
   WheelSpeeds value;
-  for (size_t i = 0; i < 4; i++) {
+  for (size_t i = 0; i < value.size; i++) {
     simGetObjectFloatParameter(wheel_joint_handles[i], sim_jointfloatparam_velocity, &value[i]);
   }
   return value;
 }
 
-WheelValues<float> CoppeliaSimRobot::read_wheel_angles() {
+WheelValues<float> CoppeliaSimRobot::read_wheel_angles() const {
   WheelValues<float> value;
-  for (size_t i = 0; i < 4; i++) {
+  for (size_t i = 0; i < value.size; i++) {
     simFloat rvalue;
     simGetJointPosition(wheel_joint_handles[i], &rvalue);
     value[i] = rvalue;
@@ -39,22 +62,23 @@ WheelValues<float> CoppeliaSimRobot::read_wheel_angles() {
 
 // DONE(jerome): add force sensor?, simulate gyro/magnetometer
 // or maybe just get velocity and compute acceleration in the base class
-IMU CoppeliaSimRobot::read_imu() { return imu; }
+IMU CoppeliaSimRobot::read_imu() const { return chassis.imu; }
 
 void CoppeliaSimRobot::has_read_accelerometer(float x, float y, float z) {
-  imu.acceleration = {x, y, z};
+  chassis.imu.acceleration = {x, y, z};
 }
 
 void CoppeliaSimRobot::has_read_gyro(float x, float y, float z) {
-  imu.angular_velocity = {x, y, z};
+  // spdlog::info("[CS] has_read_gyro {} {} {}", x, y, z);
+  chassis.imu.angular_velocity = {x, y, z};
 }
 
 void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) {
-  attitude.roll = alpha;
-  attitude.pitch = beta;
+  chassis.attitude.roll = alpha;
+  chassis.attitude.pitch = beta;
 }
 
-std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() {
+std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() const {
   if (!camera_handle)
     return {};
   simHandleVisionSensor(camera_handle, nullptr, nullptr);
@@ -80,7 +104,7 @@ std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() {
   return image;
 }
 
-bool CoppeliaSimRobot::set_camera_resolution(unsigned width, unsigned height) {
+bool CoppeliaSimRobot::forward_camera_resolution(unsigned width, unsigned height) {
   if (!camera_handle)
     return false;
   simInt image_size[2]{};
@@ -95,66 +119,72 @@ bool CoppeliaSimRobot::set_camera_resolution(unsigned width, unsigned height) {
   return true;
 }
 
-void CoppeliaSimRobot::update_target_servo_angle(size_t index, float angle) {
-  if (servo_motor) {
-    simSetJointTargetPosition(servo_motor[index], angle);
+void CoppeliaSimRobot::forward_target_servo_angle(size_t index, float angle) {
+  if (servo_handles.at(index) > 0) {
+    simSetJointTargetPosition(servo_handles.at(index), angle);
   }
 }
 
-void CoppeliaSimRobot::update_servo_mode(size_t index, Servo::Mode mode) {
-  if (servo_motor) {
+void CoppeliaSimRobot::forward_servo_mode(size_t index, Servo::Mode mode) {
+  if (servo_handles.at(index) > 0) {
     if (mode == Servo::ANGLE) {
-      simSetObjectInt32Parameter(servo_motor[index], sim_jointintparam_ctrl_enabled, 1);
+      simSetObjectInt32Parameter(servo_handles.at(index), sim_jointintparam_ctrl_enabled, 1);
     } else {
-      simSetObjectInt32Parameter(servo_motor[index], sim_jointintparam_ctrl_enabled, 0);
+      simSetObjectInt32Parameter(servo_handles.at(index), sim_jointintparam_ctrl_enabled, 0);
     }
   }
 }
 
-void CoppeliaSimRobot::update_target_servo_speed(size_t index, float speed) {
-  if (servo_motor) {
-    // spdlog::info("update_target_servo_speed {} {}", index, speed);
-    simSetJointTargetVelocity(servo_motor[index], speed);
+void CoppeliaSimRobot::forward_servo_enabled(size_t index, bool value) {
+  if (servo_handles.at(index) > 0) {
+    simSetObjectInt32Parameter(servo_handles.at(index), sim_jointintparam_motor_enabled, value);
   }
 }
 
-float CoppeliaSimRobot::read_servo_angle(size_t index) {
+void CoppeliaSimRobot::forward_target_servo_speed(size_t index, float speed) {
+  if (servo_handles.at(index) > 0) {
+    // spdlog::info("update_target_servo_speed {} {}", index, speed);
+    simSetJointTargetVelocity(servo_handles.at(index), speed);
+  }
+}
+
+float CoppeliaSimRobot::read_servo_angle(size_t index) const {
   float angle = 0;
-  if (servo_motor) {
-    simGetJointPosition(servo_motor[index], &angle);
+  if (servo_handles.at(index) > 0) {
+    simGetJointPosition(servo_handles.at(index), &angle);
   }
   return angle;
 }
 
-float CoppeliaSimRobot::read_servo_speed(size_t index) {
+float CoppeliaSimRobot::read_servo_speed(size_t index) const {
   float speed = 0;
-  if (servo_motor) {
-    simGetObjectFloatParameter(servo_motor[index], sim_jointfloatparam_velocity, &speed);
+  if (servo_handles.at(index) > 0) {
+    simGetObjectFloatParameter(servo_handles.at(index), sim_jointfloatparam_velocity, &speed);
   }
   return speed;
 }
 
-void CoppeliaSimRobot::update_target_gripper(Robot::GripperStatus state, float power) {
+void CoppeliaSimRobot::forward_target_gripper(Gripper::Status state, float power) {
   if (gripper_target_signal.empty()) {
     spdlog::warn("Gripper not available");
   }
   simSetIntegerSignal(gripper_target_signal.data(), static_cast<int>(state));
 }
 
-Robot::GripperStatus CoppeliaSimRobot::read_gripper_state() {
+Gripper::Status CoppeliaSimRobot::read_gripper_state() const {
   if (gripper_state_signal.empty()) {
     spdlog::warn("Gripper not available");
-    return Robot::GripperStatus::pause;
+    return Gripper::Status::pause;
   }
   simInt value;
   simGetIntegerSignal(gripper_state_signal.data(), &value);
-  return Robot::GripperStatus(value);
+  return Gripper::Status(value);
 }
 
-DetectedObjects CoppeliaSimRobot::read_detected_objects() { return {}; }
+DetectedObjects CoppeliaSimRobot::read_detected_objects() const { return {}; }
 
-hit_event_t CoppeliaSimRobot::read_hit_events() { return {}; }
+hit_event_t CoppeliaSimRobot::read_hit_events() const { return {}; }
 
-std::vector<ToFReading> CoppeliaSimRobot::read_tof() { return {}; }
+std::vector<ToFReading> CoppeliaSimRobot::read_tof() const { return {}; }
 
-ir_event_t CoppeliaSimRobot::read_ir_events() { return {}; }
+ir_event_t CoppeliaSimRobot::read_ir_events() const { return {}; }

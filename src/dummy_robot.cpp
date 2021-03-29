@@ -15,42 +15,59 @@ static std::vector<uint8_t> generate_strip_image(unsigned i0, unsigned i1, unsig
 }
 
 void DummyRobot::do_step(float time_step) {
-  wheel_angles = get_wheel_angles() + target_wheel_speed * last_time_step;
-  ServoValues<float> angles;
-  for (size_t i = 0; i < 2; i++) {
-    angles[i] = servos[i].angle + servos[i].target_speed * time_step;
+  chassis.wheel_speeds.current = chassis.wheel_speeds.target;
+  chassis.wheel_angles = chassis.wheel_angles + chassis.wheel_speeds.current * last_time_step;
+
+  std::map<unsigned, float> angles;
+  for (auto const &[i, servo] : connected_servos) {
+    angles[i] = servo->angle.current;
+    servo->angle.current = std::clamp(servo->angle.current + servo->speed.target * time_step,
+                                      servo->min_angle, servo->max_angle);
   }
-  angles = limit_servo_angles(angles);
-  for (size_t i = 0; i < 2; i++) {
-    servos[i].speed = (angles[i] - servos[i].angle) / time_step;
-    servos[i].angle = angles[i];
+  if (has_arm) {
+    arm.limit_motor_angles(CURRENT);
   }
+  for (auto const &[i, servo] : connected_servos) {
+    servo->speed.current = (servo->angle.current - angles[i]) / time_step;
+  }
+  if (has_gripper) {
+    gripper.state.current = gripper.state.target;
+  }
+  // This clamping is a mess
+  // if (has_gimbal) {
+  //   for (auto servo : {&gimbal.yaw_servo, &gimbal.pitch_servo}) {
+  //     float angle = servo->angle.current;
+  //     servo->angle.current = std::clamp(servo->angle.current + servo->speed.target *
+  //     last_time_step,
+  //                                       servo->min_angle, servo->max_angle);
+  //     servo->speed.current = (servo->angle.current - angle) / last_time_step;
+  //   }
+  // }
   Robot::do_step(time_step);
 }
 
-std::vector<uint8_t> DummyRobot::read_camera_image() {
+WheelSpeeds DummyRobot::read_wheel_speeds() const { return chassis.wheel_speeds.current; }
+void DummyRobot::forward_target_wheel_speeds(const WheelSpeeds &) {}
+WheelValues<float> DummyRobot::read_wheel_angles() const { return chassis.wheel_angles; }
+
+std::vector<uint8_t> DummyRobot::read_camera_image() const {
   static unsigned seq = 0;
   seq = (seq + 1) % camera.width;
   return generate_strip_image(seq, seq + 10, camera.width, camera.height);
 }
 
-void DummyRobot::update_target_wheel_speeds(WheelSpeeds &speeds) {}
-
-WheelSpeeds DummyRobot::read_wheel_speeds() { return target_wheel_speed; }
-
-WheelValues<float> DummyRobot::read_wheel_angles() { return wheel_angles; }
-
-void DummyRobot::update_led_colors(LEDColors &colors) {}
-
-IMU DummyRobot::read_imu() {
+void DummyRobot::forward_chassis_led(size_t index, const Color &color) {}
+void DummyRobot::forward_gimbal_led(size_t index, size_t part, const Color &color) {}
+void DummyRobot::forward_blaster_led(float value) const {}
+IMU DummyRobot::read_imu() const {
   IMU imu;
   imu.acceleration = {0, 0, 9.81};
   // use odom as the source of velocity
-  imu.angular_velocity = {0, 0, get_twist(Robot::Frame::body).theta};
+  imu.angular_velocity = {0, 0, chassis.get_twist(Frame::body).theta};
   return imu;
 }
 
-bool DummyRobot::set_camera_resolution(unsigned width, unsigned height) {
+bool DummyRobot::forward_camera_resolution(unsigned width, unsigned height) {
   camera.width = width;
   camera.height = height;
   return true;
@@ -58,30 +75,36 @@ bool DummyRobot::set_camera_resolution(unsigned width, unsigned height) {
 
 #define TAU 0.25
 
-void DummyRobot::update_target_servo_angle(size_t index, float angle) {
-  Servo *servo = &servos[index];
-  float speed = (angle - servo->angle) / TAU;
-  update_target_servo_speed(index, speed);
+void DummyRobot::forward_target_servo_angle(size_t index, float angle) {
+  Servo *servo = connected_servos[index];
+  float speed = (angle - servo->angle.current) / TAU;
+  forward_target_servo_speed(index, speed);
   // Hack to force control update
-  servo->target_angle = nanf("");
+  servo->angle.target = nanf("");
 }
 
-void DummyRobot::update_target_servo_speed(size_t index, float speed) {
-  Servo *servo = &servos[index];
-  servo->target_speed = std::clamp(speed, -Servo::MAX_SPEED, Servo::MAX_SPEED);
+void DummyRobot::forward_target_servo_speed(size_t index, float speed) {
+  Servo *servo = connected_servos[index];
+  servo->speed.target = std::clamp(speed, -servo->max_speed, servo->max_speed);
 }
 
-float DummyRobot::read_servo_angle(size_t index) { return servos[index].angle; }
+float DummyRobot::read_servo_angle(size_t index) const {
+  return connected_servos.at(index)->angle.current;
+}
 
-float DummyRobot::read_servo_speed(size_t index) { return servos[index].speed; }
+float DummyRobot::read_servo_speed(size_t index) const {
+  return connected_servos.at(index)->speed.current;
+}
 
-void DummyRobot::update_servo_mode(size_t index, Servo::Mode mode) {}
+void DummyRobot::forward_servo_mode(size_t index, Servo::Mode mode) {}
 
-void DummyRobot::update_target_gripper(Robot::GripperStatus state, float power) {}
+void DummyRobot::forward_servo_enabled(size_t index, bool value) {}
 
-Robot::GripperStatus DummyRobot::read_gripper_state() { return target_gripper_state; }
+void DummyRobot::forward_target_gripper(Gripper::Status state, float power) {}
 
-DetectedObjects DummyRobot::read_detected_objects() {
+Gripper::Status DummyRobot::read_gripper_state() const { return gripper.state.current; }
+
+DetectedObjects DummyRobot::read_detected_objects() const {
   // Fill with one object per type
   DetectedObjects objects;
   if (vision.is_enabled<DetectedObjects::Person>()) {
@@ -102,8 +125,10 @@ DetectedObjects DummyRobot::read_detected_objects() {
   return objects;
 }
 
-hit_event_t DummyRobot::read_hit_events() { return {{.index = 0, .type = 0}}; }
+hit_event_t DummyRobot::read_hit_events() const { return {{.index = 0, .type = 0}}; }
 
-ir_event_t DummyRobot::read_ir_events() { return {{}}; }
+ir_event_t DummyRobot::read_ir_events() const { return {{}}; }
 
-std::vector<ToFReading> DummyRobot::read_tof() { return {{.active = true, .distance = 0.89}}; }
+std::vector<ToFReading> DummyRobot::read_tof() const {
+  return {{.active = true, .distance = 0.89}};
+}

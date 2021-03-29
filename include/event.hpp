@@ -7,7 +7,7 @@
 
 #include "command.hpp"
 #include "protocol.hpp"
-#include "robot.hpp"
+#include "robot/robot.hpp"
 
 template <typename B> struct Event {
   Commands *cmd;
@@ -116,7 +116,7 @@ struct VisionEvent : Event<VisionDetectInfo> {
   }
 
   std::vector<VisionDetectInfo::Response> update_msg() {
-    auto objects = robot->get_detected_objects();
+    auto objects = robot->vision.get_detected_objects();
     std::vector<VisionDetectInfo::Response> msgs;
     add_message<DetectedObjects::Person>(msgs, objects);
     add_message<DetectedObjects::Gesture>(msgs, objects);
@@ -159,7 +159,7 @@ struct ArmorHitEvent : Event<ArmorHitEventMsg> {
       : Event(cmd, robot, sender, receiver) {}
 
   std::vector<ArmorHitEventMsg::Response> update_msg() {
-    auto hits = robot->get_hit_events();
+    auto hits = robot->armor.get_hit_events();
     std::vector<ArmorHitEventMsg::Response> msgs;
     for (auto const &hit : hits) {
       msgs.emplace_back(sender, receiver, hit.type, hit.index, 0, 0);
@@ -197,7 +197,7 @@ struct IRHitEvent : Event<IRHitEventMsg> {
       : Event(cmd, robot, sender, receiver) {}
 
   std::vector<IRHitEventMsg::Response> update_msg() {
-    auto hits = robot->get_ir_events();
+    auto hits = robot->armor.get_ir_events();
     std::vector<IRHitEventMsg::Response> msgs;
     for (auto const &hit : hits) {
       msgs.emplace_back(sender, receiver, hit.skill_id, hit.role_id, hit.recv_dev, hit.recv_ir_pin);

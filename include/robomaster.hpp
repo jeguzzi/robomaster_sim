@@ -12,7 +12,7 @@
 #include "command.hpp"
 #include "connection.hpp"
 #include "discovery.hpp"
-#include "robot.hpp"
+#include "robot/robot.hpp"
 #include "streamer.hpp"
 
 class RoboMaster {

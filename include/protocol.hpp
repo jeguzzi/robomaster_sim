@@ -7,7 +7,7 @@
 #include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/spdlog.h"
 
-#include "robot.hpp"
+#include "robot/robot.hpp"
 #include "utils.hpp"
 
 struct RequestT {
@@ -40,9 +40,9 @@ struct ResponseT {
     need_ack = !is_ack;
   }
 
-  ResponseT(uint8_t sender, uint8_t receiver) {
-    sender = receiver;
-    receiver = sender;
+  ResponseT(uint8_t _sender, uint8_t _receiver) {
+    sender = _receiver;
+    receiver = _sender;
     is_ack = 0;
     need_ack = 0;
   }

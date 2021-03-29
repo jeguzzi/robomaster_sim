@@ -12,6 +12,56 @@
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
 
+enum ValueType { CURRENT, TARGET, DESIRED };
+
+template <typename T> struct ControllableValue {
+  T current;
+  T target;
+  T desired;
+  bool initialized;
+
+  bool check() {
+    if (target != desired || !initialized) {
+      target = desired;
+      return true;
+    }
+    return false;
+  }
+
+  explicit ControllableValue(T value)
+      : current(value)
+      , target(value)
+      , desired(value)
+      , initialized(false) {}
+
+  void set_target(const T &value) { desired = value; }
+
+  void set(const T &value, ValueType type = CURRENT) {
+    switch (type) {
+    case CURRENT:
+      current = value;
+      return;
+    case DESIRED:
+      desired = value;
+      return;
+    case TARGET:
+      target = value;
+      return;
+    }
+  }
+
+  T get(ValueType type) {
+    switch (type) {
+    case CURRENT:
+      return current;
+    case DESIRED:
+      return desired;
+    case TARGET:
+      return target;
+    }
+  }
+};
+
 // float normalize(float value);
 
 inline float normalize(float value) {
@@ -46,17 +96,21 @@ struct Vector3 {
   inline float norm() const { return sqrt(x * x + y * y + z * z); }
 };
 
+template <typename T> struct GimbalValues;
+
 struct Attitude {
   float yaw, pitch, roll;
 
   template <typename OStream> friend OStream &operator<<(OStream &os, const Attitude &v) {
-    os << "Attitude <" << v.yaw << ", " << v.pitch << ", " << v.roll << " >";
+    os << "Attitude < " << v.roll << ", " << v.pitch << ", " << v.yaw << " >";
     return os;
   }
 
   inline Attitude operator+(Attitude v) const {
     return {yaw + v.yaw, pitch + v.pitch, roll + v.roll};
   }
+
+  operator GimbalValues<float>() const;
 };
 
 struct Twist2D {
@@ -139,6 +193,8 @@ template <typename T> struct WheelValues {
   T rear_left;
   T rear_right;
 
+  static constexpr size_t size = 4;
+
   inline bool operator==(const WheelValues<T> &rhs) const {
     return front_left == rhs.front_left && front_right == rhs.front_right &&
            rear_left == rhs.rear_left && rear_right == rhs.rear_right;
@@ -186,23 +242,25 @@ template <typename T> struct WheelValues {
 };
 
 template <typename OStream, typename T> OStream &operator<<(OStream &os, const WheelValues<T> &v) {
-  os << "<"
+  os << "Wheel < "
      << " front left: " << v.front_left << ", front right: " << v.front_right
      << ", rear left: " << v.rear_left << ", rear right: " << v.rear_right << " >";
   return os;
 }
 
-template <typename T> struct LEDValues {
+template <typename T> struct ChassisLEDValues {
   T front;
   T left;
   T rear;
   T right;
 
-  inline bool operator==(const LEDValues<T> &rhs) const {
+  static constexpr size_t size = 4;
+
+  inline bool operator==(const ChassisLEDValues<T> &rhs) const {
     return front == rhs.front && left == rhs.left && rear == rhs.rear && right == rhs.right;
   }
 
-  inline bool operator!=(const LEDValues<T> &rhs) { return !(*this == rhs); }
+  inline bool operator!=(const ChassisLEDValues<T> &rhs) { return !(*this == rhs); }
 
   T &operator[](std::size_t idx) {
     switch (idx) {
@@ -234,10 +292,52 @@ template <typename T> struct LEDValues {
   }
 };
 
-template <typename OStream, typename T> OStream &operator<<(OStream &os, const LEDValues<T> &v) {
-  os << "<"
+template <typename OStream, typename T>
+OStream &operator<<(OStream &os, const ChassisLEDValues<T> &v) {
+  os << "ChassisLED < "
      << "front: " << v.front << ", left: " << v.left << ", rear: " << v.rear
      << ", right: " << v.right << " >";
+  return os;
+}
+
+template <typename T> struct GimbalLEDValues {
+  T top_left;
+  T top_right;
+
+  constexpr static size_t size = 2;
+
+  inline bool operator==(const GimbalLEDValues<T> &rhs) const {
+    return top_right == rhs.top_right && top_left == rhs.top_left;
+  }
+
+  inline bool operator!=(const GimbalLEDValues<T> &rhs) { return !(*this == rhs); }
+
+  T &operator[](std::size_t idx) {
+    switch (idx) {
+    case 0:
+      return top_left;
+    case 1:
+      return top_right;
+    default:
+      throw std::out_of_range("Invalid position!");
+    }
+  }
+  const T &operator[](std::size_t idx) const {
+    switch (idx) {
+    case 0:
+      return top_left;
+    case 1:
+      return top_right;
+    default:
+      throw std::out_of_range("Invalid position!");
+    }
+  }
+};
+
+template <typename OStream, typename T>
+OStream &operator<<(OStream &os, const GimbalLEDValues<T> &v) {
+  os << "GimbalLED < "
+     << "top left: " << v.top_left << ", top right: " << v.top_right << " >";
   return os;
 }
 
@@ -267,21 +367,32 @@ template <typename T> void write(std::vector<uint8_t> &buffer, size_t index, T v
   }
 }
 
-template <typename T> struct ServoValues {
+template <class T> using ServoValues = std::array<T, 3>;
+
+template <typename OStream, typename T> OStream &operator<<(OStream &os, const ServoValues<T> &v) {
+  os << "Servos < ";
+  for (size_t i = 0; i < v.size(); i++) {
+    os << "#" << i << ": " << v[i] << ", ";
+  }
+  os << " >";
+  return os;
+}
+
+template <typename T> struct ArmServoValues {
   T right;
   T left;
 
-  inline bool operator==(const ServoValues<T> &rhs) const {
+  inline bool operator==(const ArmServoValues<T> &rhs) const {
     return right == rhs.right && left == rhs.left;
   }
 
-  inline bool operator!=(const ServoValues<T> &rhs) const { return !(*this == rhs); }
+  inline bool operator!=(const ArmServoValues<T> &rhs) const { return !(*this == rhs); }
 
-  inline ServoValues<T> operator+(const ServoValues<T> &rhs) const {
+  inline ArmServoValues<T> operator+(const ArmServoValues<T> &rhs) const {
     return {right + rhs.right, left + rhs.left};
   }
 
-  inline ServoValues<T> operator-(const ServoValues<T> &rhs) const {
+  inline ArmServoValues<T> operator-(const ArmServoValues<T> &rhs) const {
     return {right - rhs.right, left - rhs.left};
   }
 
@@ -309,11 +420,68 @@ template <typename T> struct ServoValues {
   operator bool() const { return static_cast<bool>(right) && static_cast<bool>(left); }
 };
 
-template <typename OStream, typename T> OStream &operator<<(OStream &os, const ServoValues<T> &v) {
-  os << "{"
-     << "\n\rright: " << v.right << "\n\rleft: " << v.left << "\n}";
+template <typename OStream, typename T>
+OStream &operator<<(OStream &os, const ArmServoValues<T> &v) {
+  os << "ArmServo < "
+     << "left: " << v.left << ", right: " << v.right << " >";
   return os;
 }
+
+template <typename T> struct GimbalValues {
+  T yaw;
+  T pitch;
+
+  static constexpr size_t size = 2;
+
+  inline bool operator==(const GimbalValues<T> &rhs) const {
+    return yaw == rhs.yaw && pitch == rhs.pitch;
+  }
+
+  inline bool operator!=(const GimbalValues<T> &rhs) const { return !(*this == rhs); }
+
+  inline GimbalValues<T> operator*(float rhs) const { return {yaw * rhs, pitch * rhs}; }
+
+  inline GimbalValues<T> operator+(const GimbalValues<T> &rhs) const {
+    return {yaw + rhs.yaw, pitch + rhs.pitch};
+  }
+
+  inline GimbalValues<T> operator-(const GimbalValues<T> &rhs) const {
+    return {yaw - rhs.yaw, pitch - rhs.pitch};
+  }
+
+  T &operator[](std::size_t idx) {
+    switch (idx) {
+    case 0:
+      return yaw;
+    case 1:
+      return pitch;
+    default:
+      throw std::out_of_range("Invalid position!");
+    }
+  }
+  const T &operator[](std::size_t idx) const {
+    switch (idx) {
+    case 0:
+      return yaw;
+    case 1:
+      return pitch;
+    default:
+      throw std::out_of_range("Invalid position!");
+    }
+  }
+
+  operator bool() const { return static_cast<bool>(yaw) && static_cast<bool>(pitch); }
+
+  operator Attitude() const { return {.yaw = yaw, .pitch = pitch, .roll = 0}; }
+};
+
+template <typename OStream, typename T> OStream &operator<<(OStream &os, const GimbalValues<T> &v) {
+  os << "Gimbal < "
+     << "yaw: " << v.yaw << ", pitch :" << v.pitch << " >";
+  return os;
+}
+
+inline Attitude::operator GimbalValues<float>() const { return {.yaw = yaw, .pitch = pitch}; }
 
 struct Vector2 {
   float x, y;
@@ -410,15 +578,15 @@ struct BoundingBox {
 };
 
 // The values at the RM reset position (maximal flexion)
-constexpr ServoValues<float> SERVO_RESET_ANGLES = {.right = -0.274016f, .left = 0.073304f};
-constexpr ServoValues<int> SERVO_RESET_VALUES = {.right = 1273, .left = 1242};
+constexpr ArmServoValues<float> SERVO_RESET_ANGLES = {.right = -0.274016f, .left = 0.073304f};
+constexpr ArmServoValues<int> SERVO_RESET_VALUES = {.right = 1273, .left = 1242};
 constexpr float SERVO_RAD2UNIT = 325.95f;
 constexpr float SERVO_RAD_PER_SECOND2UNIT = 325.95f * 5.0f;
-constexpr ServoValues<float> SERVO_RESET_EXT_ANGLES = {
+constexpr ArmServoValues<float> SERVO_RESET_EXT_ANGLES = {
     .right = static_cast<float>(SERVO_RESET_VALUES.right / SERVO_RAD2UNIT),
     .left = static_cast<float>(SERVO_RESET_VALUES.left / SERVO_RAD2UNIT)};
 
-constexpr ServoValues<float> SERVO_BIASES = {
+constexpr ArmServoValues<float> SERVO_BIASES = {
     .right = SERVO_RESET_VALUES.right + SERVO_RAD2UNIT * SERVO_RESET_ANGLES.right,
     .left = SERVO_RESET_VALUES.left + SERVO_RAD2UNIT * SERVO_RESET_ANGLES.left};
 
@@ -429,5 +597,25 @@ inline int servo_speed_value(float speed) {
 inline int servo_angle_value(size_t index, float angle) {
   return static_cast<int>(round(-SERVO_RAD2UNIT * angle + SERVO_BIASES[index]));
 }
+
+struct IMU {
+  Vector3 angular_velocity;
+  Vector3 acceleration;
+
+  template <typename OStream> friend OStream &operator<<(OStream &os, const IMU &v) {
+    os << "IMU < pose: " << v.angular_velocity << ", acceleration: " << v.acceleration << " >";
+    return os;
+  }
+};
+
+struct Odometry {
+  Pose2D pose;
+  Twist2D twist;
+
+  template <typename OStream> friend OStream &operator<<(OStream &os, const Odometry &v) {
+    os << "Odom < pose: " << v.pose << ", twist: " << v.twist << " >";
+    return os;
+  }
+};
 
 #endif  // INCLUDE_UTILS_HPP_

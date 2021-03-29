@@ -232,7 +232,7 @@ struct SetWheelSpeed : Proto<0x3f, 0x20> {
                           .front_right = angular_speed_from_rpm(request.w1_speed),
                           .rear_left = -angular_speed_from_rpm(request.w3_speed),
                           .rear_right = angular_speed_from_rpm(request.w4_speed)};
-    robot->set_target_wheel_speeds(speeds);
+    robot->chassis.wheel_speeds.set_target(speeds);
     return true;
   }
 };
@@ -245,6 +245,8 @@ struct SetSystemLed : Proto<0x3f, 0x33> {
     // freq: int: [1, 10]
     // t1, t2 [ms]
     uint32_t comp_mask;
+    // Only usefull for gimbal leds because they are individually addressable
+    // but in the current API only of on/off effects
     int16_t led_mask;
     uint8_t ctrl_mode;
     uint8_t effect_mode;
@@ -280,9 +282,10 @@ struct SetSystemLed : Proto<0x3f, 0x33> {
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
     // The real robot ignore the loop parameter and set it to true.
-    uint8_t mask = (0xFF & request.led_mask & request.comp_mask);
+    uint8_t mask = 0xFF & request.comp_mask;
+    uint8_t led_mask = 0xFF & request.led_mask;
     Color color = {request.r / 255.0f, request.g / 255.0f, request.b / 255.0f};
-    robot->set_led_effect(color, mask, ActiveLED::LedEffect(request.effect_mode),
+    robot->set_led_effect(color, mask, led_mask, ActiveLED::LedEffect(request.effect_mode),
                           request.t1 * 0.001, request.t2 * 0.001, true || request.loop);
     return true;
   }
@@ -564,7 +567,7 @@ struct VisionDetectEnable : Proto<0xa, 0xa3> {
 
   static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
     // spdlog::warn("VisionDetectEnable {} not implemented yet", request.type);
-    robot->set_enable_vision(request.type);
+    robot->vision.set_enable(request.type);
     cmd->set_vision_request(request.sender, request.receiver, request.type);
     return true;
   }
@@ -597,7 +600,7 @@ struct ChassisSpeedMode : Proto<0x3f, 0x21> {
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
     Twist2D value{request.x_spd, -request.y_spd, -deg2rad(request.z_spd)};
-    robot->set_target_velocity(value);
+    robot->chassis.set_target_velocity(value);
     // TODO(Jerome): check if it's a bug that it send a request that does not require an ack
     response.is_ack = true;
     response.need_ack = 0;
@@ -731,7 +734,7 @@ struct GripperCtrl : Proto<0x33, 0x11> {
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
     // id is ignored
-    robot->set_target_gripper(Robot::GripperStatus(request.control),
+    robot->gripper.set_target(Gripper::Status(request.control),
                               static_cast<float>(100.0 / request.power));
     return true;
   }
@@ -870,7 +873,7 @@ struct RoboticArmGetPostion : Proto<0x33, 0x14> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    auto p = robot->get_arm_position();
+    auto p = robot->arm.get_position();
     response.x = round(1000 * p.x);
     response.y = round(1000 * p.z);
     response.z = 0;
@@ -967,7 +970,7 @@ struct VisionDetectStatus : Proto<0xa, 0xa5> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    response.vision_type = robot->get_enable_vision();
+    response.vision_type = robot->vision.get_enable();
     return true;
   }
 };
@@ -996,7 +999,7 @@ struct VisionSetColor : Proto<0xa, 0xab> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    robot->set_vision_color(request.type, request.color);
+    robot->vision.set_color(request.type, request.color);
     return true;
   }
 };
@@ -1395,7 +1398,8 @@ struct GimbalCtrlSpeed : Proto<0x4, 0xc> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    robot->set_gimbal_speed(deg2rad(request.yaw_speed * 0.1), deg2rad(request.pitch_speed * 0.1));
+    robot->gimbal.set_target_speeds(
+        {.yaw = -deg2rad(request.yaw_speed * 0.1), .pitch = -deg2rad(request.pitch_speed * 0.1)});
     return true;
   }
 };
@@ -1456,10 +1460,10 @@ struct GimbalCtrl : Proto<0x4, 0xd> {
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
     if (request.order_code == SUSPEND) {
-      robot->enable_gimbal(false);
+      robot->gimbal.enable(false);
       return true;
     } else if (request.order_code == RESUME) {
-      robot->enable_gimbal(true);
+      robot->gimbal.enable(true);
       return true;
     }
     spdlog::warn("Unexpect order_code in {}", request);
@@ -1475,7 +1479,6 @@ struct GimbalRotate : Proto<0x3f, 0xb0> {
     uint8_t yaw_valid;
     uint8_t roll_valid;
     uint8_t pitch_valid;
-    // TODO(Jerome): complete as `coordinate` is currently ignored
     uint8_t coordinate;
     int16_t yaw;
     int16_t roll;
@@ -1504,10 +1507,22 @@ struct GimbalRotate : Proto<0x3f, 0xb0> {
       pitch_speed = read<uint16_t>(buffer + 15);
     }
 
-    inline float get_yaw() const { return deg2rad(yaw * 0.1); }
-    inline float get_pitch() const { return deg2rad(pitch * 0.1); }
+    inline float get_yaw() const { return -deg2rad(yaw * 0.1); }
+    inline float get_pitch() const { return -deg2rad(pitch * 0.1); }
     inline float get_yaw_speed() const { return deg2rad(yaw_speed); }
     inline float get_pitch_speed() const { return deg2rad(pitch_speed); }
+    inline Gimbal::Frame get_yaw_frame() const {
+      if (coordinate == 0)
+        return Gimbal::Frame::fixed;
+      if (coordinate == 1)
+        return Gimbal::Frame::gimbal;
+      return Gimbal::Frame::chassis;
+    }
+    inline Gimbal::Frame get_pitch_frame() const {
+      if (coordinate == 0 || coordinate == 3 || coordinate == 4)
+        return Gimbal::Frame::fixed;
+      return Gimbal::Frame::gimbal;
+    }
 
     template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
       os << "GimbalRotate::Request {"
@@ -1530,15 +1545,16 @@ struct GimbalRotate : Proto<0x3f, 0xb0> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
+    spdlog::info("Got {}", request);
     if (request.action_ctrl == 0) {
       auto push = std::make_unique<GimbalActionPush::Response>(request);
       push->is_ack = false;
       push->need_ack = 0;
       push->seq_id = 0;
-      auto a = std::make_unique<GimbalActionSDK>(cmd, request.action_id, push_freq(request.freq),
-                                                 std::move(push), robot, request.get_yaw(),
-                                                 request.get_pitch(), request.get_yaw_speed(),
-                                                 request.get_pitch_speed(), false);
+      auto a = std::make_unique<GimbalActionSDK>(
+          cmd, request.action_id, push_freq(request.freq), std::move(push), robot,
+          request.get_yaw(), request.get_pitch(), request.get_yaw_speed(),
+          request.get_pitch_speed(), request.get_yaw_frame(), request.get_pitch_frame());
       response.accept = accept_code(robot->submit_action(std::move(a)));
       return true;
     } else {
@@ -1594,16 +1610,16 @@ struct GimbalRecenter : Proto<0x3f, 0xb2> {
     std::vector<uint8_t> encode() { return {0, accept}; }
     using ResponseT::ResponseT;
   };
-
   static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
     if (request.action_ctrl == 0) {
       auto push = std::make_unique<GimbalActionPush::Response>(request);
       push->is_ack = false;
       push->need_ack = 0;
       push->seq_id = 0;
-      auto a = std::make_unique<GimbalActionSDK>(
-          cmd, request.action_id, push_freq(request.freq), std::move(push), robot, 0.0, 0.0,
-          request.get_yaw_speed(), request.get_pitch_speed(), false);
+      auto a = std::make_unique<GimbalActionSDK>(cmd, request.action_id, push_freq(request.freq),
+                                                 std::move(push), robot, 0.0, 0.0,
+                                                 request.get_yaw_speed(), request.get_pitch_speed(),
+                                                 Gimbal::Frame::chassis, Gimbal::Frame::chassis);
       response.accept = accept_code(robot->submit_action(std::move(a)));
       return true;
     } else {
@@ -1680,7 +1696,8 @@ struct BlasterSetLed : Proto<0x3f, 0x55> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Ignoring {}", request);
+    spdlog::warn("Partial implementation {}", request);
+    robot->set_blaster_led(request.g / 255.0, request.effect > 0);
     return true;
   }
 };

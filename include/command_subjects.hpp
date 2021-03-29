@@ -7,7 +7,7 @@
 
 #include "spdlog/spdlog.h"
 
-#include "robot.hpp"
+#include "robot/robot.hpp"
 #include "subject.hpp"
 #include "utils.hpp"
 
@@ -67,8 +67,8 @@ struct VelocitySubject : SubjectWithUID<0x0002000949a4009c> {
   }
 
   void update(Robot *robot) {
-    Twist2D twist_odom = from_robot(robot->get_twist(Robot::Frame::odom));
-    Twist2D twist_body = from_robot(robot->get_twist(Robot::Frame::body));
+    Twist2D twist_odom = from_robot(robot->chassis.get_twist(Frame::odom));
+    Twist2D twist_body = from_robot(robot->chassis.get_twist(Frame::body));
     vgx = twist_odom.x;
     vgy = twist_odom.y;
     vgz = twist_odom.theta;
@@ -95,7 +95,7 @@ struct PositionSubject final : SubjectWithUID<0x00020009eeb7cece> {
   }
 
   void update(Robot *robot) {
-    Pose2D pose_odom = from_robot(robot->get_pose());
+    Pose2D pose_odom = from_robot(robot->chassis.get_pose());
     position_x = pose_odom.x;
     position_y = pose_odom.y;
     position_z = pose_odom.theta;
@@ -118,7 +118,7 @@ struct AttiInfoSubject : SubjectWithUID<0x000200096b986306> {
   }
 
   void update(Robot *robot) {
-    Attitude attitude_odom = from_robot(robot->get_attitude());
+    Attitude attitude_odom = from_robot(robot->chassis.get_attitude());
     yaw = attitude_odom.yaw;
     pitch = attitude_odom.pitch;
     roll = attitude_odom.roll;
@@ -191,8 +191,8 @@ struct EscSubject : SubjectWithUID<0x00020009c14cb7c5> {
 
   void update(Robot *robot) {
     // spdlog::warn("EscSubject not implemented");
-    WheelSpeeds speeds = robot->get_wheel_speeds();
-    WheelValues<float> angles = robot->get_wheel_angles();
+    WheelSpeeds speeds = robot->chassis.get_wheel_speeds();
+    WheelValues<float> angles = robot->chassis.get_wheel_angles();
     float time_ = robot->get_time();
 
     speed[0] = EscSubject::esc_speed(speeds.front_right);
@@ -235,7 +235,7 @@ struct ImuSubject : SubjectWithUID<0x00020009a7985b8d> {
   }
 
   void update(Robot *robot) {
-    IMU imu_body = robot->get_imu();
+    IMU imu_body = robot->chassis.get_imu();
     acc_x = acc(imu_body.acceleration.x);
     acc_y = -acc(imu_body.acceleration.y);
     acc_z = -acc(imu_body.acceleration.z);
@@ -274,7 +274,7 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
 
   void update(Robot *robot) {
     // TODO(Jerome): Tentative. Some flags are still not clear
-    auto speeds = robot->get_wheel_speeds();
+    auto speeds = robot->chassis.get_wheel_speeds();
     static_flag = true;
     for (size_t i = 0; i < 4; i++) {
       if (abs(speeds[i]) > MAX_SPEED_STATIC) {
@@ -282,7 +282,7 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
         break;
       }
     }
-    auto attitude = robot->get_attitude();
+    auto attitude = robot->chassis.get_attitude();
     up_hill = (attitude.pitch < -MAX_PITCH_FLAT);
     down_hill = (attitude.pitch > MAX_PITCH_FLAT);
     on_slope = (abs(attitude.roll) > MAX_ROLL_FLAT);
@@ -343,7 +343,7 @@ struct GripperSubject : SubjectWithUID<0x00020009124d156a> {
 
   std::vector<uint8_t> encode() { return {status}; }
 
-  void update(Robot *robot) { status = robot->get_gripper_status(); }
+  void update(Robot *robot) { status = robot->gripper.get_status(); }
 };
 
 struct ArmSubject : SubjectWithUID<0x0002000926abd64d> {
@@ -359,7 +359,7 @@ struct ArmSubject : SubjectWithUID<0x0002000926abd64d> {
   }
 
   void update(Robot *robot) {
-    Vector3 position = robot->get_arm_position();
+    Vector3 position = robot->arm.get_position();
     pos_x = static_cast<uint32_t>(1000 * position.x);
     pos_y = static_cast<uint32_t>(1000 * position.z);
   }
@@ -444,10 +444,6 @@ struct TofSubject : SubjectWithUID<0x0002000986e4c05a> {
 struct GimbalPosSubject : SubjectWithUID<0x00020009f79b3c97> {
   std::string name() { return "Gimbal"; }
 
-  constexpr static size_t NUMBER_OF_TOF = 4;
-
-  static inline uint16_t encode_distance(float value) { return uint16_t(1000 * value); }
-
   int16_t yaw_ground_angle;
   int16_t pitch_ground_angle;
   int16_t yaw_angle;
@@ -466,12 +462,12 @@ struct GimbalPosSubject : SubjectWithUID<0x00020009f79b3c97> {
   }
 
   void update(Robot *robot) {
-    auto attitude = robot->get_gimbal_attitude();
-    yaw_angle = round(rad2deg(10 * attitude.yaw));
-    pitch_angle = round(rad2deg(10 * attitude.pitch));
-    attitude = robot->get_gimbal_attitude(true);
-    yaw_ground_angle = round(rad2deg(10 * attitude.yaw));
-    pitch_ground_angle = round(rad2deg(10 * attitude.pitch));
+    auto attitude = robot->gimbal.attitude(Gimbal::Frame::chassis);
+    yaw_angle = -round(rad2deg(10 * attitude.yaw));
+    pitch_angle = -round(rad2deg(10 * attitude.pitch));
+    attitude = robot->gimbal.attitude(Gimbal::Frame::fixed);
+    yaw_ground_angle = -round(rad2deg(10 * attitude.yaw));
+    pitch_ground_angle = -round(rad2deg(10 * attitude.pitch));
   }
 };
 

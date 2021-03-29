@@ -1,0 +1,146 @@
+#ifndef INCLUDE_ROBOT_GIMBAL_HPP_
+#define INCLUDE_ROBOT_GIMBAL_HPP_
+
+#include <algorithm>
+
+#include "../utils.hpp"
+#include "servo.hpp"
+
+struct Gimbal {
+  enum Mode { attitude_mode, velocity_mode };
+
+  enum Frame { chassis, fixed, gimbal };
+
+  Servo yaw_servo;
+  Servo pitch_servo;
+  Mode mode;
+  IMU chassis_imu;
+  Attitude chassis_attitude;
+  // The target angular speed in the frame `gimbal_fixed`: gravity aligned,
+  // orientation fixed when the robot starts.
+  Vector3 target_angular_velocity_in_gimbal_fixed;
+  Attitude target_attitude;
+
+  bool performing_action;
+  bool following_chassis;
+
+  GimbalValues<float> control_speed;
+
+  void update_control(float time_step, Attitude attitude, IMU imu);
+
+  Gimbal()
+      : yaw_servo(true, deg2rad(-250), deg2rad(250), deg2rad(540))
+      , pitch_servo(true, deg2rad(-30), deg2rad(25), deg2rad(540))
+      , mode(Mode::attitude_mode)
+      , chassis_imu()
+      , chassis_attitude()
+      , target_angular_velocity_in_gimbal_fixed()
+      , target_attitude()
+      , performing_action(false)
+      , following_chassis(false) {}
+  // float distance() const { return std::max(yaw_servo.distance(), pitch_servo.distance()); }
+
+  float distance() const {
+    if (mode == Mode::attitude_mode) {
+      Attitude current;
+      if (!performing_action && following_chassis) {
+        current = attitude(Frame::chassis);
+      } else {
+        current = attitude(Frame::fixed);
+      }
+      return std::max(abs(current.yaw - target_attitude.yaw),
+                      abs(current.pitch - target_attitude.pitch));
+    }
+    return 0.0;
+  }
+  // Angles in fixed frame only!!!
+  void set_target_angles(GimbalValues<float> angle) {
+    set_mode(Mode::attitude_mode);
+    target_attitude = {.pitch = angle.pitch, .yaw = angle.yaw};
+    // if (mode == Mode::attitude_mode) {
+    //   target_attitude = target_attitude + chassis_attitude;
+    // }
+  }
+
+  void set_target_speeds(GimbalValues<float> speed) {
+    set_mode(Mode::velocity_mode);
+    target_angular_velocity_in_gimbal_fixed = {.y = speed.pitch, .z = speed.yaw};
+  }
+
+  void reset_target_speeds() { target_angular_velocity_in_gimbal_fixed = {}; }
+
+  void set_control_speeds(GimbalValues<float> speed) { control_speed = speed; }
+
+  Attitude attitude(Frame frame) const {
+    Attitude value = {.yaw = yaw_servo.angle.current, .pitch = pitch_servo.angle.current};
+    if (frame == Frame::fixed)
+      value = value + chassis_attitude;
+    return value;
+  }
+
+  GimbalValues<float> current_angles() const {
+    return {.yaw = yaw_servo.angle.current, .pitch = pitch_servo.angle.current};
+  }
+
+  GimbalValues<float> target_angles() const {
+    return {.yaw = yaw_servo.angle.target, .pitch = pitch_servo.angle.target};
+  }
+
+  Vector3 angular_velocity(Frame frame) const {
+    Vector3 value = {.z = yaw_servo.speed.current, .y = pitch_servo.speed.current};
+    if (frame == Frame::fixed)
+      value = value + chassis_imu.angular_velocity;
+    return value;
+  }
+
+  GimbalValues<float> current_speeds() const {
+    return {.yaw = yaw_servo.speed.current, .pitch = pitch_servo.speed.current};
+  }
+
+  GimbalValues<float> target_speeds() const {
+    return {.yaw = yaw_servo.speed.target, .pitch = pitch_servo.speed.target};
+  }
+
+  void enable(bool value) { yaw_servo.enabled.desired = pitch_servo.enabled.desired = value; }
+
+  void follow_chassis(bool value) {
+    spdlog::info("[Chassis] follow_chassis -> {}", value);
+    if (value != following_chassis) {
+      following_chassis = value;
+      reset_target_attitude();
+    }
+  }
+
+  void reset_target_attitude() {
+    spdlog::info("[Chassis] reset_target_attitude [{}]", following_chassis);
+    if (following_chassis) {
+      target_attitude = attitude(Frame::chassis);
+    } else {
+      target_attitude = attitude(Frame::fixed);
+    }
+  }
+
+  void set_mode(Mode _mode) {
+    if (mode != _mode) {
+      mode = _mode;
+      if (mode == Mode::attitude_mode) {
+        reset_target_attitude();
+      }
+    }
+  }
+
+  GimbalValues<float> fixed_angles(GimbalValues<float> value, GimbalValues<Frame> frame) const {
+    GimbalValues<float> chassis_angles = chassis_attitude;
+    GimbalValues<float> servo_angles = current_angles();
+    for (size_t i = 0; i < value.size; i++) {
+      if (frame[i] == Frame::chassis) {
+        value[i] = value[i] + chassis_angles[i];
+      } else if (frame.yaw == Frame::gimbal) {
+        value[i] = value[i] + chassis_angles[i] + servo_angles[i];
+      }
+    }
+    return value;
+  }
+};
+
+#endif  //  INCLUDE_ROBOT_GIMBAL_HPP_ */

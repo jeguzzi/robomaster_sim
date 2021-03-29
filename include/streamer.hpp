@@ -7,7 +7,7 @@
 #include <boost/asio.hpp>
 
 #include "encoder.hpp"
-#include "robot.hpp"
+#include "robot/robot.hpp"
 
 namespace ba = boost::asio;
 

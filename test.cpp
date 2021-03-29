@@ -61,7 +61,8 @@ int main(int argc, char **argv) {
 
   auto io_context = std::make_shared<boost::asio::io_context>();
   spdlog::set_level(spdlog::level::from_str(log_level));
-  RealTimeDummyRobot dummy(io_context.get(), 0.05);
+  RealTimeDummyRobot dummy(io_context.get(), 0.05, false, false, {false, false, false}, true, false,
+                           false);
   RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, armor_hits,
                    ir_hits);
   spdlog::info("Start spinning");
