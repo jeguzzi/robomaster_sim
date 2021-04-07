@@ -137,6 +137,20 @@ struct Gimbal {
         value[i] = value[i] + chassis_angles[i];
       } else if (frame.yaw == Frame::gimbal) {
         value[i] = value[i] + chassis_angles[i] + servo_angles[i];
+      } else {
+        float delta = normalize(value[i] - chassis_angles[i] - servo_angles[i]);
+        const Servo *servo;
+        if (i == 0) {
+          servo = &yaw_servo;
+        } else {
+          servo = &pitch_servo;
+        }
+        if (servo_angles[i] + delta < servo->min_angle) {
+          delta += 2 * M_PI;
+        } else if (servo_angles[i] + delta > servo->max_angle) {
+          delta -= 2 * M_PI;
+        }
+        value[i] = delta + chassis_angles[i] + servo_angles[i];
       }
     }
     return value;

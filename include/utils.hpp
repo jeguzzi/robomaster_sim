@@ -23,6 +23,7 @@ template <typename T> struct ControllableValue {
   bool check() {
     if (target != desired || !initialized) {
       target = desired;
+      initialized = true;
       return true;
     }
     return false;

@@ -31,6 +31,9 @@ void DummyRobot::do_step(float time_step) {
     servo->speed.current = (servo->angle.current - angles[i]) / time_step;
   }
   if (has_gripper) {
+    if (gripper.state.current != gripper.state.target) {
+      spdlog::info("Gripper -> {}", gripper.state.target);
+    }
     gripper.state.current = gripper.state.target;
   }
   // This clamping is a mess

@@ -53,6 +53,7 @@ void ActiveLED::update(Color _color, LedEffect _effect, float _period_1, float _
 }
 
 void ActiveLED::do_step(float time_step) {
+  changed = 0;
   if (!active)
     return;
   _time = _time + time_step;

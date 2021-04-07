@@ -37,9 +37,9 @@ Twist2D from_robot(Twist2D twist) { return {twist.x, -twist.y, rad2deg(0.0)}; }
 Pose2D from_robot(Pose2D pose) { return {pose.x, -pose.y, rad2deg(0.0)}; }
 
 Attitude from_robot(Attitude attitude) {
-  return {.yaw = rad2deg(-attitude.yaw),
-          .pitch = rad2deg(-attitude.pitch),
-          .roll = rad2deg(attitude.roll)};
+  return {.yaw = rad2deg(normalize(-attitude.yaw)),
+          .pitch = rad2deg(normalize(-attitude.pitch)),
+          .roll = rad2deg(normalize(attitude.roll))};
 }
 
 struct VelocitySubject : SubjectWithUID<0x0002000949a4009c> {

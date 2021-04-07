@@ -173,7 +173,9 @@ void Robot::do_step(float time_step) {
     }
   }
 
-  gimbal.update_control(time_step, chassis.attitude, chassis.imu);
+  if (has_gimbal) {
+    gimbal.update_control(time_step, chassis.attitude, chassis.imu);
+  }
 
   control_chassis();
   control_leds();

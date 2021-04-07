@@ -16,7 +16,8 @@ static void show_usage(std::string name) {
             << "  --udp\t\t\t\tVideo stream via UDP" << std::endl
             << "  --bitrate=<BITRATE>\t\tVideo stream bitrate (default: 200000)" << std::endl
             << "  --armor_hits\t\t\tPublish armor hits" << std::endl
-            << "  --ir_hits\t\t\tPublish IR hits" << std::endl;
+            << "  --ir_hits\t\t\tPublish IR hits" << std::endl
+            << "  --period=<PERIOD>\t\tUpdate step [s] (default: 0.05)" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -28,6 +29,7 @@ int main(int argc, char **argv) {
   char serial[100] = "RM0001";
   char log_level[100] = "info";
   char ip[100] = "";
+  float period = 0.05;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--udp") == 0) {
       use_udp = true;
@@ -53,6 +55,9 @@ int main(int argc, char **argv) {
       ir_hits = true;
       continue;
     }
+    if (sscanf(argv[i], "--period=%f", &period)) {
+      continue;
+    }
     if (strcmp(argv[i], "--help") == 0) {
       show_usage(argv[0]);
       return 0;
@@ -61,8 +66,8 @@ int main(int argc, char **argv) {
 
   auto io_context = std::make_shared<boost::asio::io_context>();
   spdlog::set_level(spdlog::level::from_str(log_level));
-  RealTimeDummyRobot dummy(io_context.get(), 0.05, false, false, {false, false, false}, true, false,
-                           false);
+  RealTimeDummyRobot dummy(io_context.get(), period, true, true, {true, true, false}, true, true,
+                           true);
   RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, armor_hits,
                    ir_hits);
   spdlog::info("Start spinning");

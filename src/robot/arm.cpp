@@ -60,6 +60,7 @@ ArmServoValues<float> Arm::safe_motor_angles(const ArmServoValues<float> &target
 }
 
 void Arm::update_position() { position = forward_arm_kinematics(get_motors_angle()); }
+
 void Arm::update_control(const Vector3 &target_position) {
   // no planning, just a dummy (direct) controller based on inverse kinematic
   auto angles = inverse_arm_kinematics(target_position, position, get_motors_angle());

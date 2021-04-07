@@ -19,7 +19,7 @@ void Topic::start() {
   active = true;
   deadline = 0.0f;
   // deadline = 1.0f/request.sub_freq;
-  spdlog::info("[Topic] Start {}", subject->name());
+  spdlog::info("[Topic] Start {} @ {} Hz", subject->name(), request.sub_freq);
   // publish();
 }
 
