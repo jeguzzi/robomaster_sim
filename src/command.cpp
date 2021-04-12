@@ -14,6 +14,8 @@
 #include "robomaster.hpp"
 #include "subscriber_messages.hpp"
 
+#define MAX_HEARTBEAT_DELAY 3.0
+
 using boost::asio::ip::udp;
 
 bool AddSubMsg::answer(const Request &request, Response &response, Robot *robot, Commands *server) {
@@ -34,8 +36,10 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
     : Server(_io_context, robot, ip, port)
     , robomaster(rm)
     , enable_armor_hits(enable_armor_hits)
-    , enable_ir_hits(enable_ir_hits) {
-  register_message<SdkHeartBeat>();
+    , enable_ir_hits(enable_ir_hits)
+    , _time(0.0)
+    , connected(false) {
+  register_message<SdkHeartBeat, Commands *>(this);
   register_message<SetSdkMode, Commands *>(this);
   register_message<SetRobotMode>();
   register_message<GetRobotMode>();
@@ -113,14 +117,18 @@ void Commands::add_subscriber_node(uint8_t node_id) {
     ir_hit_event = std::make_unique<IRHitEvent>(this, robot, node_id);
   // Disabled
   // uart_event = std::make_unique<UARTEvent>(this, robot);
+  last_heartbeat = _time;
+  connected = true;
+}
+
+void Commands::got_heartbeat() {
+  last_heartbeat = _time;
+  spdlog::debug("[Commands] got hearbeat at {}", last_heartbeat);
 }
 
 void Commands::reset_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] reset subscriber {}", node_id);
-  armor_hit_event = nullptr;
-  ir_hit_event = nullptr;
-  vision_event = nullptr;
-  publishers.clear();
+  unconnect();
 }
 
 void Commands::set_enable_sdk(bool value) {
@@ -168,10 +176,28 @@ void Commands::do_step(float time_step) {
     ir_hit_event->do_step(time_step);
   if (uart_event)
     uart_event->do_step(time_step);
+  // check the hearbeat
+  _time += time_step;
+  if (connected && (_time - last_heartbeat > MAX_HEARTBEAT_DELAY)) {
+    spdlog::warn("[Commands] lost connection at {:.3f}, last heart beat received at {:.3f}", _time,
+                 last_heartbeat);
+    unconnect();
+  }
 }
 
 VideoStreamer *Commands::get_video_streamer() { return robomaster->get_video_streamer(); }
 
 void Commands::set_vision_request(uint8_t sender, uint8_t request, uint16_t mask) {
   vision_event = std::make_unique<VisionEvent>(this, robot, sender, request, mask);
+}
+
+void Commands::unconnect() {
+  spdlog::debug("[Commands] unconnect");
+  robot->stop_streaming();
+  get_video_streamer()->stop();
+  armor_hit_event = nullptr;
+  ir_hit_event = nullptr;
+  vision_event = nullptr;
+  publishers.clear();
+  connected = false;
 }

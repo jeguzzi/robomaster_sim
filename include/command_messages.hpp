@@ -620,7 +620,10 @@ struct SdkHeartBeat : Proto<0x3f, 0xd5> {
     }
   };
 
-  static bool answer(const Request &request, Response &response, Robot *robot) { return true; }
+  static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
+    cmd->got_heartbeat();
+    return true;
+  }
 };
 
 struct SetSdkMode : Proto<0x3f, 0xd1> {
