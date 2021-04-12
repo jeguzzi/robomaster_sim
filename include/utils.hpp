@@ -76,8 +76,8 @@ struct Vector3 {
   float x, y, z;
 
   Vector3 rotate_around_z(float theta) const {
-    float s = sin(theta);
-    float c = cos(theta);
+    float s = std::sin(theta);
+    float c = std::cos(theta);
     return {x * c - y * s, x * s + y * c, z};
   }
 
@@ -170,7 +170,7 @@ struct Pose2D {
 
   inline float distance() const { return sqrt(x * x + y * y); }
 
-  inline float norm() const { return distance() + abs(normalize(theta)); }
+  inline float norm() const { return distance() + std::abs(normalize(theta)); }
 
   // Pose2D relative_to(Pose2D pose) {
   //   Twist2D delta = *this - pose;
@@ -488,8 +488,8 @@ struct Vector2 {
   float x, y;
 
   Vector2 rotate_around_z(float theta) {
-    float s = sin(theta);
-    float c = cos(theta);
+    float s = std::sin(theta);
+    float c = std::cos(theta);
     return {x * c - y * s, x * s + y * c};
   }
 

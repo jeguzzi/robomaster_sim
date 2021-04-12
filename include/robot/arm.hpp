@@ -31,10 +31,10 @@ struct Arm {
   static ArmServoValues<float> safe_motor_angles(const ArmServoValues<float> &target_values);
 
   Arm(Servo &left_motor, Servo &right_motor)
-      : motors({.left = left_motor, .right = right_motor}) {}
+      : motors({.right = right_motor, .left = left_motor}) {}
 
   ArmServoValues<float> get_motors_angle(ValueType type = CURRENT) const {
-    return {.left = motors.left.angle.get(type), .right = motors.right.angle.get(type)};
+    return {.right = motors.right.angle.get(type), .left = motors.left.angle.get(type)};
   }
 
   void set_motors_angle(ArmServoValues<float> value, ValueType type = CURRENT) const {
@@ -49,8 +49,8 @@ struct Arm {
   void limit_motor_angles(ValueType);
   void limit_motors(float time_step);
   ArmServoValues<float> get_motors_desired_angle(float time_step) const {
-    return {.left = motors.left.get_desired_angle(time_step),
-            .right = motors.right.get_desired_angle(time_step)};
+    return {.right = motors.right.get_desired_angle(time_step),
+            .left = motors.left.get_desired_angle(time_step)};
   }
   void set_motors_desired_angle(ArmServoValues<float> values, float time_step) {
     motors.left.set_desired_angle(values.left, time_step);

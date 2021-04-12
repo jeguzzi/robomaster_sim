@@ -18,7 +18,7 @@ struct Servo {
       , mode(Mode::ANGLE)
       , enabled(enabled) {}
 
-  float distance() const { return abs(normalize(angle.current - angle.desired)); }
+  float distance() const { return std::abs(normalize(angle.current - angle.desired)); }
   float min_angle;
   float max_angle;
   float max_speed;

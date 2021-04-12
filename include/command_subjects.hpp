@@ -277,7 +277,7 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
     auto speeds = robot->chassis.get_wheel_speeds();
     static_flag = true;
     for (size_t i = 0; i < 4; i++) {
-      if (abs(speeds[i]) > MAX_SPEED_STATIC) {
+      if (std::abs(speeds[i]) > MAX_SPEED_STATIC) {
         static_flag = false;
         break;
       }
@@ -285,8 +285,8 @@ struct SaStatusSubject : SubjectWithUID<0x000200094a2c6d55> {
     auto attitude = robot->chassis.get_attitude();
     up_hill = (attitude.pitch < -MAX_PITCH_FLAT);
     down_hill = (attitude.pitch > MAX_PITCH_FLAT);
-    on_slope = (abs(attitude.roll) > MAX_ROLL_FLAT);
-    roll_over = (abs(normalize(attitude.roll)) > MIN_ROLL_OVER);
+    on_slope = (std::abs(attitude.roll) > MAX_ROLL_FLAT);
+    roll_over = (std::abs(normalize(attitude.roll)) > MIN_ROLL_OVER);
     hill_static = up_hill & static_flag;
   }
 };

@@ -5,9 +5,9 @@
 static Color breath_led(float _time, Color color, float period_1, float period_2) {
   float f;
   if (_time < period_1) {
-    f = sin(_time / period_1 * M_PI_2);
+    f = std::sin(_time / period_1 * M_PI_2);
   } else {
-    f = cos((_time - period_1) / period_2 * M_PI_2);
+    f = std::cos((_time - period_1) / period_2 * M_PI_2);
   }
   spdlog::debug("breath {} {}: {} -> {}", period_1, period_2, _time, f);
   return color * (f * f);

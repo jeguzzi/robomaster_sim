@@ -40,7 +40,7 @@ struct Action {
 };
 
 inline float time_to_goal(const Pose2D &goal_pose, float linear_speed, float angular_speed) {
-  return std::max(abs(normalize(goal_pose.theta)) / angular_speed,
+  return std::max(std::abs(normalize(goal_pose.theta)) / angular_speed,
                   goal_pose.distance() / linear_speed);
 }
 
@@ -106,7 +106,7 @@ struct MoveGimbalAction : Action {
                    float pitch_speed, Gimbal::Frame yaw_frame, Gimbal::Frame pitch_frame)
       : Action(robot)
       , target({.yaw = target_yaw, .pitch = target_pitch})
-      , speed({.pitch = pitch_speed, .yaw = yaw_speed})
+      , speed({.yaw = yaw_speed, .pitch = pitch_speed})
       , frame({.yaw = yaw_frame, .pitch = pitch_frame}) {}
 
   virtual void do_step(float time_step);

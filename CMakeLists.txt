@@ -121,6 +121,7 @@ link_directories(
 /usr/local/opt/icu4c/lib
 )
 
+if (EXISTS "coppeliaSim_plugin")
 add_subdirectory(coppeliaSim_plugin)
 
 target_link_libraries(simExtRobomaster
@@ -139,6 +140,7 @@ target_compile_options(simExtRobomaster PUBLIC
 "-Wno-delete-non-virtual-dtor"
 "-Wno-unused-result"
 )
+endif()
 
 # add_executable(test_log test_log.cpp)
 #

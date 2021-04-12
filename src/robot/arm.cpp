@@ -2,13 +2,14 @@
 
 Vector3 Arm::forward_arm_kinematics(const ArmServoValues<float> &_angles) {
   ArmServoValues<float> angles = ZERO - _angles;
-  Vector3 p = {cos(angles.right) - cos(angles.left), 0, sin(angles.right) - sin(angles.left)};
+  Vector3 p = {std::cos(angles.right) - std::cos(angles.left), 0,
+               std::sin(angles.right) - std::sin(angles.left)};
   return p * L + OFFSET;
 }
 
 Matrix2 Arm::Jacobian(ArmServoValues<float> angles) {
-  return {L * sin(ZERO.right - angles.right), -L * sin(ZERO.left - angles.left),
-          -L * cos(ZERO.right - angles.right), L * cos(ZERO.left - angles.left)};
+  return {L * std::sin(ZERO.right - angles.right), -L * std::sin(ZERO.left - angles.left),
+          -L * std::cos(ZERO.right - angles.right), L * std::cos(ZERO.left - angles.left)};
 }
 
 ArmServoValues<float> Arm::inverse_arm_kinematics(const Vector3 &position,

@@ -48,15 +48,15 @@ struct Gimbal {
       } else {
         current = attitude(Frame::fixed);
       }
-      return std::max(abs(current.yaw - target_attitude.yaw),
-                      abs(current.pitch - target_attitude.pitch));
+      return std::max(std::abs(current.yaw - target_attitude.yaw),
+                      std::abs(current.pitch - target_attitude.pitch));
     }
     return 0.0;
   }
   // Angles in fixed frame only!!!
   void set_target_angles(GimbalValues<float> angle) {
     set_mode(Mode::attitude_mode);
-    target_attitude = {.pitch = angle.pitch, .yaw = angle.yaw};
+    target_attitude = {.yaw = angle.yaw, .pitch = angle.pitch};
     // if (mode == Mode::attitude_mode) {
     //   target_attitude = target_attitude + chassis_attitude;
     // }
@@ -87,7 +87,7 @@ struct Gimbal {
   }
 
   Vector3 angular_velocity(Frame frame) const {
-    Vector3 value = {.z = yaw_servo.speed.current, .y = pitch_servo.speed.current};
+    Vector3 value = {.y = pitch_servo.speed.current, .z = yaw_servo.speed.current};
     if (frame == Frame::fixed)
       value = value + chassis_imu.angular_velocity;
     return value;

@@ -128,10 +128,10 @@ DetectedObjects DummyRobot::read_detected_objects() const {
   return objects;
 }
 
-hit_event_t DummyRobot::read_hit_events() const { return {{.index = 0, .type = 0}}; }
+hit_event_t DummyRobot::read_hit_events() const { return {{.type = 0, .index = 0}}; }
 
 ir_event_t DummyRobot::read_ir_events() const { return {{}}; }
 
 std::vector<ToFReading> DummyRobot::read_tof() const {
-  return {{.active = true, .distance = 0.89}};
+  return {{.distance = 0.89, .active = true}};
 }

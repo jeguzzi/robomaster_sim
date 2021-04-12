@@ -36,4 +36,9 @@
 build
 playground
 archive
+archived
 include/spdlog
+coppeliaSim_plugin_debug
+linux_build
+xcode
+__pycache__
