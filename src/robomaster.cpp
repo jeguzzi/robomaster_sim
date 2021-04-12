@@ -27,11 +27,11 @@ static std::string pad_serial(std::string value) {
 
 RoboMaster::RoboMaster(std::shared_ptr<boost::asio::io_context> _io_context, Robot *_robot,
                        std::string serial_number, bool udp_video_stream,
-                       unsigned video_stream_bitrate, std::string ip, bool enable_armor_hits,
-                       bool enable_ir_hits)
+                       unsigned video_stream_bitrate, std::string ip, unsigned prefix_len,
+                       bool enable_armor_hits, bool enable_ir_hits)
     : io_context(_io_context ? _io_context : std::make_shared<boost::asio::io_context>())
     , robot(_robot)
-    , discovery(io_context.get(), pad_serial(serial_number), ip)
+    , discovery(io_context.get(), pad_serial(serial_number), ip, prefix_len)
     , conn(io_context.get(), robot, ip, 30030)
     , cmds(io_context.get(), robot, this, ip, 20020, enable_armor_hits, enable_ir_hits) {
   // spdlog::set_level(spdlog::level::info);

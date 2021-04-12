@@ -13,7 +13,7 @@ using ba::ip::udp;
 class Discovery {
  public:
   Discovery(boost::asio::io_context *io_context, std::string serial_number, std::string ip = "",
-            float period = 1.0);
+            unsigned prefix_len = 0, float period = 1.0);
   void start();
   void stop();
   void do_step(float time_step);
@@ -25,7 +25,7 @@ class Discovery {
   float deadline;
   std::string message;
   std::vector<unsigned> ports;
-
+  boost::asio::ip::address_v4 broadcast_address;
   void publish();
 };
 

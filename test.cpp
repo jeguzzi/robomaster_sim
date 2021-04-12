@@ -12,6 +12,7 @@ static void show_usage(std::string name) {
             << "  --help\t\t\tShow this help message" << std::endl
             << "  --log_level=<LEVEL>\t\tLog level (default: info)" << std::endl
             << "  --ip=<IP>\t\t\tRobot ip (default: 0.0.0.0)" << std::endl
+            << "  --prefix_len=<LENGTH>\t\t\tRobot network prefix length (default: 0)" << std::endl
             << "  --serial_number=<SERIAL>\tRobot serial number (default: RM0001)" << std::endl
             << "  --udp\t\t\t\tVideo stream via UDP" << std::endl
             << "  --bitrate=<BITRATE>\t\tVideo stream bitrate (default: 200000)" << std::endl
@@ -30,6 +31,7 @@ int main(int argc, char **argv) {
   char log_level[100] = "info";
   char ip[100] = "";
   float period = 0.05;
+  unsigned prefix_len = 0;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--udp") == 0) {
       use_udp = true;
@@ -58,6 +60,9 @@ int main(int argc, char **argv) {
     if (sscanf(argv[i], "--period=%f", &period)) {
       continue;
     }
+    if (sscanf(argv[i], "--prefix_len=%d", &prefix_len)) {
+      continue;
+    }
     if (strcmp(argv[i], "--help") == 0) {
       show_usage(argv[0]);
       return 0;
@@ -68,8 +73,8 @@ int main(int argc, char **argv) {
   spdlog::set_level(spdlog::level::from_str(log_level));
   RealTimeDummyRobot dummy(io_context.get(), period, true, true, {true, true, false}, true, true,
                            true);
-  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, armor_hits,
-                   ir_hits);
+  RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, prefix_len,
+                   armor_hits, ir_hits);
   spdlog::info("Start spinning");
   robot.spin(false);
   std::cout << "Goodbye" << std::endl;

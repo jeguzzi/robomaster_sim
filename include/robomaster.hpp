@@ -20,7 +20,8 @@ class RoboMaster {
   explicit RoboMaster(std::shared_ptr<boost::asio::io_context> io_context, Robot *robot,
                       std::string serial_number = "RM0001", bool udp_video_stream = false,
                       unsigned video_stream_bitrate = 200000, std::string ip = "",
-                      bool enable_armor_hits = false, bool enable_ir_hits = false);
+                      unsigned prefix_len = 0, bool enable_armor_hits = false,
+                      bool enable_ir_hits = false);
   void spin(bool);
   void do_step(float);
   ~RoboMaster() {
