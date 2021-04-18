@@ -9,7 +9,7 @@ static Color breath_led(float _time, Color color, float period_1, float period_2
   } else {
     f = std::cos((_time - period_1) / period_2 * M_PI_2);
   }
-  spdlog::debug("breath {} {}: {} -> {}", period_1, period_2, _time, f);
+  // spdlog::debug("breath {} {}: {} -> {}", period_1, period_2, _time, f);
   return color * (f * f);
 }
 
@@ -46,23 +46,30 @@ void ActiveLED::update(Color _color, LedEffect _effect, float _period_1, float _
     color = tcolor;
   if (effect == LedEffect::scrolling)
     period = 0.175 + _period_1 + 7.5 * period_2;
-  active = (effect != LedEffect::off && effect != LedEffect::on);
-  if (active)
-    _time = 0;
+  active = true;
+  _time = 0;
+  // active = (effect != LedEffect::off && effect != LedEffect::on);
+  // if (active)
+  //   _time = 0;
   changed = true;
 }
 
 void ActiveLED::do_step(float time_step) {
-  changed = 0;
-  if (!active)
+  if (!active) {
+    changed = 0;
     return;
+  }
+  changed = 0xFF;
+  if (effect == LedEffect::off || effect == LedEffect::on) {
+    active = false;
+    return;
+  }
   _time = _time + time_step;
   if (!loop && _time > period) {
     active = false;
     // TODO(Jerome): Check which color at the end of an effect
     return;
   }
-  changed = 0xFF;
   _time = fmod(_time, period);
   if (effect == LedEffect::flash) {
     color = flash_led(_time, tcolor, period_1, period_2);

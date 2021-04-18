@@ -60,6 +60,7 @@ template <typename T> struct ControllableValue {
     case TARGET:
       return target;
     }
+    return current;
   }
 };
 
@@ -82,7 +83,8 @@ struct Vector3 {
   }
 
   template <typename OStream> friend OStream &operator<<(OStream &os, const Vector3 &r) {
-    os << "Vector3 < " << r.x << ", " << r.y << ", " << r.z << " >";
+    os << std::fixed << std::setprecision(3) << "Vector3 < " << r.x << ", " << r.y << ", " << r.z
+       << " >";
     return os;
   }
 
@@ -103,7 +105,8 @@ struct Attitude {
   float yaw, pitch, roll;
 
   template <typename OStream> friend OStream &operator<<(OStream &os, const Attitude &v) {
-    os << "Attitude < " << v.roll << ", " << v.pitch << ", " << v.yaw << " >";
+    os << std::fixed << std::setprecision(3) << "Attitude < " << v.roll << ", " << v.pitch << ", "
+       << v.yaw << " >";
     return os;
   }
 
@@ -126,7 +129,8 @@ struct Twist2D {
   }
 
   template <typename OStream> friend OStream &operator<<(OStream &os, const Twist2D &r) {
-    os << "Twist2D < " << r.x << ", " << r.y << ", " << r.theta << " >";
+    os << std::fixed << std::setprecision(3) << "Twist2D < " << r.x << ", " << r.y << ", "
+       << r.theta << " >";
     return os;
   }
 };
@@ -182,7 +186,7 @@ struct Pose2D {
   Pose2D relative_to(Pose2D pose) { return pose.inverse() * (*this); }
 
   template <typename OStream> friend OStream &operator<<(OStream &os, const Pose2D &r) {
-    os << std::setprecision(3);
+    os << std::fixed << std::setprecision(3);
     os << "Pose2D < " << r.x << ", " << r.y << ", " << r.theta << " >";
     return os;
   }
@@ -243,6 +247,7 @@ template <typename T> struct WheelValues {
 };
 
 template <typename OStream, typename T> OStream &operator<<(OStream &os, const WheelValues<T> &v) {
+  os << std::fixed << std::setprecision(3);
   os << "Wheel < "
      << " front left: " << v.front_left << ", front right: " << v.front_right
      << ", rear left: " << v.rear_left << ", rear right: " << v.rear_right << " >";
@@ -423,6 +428,7 @@ template <typename T> struct ArmServoValues {
 
 template <typename OStream, typename T>
 OStream &operator<<(OStream &os, const ArmServoValues<T> &v) {
+  os << std::fixed << std::setprecision(3);
   os << "ArmServo < "
      << "left: " << v.left << ", right: " << v.right << " >";
   return os;
@@ -600,11 +606,13 @@ inline int servo_angle_value(size_t index, float angle) {
 }
 
 struct IMU {
+  Attitude attitude;
   Vector3 angular_velocity;
   Vector3 acceleration;
 
   template <typename OStream> friend OStream &operator<<(OStream &os, const IMU &v) {
-    os << "IMU < pose: " << v.angular_velocity << ", acceleration: " << v.acceleration << " >";
+    os << "IMU < attitude: " << v.attitude << ", angular velocity: " << v.angular_velocity
+       << ", acceleration: " << v.acceleration << " >";
     return os;
   }
 };

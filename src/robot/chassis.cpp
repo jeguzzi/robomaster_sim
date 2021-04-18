@@ -48,6 +48,8 @@ void Chassis::update_odometry(float time_step) {
 void Chassis::update_attitude(float time_step) {
   // spdlog::info("[Chassis] imu {}", imu);
   attitude.yaw += time_step * imu.angular_velocity.z;
+  attitude.pitch = imu.attitude.pitch;
+  attitude.roll = imu.attitude.roll;
   // use [imu] attitude as a source for odometry angular data:
   odometry.twist.theta = imu.angular_velocity.z;
   odometry.pose.theta = attitude.yaw;

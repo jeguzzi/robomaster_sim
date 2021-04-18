@@ -65,16 +65,6 @@ struct DetectedObjects {
   std::vector<Robot> robots;
 
   template <typename T> const std::vector<T> &get() const;
-
-  template <> const std::vector<Person> &get() const { return people; }
-
-  template <> const std::vector<Gesture> &get() const { return gestures; }
-
-  template <> const std::vector<Line> &get() const { return lines; }
-
-  template <> const std::vector<Marker> &get() const { return markers; }
-
-  template <> const std::vector<Robot> &get() const { return robots; }
 };
 
 struct Vision {

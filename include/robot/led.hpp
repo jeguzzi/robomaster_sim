@@ -34,7 +34,8 @@ struct Color {
 };
 
 template <typename OStream> OStream &operator<<(OStream &os, const Color &v) {
-  os << "Color <" << int(v.r) << ", " << int(v.g) << ", " << int(v.b) << ">";
+  os << std::fixed << std::setprecision(2);
+  os << "Color <" << v.r << ", " << v.g << ", " << v.b << ">";
   return os;
 }
 

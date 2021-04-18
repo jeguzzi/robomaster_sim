@@ -31,7 +31,11 @@ struct Arm {
   static ArmServoValues<float> safe_motor_angles(const ArmServoValues<float> &target_values);
 
   Arm(Servo &left_motor, Servo &right_motor)
-      : motors({.right = right_motor, .left = left_motor}) {}
+      : motors({.right = right_motor, .left = left_motor}) {
+    // motors.right.min_angle = -0.2740f;
+    // motors.right.max_angle = 1.3840f;
+    // left motor limits depends on the right motor angle and are updated in `Arm::limit_motors`
+  }
 
   ArmServoValues<float> get_motors_angle(ValueType type = CURRENT) const {
     return {.right = motors.right.angle.get(type), .left = motors.left.angle.get(type)};

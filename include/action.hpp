@@ -126,8 +126,8 @@ struct RoboticArmMovePush : Proto<0x3f, 0xb6> {
 struct MoveArmActionSDK : MoveArmAction, ActionSDK<RoboticArmMovePush> {
   MoveArmActionSDK(Commands *cmd, uint8_t id, float frequency,
                    std::unique_ptr<RoboticArmMovePush::Response> push, Robot *robot, float x,
-                   float z, bool relative)
-      : MoveArmAction(robot, x, z, relative)
+                   float z, bool absolute)
+      : MoveArmAction(robot, x, z, absolute)
       , ActionSDK<RoboticArmMovePush>(cmd, id, frequency, std::move(push), this) {
     action = this;
   }

@@ -67,6 +67,7 @@ IMU DummyRobot::read_imu() const {
   imu.acceleration = {0, 0, 9.81};
   // use odom as the source of velocity
   imu.angular_velocity = {0, 0, chassis.get_twist(Frame::body).theta};
+  imu.attitude = {0, 0, 0};
   return imu;
 }
 

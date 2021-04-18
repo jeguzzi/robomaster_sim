@@ -32,9 +32,10 @@ void Gimbal::update_control(float time_step, Attitude attitude, IMU imu) {
       pitch_servo.mode.desired = Servo::SPEED;
       // spdlog::info("[Gimbal] desired yaw speed {},  desired pitch speed {}",
       //              yaw_servo.speed.desired, pitch_servo.speed.desired);
-      if (yaw_servo.will_pass_limits(time_step))
+      float _speed;
+      if (yaw_servo.will_pass_limits(time_step, _speed))
         target_attitude.yaw = yaw_servo.angle.current + chassis_attitude.yaw;
-      if (pitch_servo.will_pass_limits(time_step))
+      if (pitch_servo.will_pass_limits(time_step, _speed))
         target_attitude.pitch = pitch_servo.angle.current + chassis_attitude.pitch;
     } else {
       yaw_servo.angle.desired = target_attitude.yaw;
@@ -52,10 +53,10 @@ void Gimbal::update_control(float time_step, Attitude attitude, IMU imu) {
     yaw_servo.mode.desired = Servo::SPEED;
     pitch_servo.speed.desired = omega.y;
     pitch_servo.mode.desired = Servo::SPEED;
-
-    if (yaw_servo.will_pass_limits(time_step))
+    float _speed;
+    if (yaw_servo.will_pass_limits(time_step, _speed))
       target_angular_velocity_in_gimbal_fixed.z = 0;
-    if (pitch_servo.will_pass_limits(time_step))
+    if (pitch_servo.will_pass_limits(time_step, _speed))
       target_angular_velocity_in_gimbal_fixed.y = 0;
   }
 }

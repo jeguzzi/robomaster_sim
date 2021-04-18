@@ -4,6 +4,30 @@
 
 #include "coppeliasim_robot.hpp"
 
+// bool read_vector_from_signal(const std::string name, Vector3 *out) {
+//   simInt buffer_lenght;
+//   simChar *buffer = simGetStringSignal(name.data(), &buffer_lenght);
+//   if (buffer && buffer_lenght == sizeof(Vector3)) {
+//     simInt stack = simCreateStack();
+//     simInt r = simUnpackTable(stack, buffer, buffer_lenght);
+//     if (r < 0) {
+//       return false;
+//     }
+//     r = simGetStackFloatTable(stack, &(out->x), 3);
+//     return (r >= 0);
+//   }
+// }
+
+bool read_vector_from_signal(const std::string name, Vector3 *out) {
+  simInt buffer_lenght;
+  simChar *buffer = simGetStringSignal(name.data(), &buffer_lenght);
+  if (buffer && buffer_lenght == sizeof(Vector3)) {
+    memcpy(&(out->x), buffer, buffer_lenght);
+    return true;
+  }
+  return false;
+}
+
 void CoppeliaSimRobot::forward_target_wheel_speeds(const WheelSpeeds &speeds) {
   for (size_t i = 0; i < speeds.size; i++) {
     spdlog::debug("Set wheel joint {} speed to {}", i, speeds[i]);
@@ -62,21 +86,40 @@ WheelValues<float> CoppeliaSimRobot::read_wheel_angles() const {
 
 // DONE(jerome): add force sensor?, simulate gyro/magnetometer
 // or maybe just get velocity and compute acceleration in the base class
-IMU CoppeliaSimRobot::read_imu() const { return chassis.imu; }
-
-void CoppeliaSimRobot::has_read_accelerometer(float x, float y, float z) {
-  chassis.imu.acceleration = {x, y, z};
+IMU CoppeliaSimRobot::read_imu() const {
+  IMU imu;
+  if (!read_vector_from_signal(gyro_signal, &imu.angular_velocity)) {
+    spdlog::warn("Could not read signal {}", gyro_signal);
+    return {};
+  }
+  if (!read_vector_from_signal(accelerometer_signal, &imu.acceleration)) {
+    spdlog::warn("Could not read signal {}", accelerometer_signal);
+    return {};
+  }
+  // TODO(IMU has no attitude->should move it in a separate method)
+  simFloat euler_angles[3];
+  if (simGetObjectOrientation(imu_handle, -1, euler_angles) < 0) {
+    spdlog::warn("Could not get orientation of object {} [imu_handle]", imu_handle);
+    return {};
+  }
+  imu.attitude.roll = euler_angles[0];
+  imu.attitude.pitch = euler_angles[1];
+  return imu;
 }
 
-void CoppeliaSimRobot::has_read_gyro(float x, float y, float z) {
-  // spdlog::info("[CS] has_read_gyro {} {} {}", x, y, z);
-  chassis.imu.angular_velocity = {x, y, z};
-}
+// void CoppeliaSimRobot::has_read_accelerometer(float x, float y, float z) {
+//   chassis.imu.acceleration = {x, y, z};
+// }
 
-void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) {
-  chassis.attitude.roll = alpha;
-  chassis.attitude.pitch = beta;
-}
+// void CoppeliaSimRobot::has_read_gyro(float x, float y, float z) {
+//   // spdlog::info("[CS] has_read_gyro {} {} {}", x, y, z);
+//   chassis.imu.angular_velocity = {x, y, z};
+// }
+
+// void CoppeliaSimRobot::update_orientation(float alpha, float beta, float gamma) {
+//   chassis.attitude.roll = alpha;
+//   chassis.attitude.pitch = beta;
+// }
 
 std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() const {
   if (!camera_handle)

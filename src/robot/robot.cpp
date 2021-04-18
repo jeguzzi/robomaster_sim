@@ -86,11 +86,13 @@ void Robot::control_servos() {
     if (servo->mode.target == Servo::SPEED) {
       float desired_speed = servo->desired_speed(last_time_step);
       if (servo->speed.target != desired_speed) {
+        spdlog::debug("servo {}, set target speed to {}", i, desired_speed);
         servo->speed.target = desired_speed;
         forward_target_servo_speed(i, servo->speed.target);
       }
     } else {
       if (servo->angle.check()) {
+        spdlog::debug("Servo {}, set target angle to {}", i, servo->angle.target);
         forward_target_servo_angle(i, servo->angle.target);
       }
     }
@@ -167,6 +169,7 @@ void Robot::do_step(float time_step) {
   while (it != actions.cend()) {
     it->second->do_step_cb(time_step);
     if (it->second->done()) {
+      previous_action_state[it->first] = it->second->state;
       it = actions.erase(it);
     } else {
       it++;
@@ -198,6 +201,8 @@ void Robot::do_step(float time_step) {
 void Robot::set_led_effect(Color color, LedMask mask, CompositeLedMask led_mask,
                            ActiveLED::LedEffect effect, float period_on, float period_off,
                            bool loop) {
+  spdlog::info("[Robot] set led effect: color {}, mask {}, led_mask {}, effect {}", color, mask,
+               led_mask, effect);
   if (mask & ARMOR_BOTTOM_BACK)
     chassis_leds.rear.update(color, effect, period_on, period_off, loop);
   if (mask & ARMOR_BOTTOM_FRONT)

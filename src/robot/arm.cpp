@@ -64,10 +64,13 @@ void Arm::update_position() { position = forward_arm_kinematics(get_motors_angle
 
 void Arm::update_control(const Vector3 &target_position) {
   // no planning, just a dummy (direct) controller based on inverse kinematic
+  spdlog::debug("[Arm] update control towards {} from {}", target_position, position);
   auto angles = inverse_arm_kinematics(target_position, position, get_motors_angle());
+  spdlog::debug("[Arm] -> desired servo angles {} from {}", angles, get_motors_angle());
   motors.left.angle.set_target(angles.left);
   motors.right.angle.set_target(angles.right);
   limit_motor_angles(DESIRED);
+  spdlog::debug("[Arm] [clamped] -> {} {}", motors.left.angle.desired, motors.right.angle.desired);
 }
 
 void Arm::limit_motor_angles(ValueType level) {
@@ -75,6 +78,11 @@ void Arm::limit_motor_angles(ValueType level) {
 }
 
 void Arm::limit_motors(float time_step) {
+  // Enforce motor limits here because it is not working in CoppeliaSim
+  motors.right.min_angle = std::max(motors.left.angle.current - 0.3473f, -0.2740f);
+  motors.right.max_angle = std::min(motors.left.angle.current + 1.2147f, 1.3840f);
+  motors.left.min_angle = std::max(motors.right.angle.current - 1.2147f, -0.7993f);
+  motors.left.max_angle = motors.right.angle.current + 0.3473f;
   ArmServoValues<float> desired_angles = get_motors_desired_angle(time_step);
   desired_angles = safe_motor_angles(desired_angles);
   set_motors_desired_angle(desired_angles, time_step);

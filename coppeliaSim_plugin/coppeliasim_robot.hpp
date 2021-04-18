@@ -1,6 +1,7 @@
 #ifndef COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_
 #define COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,8 @@ class CoppeliaSimRobot : public Robot {
                    GimbalValues<simInt> _gimbal_motor,
                    GimbalLEDValues<std::vector<simInt>> _gimbal_led_handles,
                    simInt _blaster_light_handle, bool _enable_gripper,
-                   std::string _gripper_state_signal, std::string _gripper_target_signal)
+                   std::string _gripper_state_signal, std::string _gripper_target_signal,
+                   simInt _imu_handle, std::string _accelerometer_signal, std::string _gyro_signal)
       : Robot(_enable_arm, _enable_gripper,
               {_servo_motor[0] > 0, _servo_motor[1] > 0, _servo_motor[2] > 0},
               (_gimbal_motor.yaw > 0 && _gimbal_motor.pitch > 0), _camera_handle > 0, false)
@@ -30,7 +32,10 @@ class CoppeliaSimRobot : public Robot {
                        {3, _gimbal_motor.yaw},
                        {4, _gimbal_motor.pitch}})
       , gripper_state_signal(_gripper_state_signal)
-      , gripper_target_signal(_gripper_target_signal) {}
+      , gripper_target_signal(_gripper_target_signal)
+      , imu_handle(_imu_handle)
+      , accelerometer_signal(_accelerometer_signal)
+      , gyro_signal(_gyro_signal) {}
 
   // void update_led_colors(LEDColors &);
   WheelSpeeds read_wheel_speeds() const;
@@ -57,9 +62,9 @@ class CoppeliaSimRobot : public Robot {
   void forward_target_gimbal_angle(const GimbalValues<float> &angle);
   void forward_blaster_led(float value) const;
 
-  void has_read_accelerometer(float x, float y, float z);
-  void has_read_gyro(float x, float y, float z);
-  void update_orientation(float alpha, float beta, float gamma);
+  // void has_read_accelerometer(float x, float y, float z);
+  // void has_read_gyro(float x, float y, float z);
+  // void update_orientation(float alpha, float beta, float gamma);
 
  private:
   WheelValues<simInt> wheel_joint_handles;
@@ -70,6 +75,9 @@ class CoppeliaSimRobot : public Robot {
   simInt camera_handle;
   std::string gripper_state_signal;
   std::string gripper_target_signal;
+  simInt imu_handle;
+  std::string accelerometer_signal;
+  std::string gyro_signal;
 };
 
 #endif  // COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_

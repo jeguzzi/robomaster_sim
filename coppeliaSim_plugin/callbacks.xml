@@ -11,7 +11,10 @@
           <param name="index" type="int">
             <description></description>
           </param>
-          <param name="serial_number" type="string">
+          <param name="remote_api" type="bool" default="true">
+              <description>should the robot expose a remote API?</description>
+          </param>
+          <param name="serial_number" type="string" default='""'>
               <description>the robot serial number</description>
           </param>
           <param name="camera_use_udp" type="bool" default="false">
@@ -39,7 +42,48 @@
             </param>
         </return>
     </command>
-    <command name="has_read_accelerometer">
+
+    <command name="create_ep">
+        <description>Instantiate a RoboMaster EP controller</description>
+        <params>
+          <param name="index" type="int">
+            <description></description>
+          </param>
+          <param name="remote_api" type="bool" default="true">
+              <description>should the robot expose a remote API?</description>
+          </param>
+          <param name="serial_number" type="string" default='""'>
+              <description>the robot serial number</description>
+          </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description>handle</description>
+            </param>
+        </return>
+    </command>
+
+    <command name="create_s1">
+        <description>Instantiate a RoboMaster S1 controller</description>
+        <params>
+          <param name="index" type="int">
+            <description></description>
+          </param>
+          <param name="remote_api" type="bool" default="true">
+              <description>should the robot expose a remote API?</description>
+          </param>
+          <param name="serial_number" type="string" default='""'>
+              <description>the robot serial number</description>
+          </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description>handle</description>
+            </param>
+        </return>
+    </command>
+
+    <!-- <command name="has_read_accelerometer">
         <description></description>
         <params>
           <param name="handle" type="int">
@@ -55,13 +99,8 @@
               <description>z (up)</description>
           </param>
         </params>
-        <!-- <return>
-            <param name="handle" type="string">
-                <description>handle of the newly created object</description>
-            </param>
-        </return> -->
-    </command>
-    <command name="has_read_gyro">
+    </command> -->
+    <!-- <command name="has_read_gyro">
         <description></description>
         <params>
             <param name="handle" type="int">
@@ -77,13 +116,8 @@
               <description>z (up)</description>
             </param>
         </params>
-        <!-- <return>
-            <param name="handle" type="string">
-                <description>handle of the newly created object</description>
-            </param>
-        </return> -->
-    </command>
-    <command name="update_orientation">
+    </command> -->
+    <!-- <command name="update_orientation">
         <description></description>
         <params>
             <param name="handle" type="int">
@@ -99,5 +133,562 @@
               <description>gamma (up)</description>
             </param>
         </params>
+    </command> -->
+
+    <struct name="CS_Twist2D">
+        <description></description>
+        <param name="x" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="y" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="theta" type="float" default="0.0">
+            <description></description>
+        </param>
+    </struct>
+
+    <struct name="CS_Pose2D">
+        <description></description>
+        <param name="x" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="y" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="theta" type="float" default="0.0">
+            <description></description>
+        </param>
+    </struct>
+
+    <command name="set_target_twist">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="twist" type="CS_Twist2D">
+              <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="get_twist">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+            <param name="twist" type="CS_Twist2D">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <struct name="CS_WheelFloatValues">
+        <description></description>
+        <param name="front_left" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="front_right" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="rear_left" type="float" default="0.0">
+            <description></description>
+        </param>
+        <param name="rear_right" type="float" default="0.0">
+            <description></description>
+        </param>
+    </struct>
+
+    <command name="get_wheel_speeds">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+            <param name="speeds" type="CS_WheelFloatValues">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="set_target_wheel_speeds">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="speeds" type="CS_WheelFloatValues">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <struct name="CS_Odometry">
+        <description></description>
+        <param name="pose" type="CS_Pose2D">
+            <description></description>
+        </param>
+        <param name="twist" type="CS_Twist2D">
+            <description></description>
+        </param>
+    </struct>
+
+    <command name="get_odometry">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+            <param name="odometry" type="CS_Odometry">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <struct name="CS_Vector3">
+        <description></description>
+        <param name="x" type="float">
+            <description></description>
+        </param>
+        <param name="y" type="float">
+            <description></description>
+        </param>
+        <param name="z" type="float">
+            <description></description>
+        </param>
+    </struct>
+
+    <struct name="CS_IMU">
+        <description></description>
+        <param name="angular_velocity" type="CS_Vector3">
+            <description></description>
+        </param>
+        <param name="acceleration" type="CS_Vector3">
+            <description></description>
+        </param>
+    </struct>
+
+    <command name="get_imu">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+            <param name="imu" type="CS_IMU">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <struct name="CS_Attitude">
+        <description></description>
+        <param name="yaw" type="float">
+            <description></description>
+        </param>
+        <param name="pitch" type="float">
+            <description></description>
+        </param>
+        <param name="roll" type="float">
+            <description></description>
+        </param>
+    </struct>
+
+    <command name="get_attitude">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+            <param name="attitude" type="CS_Attitude">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="move_to">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="pose" type="CS_Pose2D">
+                <description></description>
+            </param>
+            <param name="linear_speed" type="float" default="0.5">
+                <description></description>
+            </param>
+            <param name="angular_speed" type="float" default="1.0">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="get_action_state">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="action" type="int">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="status" type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <!-- <enum name="LedEffect" item-prefix="" base="0">
+        <item name="off" />
+        <item name="on" />
+        <item name="breath" />
+        <item name="flash" />
+        <item name="scrolling" />
+    </enum> -->
+
+    <command name="set_led_effect">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="r" type="float">
+              <description></description>
+            </param>
+            <param name="g" type="float">
+              <description></description>
+            </param>
+            <param name="b" type="float">
+              <description></description>
+            </param>
+            <param name="effect" type="string" default='"on"'>
+                <description></description>
+            </param>
+            <param name="mask" type="int" default="0xFF">
+                <description></description>
+            </param>
+            <param name="led_mask" type="int"  default="0xFF">
+                <description></description>
+            </param>
+            <param name="period_on" type="float" default="0.5">
+                <description></description>
+            </param>
+            <param name="period_off" type="float" default="0.5">
+                <description></description>
+            </param>
+            <param name="loop" type="bool" default="true">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="set_gripper_target">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="state" type="string">
+              <description></description>
+            </param>
+            <param name="power" type="float" default="0.5">
+              <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="get_gripper">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+          <param name="state" type="string">
+            <description></description>
+          </param>
+        </return>
+    </command>
+
+    <command name="get_arm_position">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+        </params>
+        <return>
+          <param name="position" type="CS_Vector3">
+            <description></description>
+          </param>
+        </return>
+    </command>
+
+    <command name="move_arm">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="x" type="float">
+                <description></description>
+            </param>
+            <param name="z" type="float">
+                <description></description>
+            </param>
+            <param name="absolute" type="bool">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="enable_camera">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+            <param name="resolution" type="string" default='"720p"'>
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="move_gimbal">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="yaw" type="float">
+                <description></description>
+            </param>
+            <param name="pitch" type="float">
+                <description></description>
+            </param>
+            <param name="yaw_speed" type="float">
+                <description></description>
+            </param>
+            <param name="pitch_speed" type="float">
+                <description></description>
+            </param>
+            <param name="yaw_frame" type="string" default='"chassis"'>
+                <description></description>
+            </param>
+            <param name="pitch_frame" type="string" default='"fixed"'>
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="get_gimbal_angles">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="yaw_frame" type="string" default='"chassis"'>
+                <description></description>
+            </param>
+            <param name="pitch_frame" type="string" default='"fixed"'>
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="yaw" type="float">
+                <description></description>
+            </param>
+            <param name="pitch" type="float">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="set_gimbal_target_speeds">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="yaw" type="float">
+                <description></description>
+            </param>
+            <param name="pitch" type="float">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="get_servo_angle">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="servo" type="int">
+              <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="angle" type="float">
+              <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="enable_gimbal">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="value" type="bool">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="set_blaster_led">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="intensity" type="float">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="move_servo">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="servo" type="int">
+                <description></description>
+            </param>
+            <param name="angle" type="float">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+
+    <command name="set_servo_target_speed">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="servo" type="int">
+                <description></description>
+            </param>
+            <param name="speed" type="float">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="set_servo_mode">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="servo" type="int">
+                <description></description>
+            </param>
+            <param name="mode" type="string">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="enable_servo">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="servo" type="int">
+                <description></description>
+            </param>
+            <param name="value" type="bool">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+
+
+    <command name="set_mode">
+        <description></description>
+        <params>
+            <param name="handle" type="int">
+              <description>handle</description>
+            </param>
+            <param name="mode" type="string">
+                <description></description>
+            </param>
+        </params>
+    </command>
+
+    <command name="set_log_level">
+        <description></description>
+        <params>
+            <!-- <param name="handle" type="int">
+              <description>handle</description>
+            </param> -->
+            <param name="log_level" type="string">
+                <description></description>
+            </param>
+        </params>
+    </command>
+    <command name="get_handles">
+        <description></description>
+        <return>
+            <param name="handles" type="table" item-type="int">
+                <description></description>
+            </param>
+        </return>
     </command>
 </plugin>

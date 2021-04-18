@@ -160,6 +160,23 @@ class Robot {
   ToF tof;
   Vision vision;
 
+  Action *get_action(std::string name) {
+    if (actions.count(name)) {
+      return actions[name].get();
+    }
+    return nullptr;
+  }
+
+  Action::State get_action_state(std::string name) {
+    if (actions.count(name)) {
+      return actions[name]->state;
+    }
+    if (previous_action_state.count(name)) {
+      return previous_action_state[name];
+    }
+    return Action::State::undefined;
+  }
+
  protected:
   bool has_arm;
   bool has_gripper;
@@ -176,6 +193,7 @@ class Robot {
   float time_;
   std::vector<Callback> callbacks;
   std::map<std::string, std::unique_ptr<Action>> actions;
+  std::map<std::string, Action::State> previous_action_state;
 };
 
 #endif  // INCLUDE_ROBOT_ROBOT_HPP_

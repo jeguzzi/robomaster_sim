@@ -7,7 +7,7 @@ project(
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-c99-extensions)
+add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers )  # -Wno-c99-extensions
 # -pedantic
 find_package(Boost COMPONENTS system thread REQUIRED)
 find_package(spdlog REQUIRED )
@@ -52,6 +52,7 @@ add_library(robot SHARED
   src/robot/led.cpp
   src/robot/gimbal.cpp
   src/robot/robot.cpp
+  src/robot/vision.cpp
 )
 
 target_link_libraries(robot PRIVATE
@@ -72,6 +73,7 @@ add_library(robomaster STATIC
   src/robot/led.cpp
   src/robot/gimbal.cpp
   src/robot/robot.cpp
+  src/robot/vision.cpp
   src/robomaster.cpp
   src/server.cpp
   src/command.cpp

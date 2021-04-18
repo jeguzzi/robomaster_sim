@@ -7,6 +7,8 @@
 #include "servo.hpp"
 
 struct Gimbal {
+  static constexpr float max_speed = deg2rad(540);
+
   enum Mode { attitude_mode, velocity_mode };
 
   enum Frame { chassis, fixed, gimbal };
@@ -29,8 +31,8 @@ struct Gimbal {
   void update_control(float time_step, Attitude attitude, IMU imu);
 
   Gimbal()
-      : yaw_servo(true, deg2rad(-250), deg2rad(250), deg2rad(540))
-      , pitch_servo(true, deg2rad(-30), deg2rad(25), deg2rad(540))
+      : yaw_servo(true, deg2rad(-250), deg2rad(250), max_speed)
+      , pitch_servo(true, deg2rad(-30), deg2rad(25), max_speed)
       , mode(Mode::attitude_mode)
       , chassis_imu()
       , chassis_attitude()
@@ -64,12 +66,16 @@ struct Gimbal {
 
   void set_target_speeds(GimbalValues<float> speed) {
     set_mode(Mode::velocity_mode);
-    target_angular_velocity_in_gimbal_fixed = {.y = speed.pitch, .z = speed.yaw};
+    target_angular_velocity_in_gimbal_fixed = {.y = std::clamp(speed.pitch, -max_speed, max_speed),
+                                               .z = std::clamp(speed.yaw, -max_speed, max_speed)};
   }
 
   void reset_target_speeds() { target_angular_velocity_in_gimbal_fixed = {}; }
 
-  void set_control_speeds(GimbalValues<float> speed) { control_speed = speed; }
+  void set_control_speeds(GimbalValues<float> speed) {
+    control_speed.pitch = std::clamp(speed.pitch, -max_speed, max_speed);
+    control_speed.yaw = std::clamp(speed.yaw, -max_speed, max_speed);
+  }
 
   Attitude attitude(Frame frame) const {
     Attitude value = {.yaw = yaw_servo.angle.current, .pitch = pitch_servo.angle.current};

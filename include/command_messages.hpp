@@ -30,6 +30,7 @@ uint8_t accept_code(Action::State state) {
   case Action::rejected:
     return 1;
   }
+  return 1;
 }
 
 float push_freq(uint8_t freq) {
@@ -825,9 +826,9 @@ struct RoboticArmMoveCtrl : Proto<0x3f, 0xb5> {
       push->need_ack = 0;
       push->seq_id = 0;
       // spdlog::info("Creating MoveArmAction");
-      auto a = std::make_unique<MoveArmActionSDK>(
-          cmd, request.action_id, push_freq(request.freq), std::move(push), robot,
-          request.x * 0.001, request.y * 0.001, static_cast<bool>(request.mode));
+      auto a = std::make_unique<MoveArmActionSDK>(cmd, request.action_id, push_freq(request.freq),
+                                                  std::move(push), robot, request.x * 0.001,
+                                                  request.y * 0.001, request.mode == 1);
       // spdlog::info("Submitting MoveArmAction");
       response.accept = accept_code(robot->submit_action(std::move(a)));
       // spdlog::info("Action accepted? {}", response.accept);
