@@ -27,8 +27,9 @@
 // Federico Ferri <federico.ferri.it at gmail dot com>
 // -------------------------------------------------------------------
 
-#include "coppeliasim_robot.hpp"
 #include "robomaster.hpp"
+
+#include "coppeliasim_robot.hpp"
 
 #include "spdlog/spdlog.h"
 
