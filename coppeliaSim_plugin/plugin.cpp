@@ -91,10 +91,22 @@ static int get_handle(std::string name, std::string suffix) {
   return simGetObjectHandle(complete_name.data());
 }
 
-static int add_robot(int coppelia_index, std::string serial_number, bool remote_api = true,
-                     bool enable_camera = true, bool camera_use_udp = false,
-                     int camera_bitrate = 1000000, bool enable_arm = true,
-                     bool enable_gripper = true, bool enable_gimbal = true) {
+static std::string get_ip(std::string network, unsigned *prefix_len) {
+  size_t pos = network.find_first_of('/');
+  std::string ip = network.substr(0, pos);
+  if (pos != std::string::npos) {
+    *prefix_len = std::stoul(network.substr(pos + 1));
+  } else {
+    *prefix_len = 0;
+  }
+  return ip;
+}
+
+static int add_robot(int coppelia_index, std::string serial_number,
+                     std::string remote_api_network = "", bool enable_camera = true,
+                     bool camera_use_udp = false, int camera_bitrate = 1000000,
+                     bool enable_arm = true, bool enable_gripper = true,
+                     bool enable_gimbal = true) {
   int handle = next_robot_handle;
   std::string suffix = "#";
   if (coppelia_index >= 0) {
@@ -180,10 +192,12 @@ static int add_robot(int coppelia_index, std::string serial_number, bool remote_
                               enable_gripper, gripper_state, gripper_target, imu_handle,
                               accelerometer_signal, gyro_signal));
   // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context, _robots[handle].get());
-  if (remote_api) {
-    _interfaces.emplace(handle,
-                        std::make_unique<RoboMaster>(nullptr, _robots[handle].get(), serial_number,
-                                                     camera_use_udp, camera_bitrate));
+  if (remote_api_network.length()) {
+    unsigned prefix_len = 0;
+    std::string ip = get_ip(remote_api_network, &prefix_len);
+    _interfaces.emplace(handle, std::make_unique<RoboMaster>(nullptr, _robots[handle].get(),
+                                                             serial_number, camera_use_udp,
+                                                             camera_bitrate, ip, prefix_len));
     _interfaces[handle]->spin(true);
   }
   next_robot_handle += 1;
@@ -232,19 +246,19 @@ class Plugin : public sim::Plugin {
   }
 
   void create(create_in *in, create_out *out) {
-    out->handle = add_robot(in->index, in->serial_number, in->remote_api, in->enable_camera,
+    out->handle = add_robot(in->index, in->serial_number, in->remote_api_network, in->enable_camera,
                             in->camera_use_udp, in->camera_bitrate, in->enable_arm,
                             in->enable_gripper, in->enable_gimbal);
   }
 
   void create_ep(create_ep_in *in, create_ep_out *out) {
-    out->handle = add_robot(in->index, in->serial_number, in->remote_api, true, false, 1000000,
-                            true, true, false);
+    out->handle = add_robot(in->index, in->serial_number, in->remote_api_network, true, false,
+                            1000000, true, true, false);
   }
 
   void create_s1(create_s1_in *in, create_s1_out *out) {
-    out->handle = add_robot(in->index, in->serial_number, in->remote_api, true, false, 1000000,
-                            false, false, true);
+    out->handle = add_robot(in->index, in->serial_number, in->remote_api_network, true, false,
+                            1000000, false, false, true);
   }
 
   // void has_read_accelerometer(has_read_accelerometer_in *in, has_read_accelerometer_out *out) {

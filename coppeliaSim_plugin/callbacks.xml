@@ -11,8 +11,8 @@
           <param name="index" type="int">
             <description></description>
           </param>
-          <param name="remote_api" type="bool" default="true">
-              <description>should the robot expose a remote API?</description>
+          <param name="remote_api_network" type="string" default='""'>
+              <description>Which address should the remote API use? Leave empty to disable the remote API</description>
           </param>
           <param name="serial_number" type="string" default='""'>
               <description>the robot serial number</description>
@@ -49,8 +49,8 @@
           <param name="index" type="int">
             <description></description>
           </param>
-          <param name="remote_api" type="bool" default="true">
-              <description>should the robot expose a remote API?</description>
+          <param name="remote_api_network" type="string" default='""'>
+              <description>Which address should the remote API use? Leave empty to disable the remote API</description>
           </param>
           <param name="serial_number" type="string" default='""'>
               <description>the robot serial number</description>
@@ -69,8 +69,8 @@
           <param name="index" type="int">
             <description></description>
           </param>
-          <param name="remote_api" type="bool" default="true">
-              <description>should the robot expose a remote API?</description>
+          <param name="remote_api_network" type="string" default='""'>
+              <description>Which address should the remote API use? Leave empty to disable the remote API</description>
           </param>
           <param name="serial_number" type="string" default='""'>
               <description>the robot serial number</description>
