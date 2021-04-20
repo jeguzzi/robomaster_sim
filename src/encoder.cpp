@@ -37,8 +37,8 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   // format_ctx->probesize = 64;
 
   /* frames per second */
-  c->time_base = (AVRational){1, fps};
-  c->framerate = (AVRational){fps, 1};
+  c->time_base = AVRational{.num = 1, .den = fps};
+  c->framerate = AVRational{.num = fps, .den = 1};
   c->pix_fmt = AV_PIX_FMT_RGB24;
 
   c->gop_size = 10; /* emit one intra frame every ten frames */

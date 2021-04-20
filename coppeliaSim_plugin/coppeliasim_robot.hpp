@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-#include <simPlusPlus/Lib.h>
-
 #include "robot/robot.hpp"
+
+#include <simPlusPlus/Lib.h>
 
 class CoppeliaSimRobot : public Robot {
  public:

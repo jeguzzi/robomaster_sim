@@ -46,7 +46,7 @@ float push_freq(uint8_t freq) {
   }
 }
 
-struct GetVersion : Proto<0x0, 0x1> {
+struct GetVersionRM : Proto<0x0, 0x1> {
   struct Request : RequestT {
     Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
             const uint8_t *buffer)

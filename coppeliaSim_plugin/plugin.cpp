@@ -27,16 +27,16 @@
 // Federico Ferri <federico.ferri.it at gmail dot com>
 // -------------------------------------------------------------------
 
-#include "plugin.h"
-#include "config.h"
-#include "simPlusPlus/Handle.h"
-#include "simPlusPlus/Plugin.h"
-#include "stubs.h"
+#include "coppeliasim_robot.hpp"
+#include "robomaster.hpp"
 
 #include "spdlog/spdlog.h"
 
-#include "coppeliasim_robot.hpp"
-#include "robomaster.hpp"
+#include "config.h"
+#include "plugin.h"
+#include "simPlusPlus/Handle.h"
+#include "simPlusPlus/Plugin.h"
+#include "stubs.h"
 
 CS_Vector3 to_cs(const Vector3 &value) { return CS_Vector3(value.x, value.y, value.z); }
 

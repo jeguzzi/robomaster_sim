@@ -5,11 +5,19 @@ project(
   VERSION 0.1
   LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+IF (WIN32)
+    set(CMAKE_CXX_STANDARD 20)
+    add_compile_options(-fPIC -Wall -D_USE_MATH_DEFINES)
 
-add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers )  # -Wno-c99-extensions
+ELSE()
+    set(CMAKE_CXX_STANDARD 17)
+    add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers )  # -Wno-c99-extensions
+ENDIF()
+
+
+
 # -pedantic
-find_package(Boost COMPONENTS system thread REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(spdlog REQUIRED )
 # find_package(libav REQUIRED avcodec REQUIRED)
 
@@ -45,7 +53,7 @@ include_directories(
   include
 )
 
-add_library(robot SHARED
+add_library(robot STATIC
   src/robot/action.cpp
   src/robot/arm.cpp
   src/robot/chassis.cpp
@@ -119,11 +127,15 @@ target_link_libraries(test_encoder PRIVATE
   spdlog::spdlog
 )
 
-link_directories(
-/usr/local/opt/icu4c/lib
-)
+# link_directories(
+# /usr/local/opt/icu4c/lib
+# )
 
 if (EXISTS "coppeliaSim_plugin")
+  IF (WIN32)
+    add_compile_options(-DSIM_REQUIRED_PROGRAM_VERSION_NB=4010000)
+  ENDIF()
+
 add_subdirectory(coppeliaSim_plugin)
 
 target_link_libraries(simExtRobomaster
@@ -132,16 +144,23 @@ target_link_libraries(simExtRobomaster
   ${Boost_LIBRARIES}
 )
 
+IF (WIN32)
+  target_compile_options(simExtRobomaster PUBLIC
+  )
+ELSE()
+  target_compile_options(simExtRobomaster PUBLIC
+  "-Wno-reorder-ctor"
+  "-Wno-sign-compare"
+  "-Wno-delete-non-abstract-non-virtual-dtor"
+  "-Wno-unused-function"
+  "-Wno-reorder"
+  "-Wno-delete-non-virtual-dtor"
+  "-Wno-unused-result"
+  )
+ENDIF()
+
 # set_target_properties( PROPERTIES COMPILE_FLAGS "Wno-reorder-ctor")
-target_compile_options(simExtRobomaster PUBLIC
-"-Wno-reorder-ctor"
-"-Wno-sign-compare"
-"-Wno-delete-non-abstract-non-virtual-dtor"
-"-Wno-unused-function"
-"-Wno-reorder"
-"-Wno-delete-non-virtual-dtor"
-"-Wno-unused-result"
-)
+
 endif()
 
 # add_executable(test_log test_log.cpp)

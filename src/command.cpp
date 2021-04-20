@@ -49,7 +49,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_message<ChassisSpeedMode>();
   register_message<AddSubMsg, Commands *>(this);
   register_message<DelMsg, Commands *>(this);
-  register_message<GetVersion>();
+  register_message<GetVersionRM>();
   register_message<GetProductVersion>();
   register_message<GetSn>();
   register_message<SetSystemLed>();
