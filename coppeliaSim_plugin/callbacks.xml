@@ -4,82 +4,91 @@
 <plugin name="Robomaster" author="jerome@idsia.ch">
     <description></description>
 
-
     <command name="create">
         <description>Instantiate a RoboMaster controller</description>
         <params>
           <param name="index" type="int">
-            <description></description>
+            <description>The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix</description>
           </param>
           <param name="remote_api_network" type="string" default='""'>
-              <description>Which address should the remote API use? Leave empty to disable the remote API</description>
+              <description>The address that the remote API should use `"&lt;ip&gt;/&lt;subnet size in bits&gt;"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.</description>
           </param>
           <param name="serial_number" type="string" default='""'>
-              <description>the robot serial number</description>
+              <description>The robot serial number</description>
           </param>
           <param name="camera_use_udp" type="bool" default="false">
-              <description>the camera should use UDP for streaming?</description>
+              <description>Make the camera use UDP for streaming</description>
           </param>
           <param name="camera_bitrate" type="int" default="1000000">
-              <description>the target bitrate for the camera stream</description>
+              <description>The target bitrate for the camera stream</description>
           </param>
           <param name="enable_camera" type="bool" default="true">
-              <description></description>
+              <description>Enable the camera module</description>
           </param>
           <param name="enable_gripper" type="bool" default="true">
-              <description></description>
+              <description>Enable the camera module</description>
           </param>
           <param name="enable_arm" type="bool" default="true">
-              <description></description>
+              <description>Enable the robotic arm module</description>
           </param>
           <param name="enable_gimbal" type="bool" default="true">
-              <description></description>
+              <description>Enable the gimbal module</description>
           </param>
         </params>
         <return>
-            <param name="handle" type="int">
-                <description>handle</description>
-            </param>
+          <param name="handle" type="int">
+              <description>An handle that identifies the RoboMaster controller</description>
+          </param>
         </return>
     </command>
 
     <command name="create_ep">
-        <description>Instantiate a RoboMaster EP controller</description>
+        <description>Instantiate a RoboMaster controller with the default configuration for EP:
+          `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=true`, `enable_gripper=true`, `enable_gimbal=false`
+        </description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
           <param name="index" type="int">
-            <description></description>
+            <description>The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix</description>
           </param>
           <param name="remote_api_network" type="string" default='""'>
-              <description>Which address should the remote API use? Leave empty to disable the remote API</description>
+              <description>The address that the remote API should use `"&lt;ip&gt;/&lt;subnet size in bits&gt;"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.</description>
           </param>
           <param name="serial_number" type="string" default='""'>
-              <description>the robot serial number</description>
+              <description>The robot serial number</description>
           </param>
         </params>
         <return>
-            <param name="handle" type="int">
-                <description>handle</description>
-            </param>
+          <param name="handle" type="int">
+              <description>An handle that identifies the RoboMaster controller</description>
+          </param>
         </return>
     </command>
 
     <command name="create_s1">
-        <description>Instantiate a RoboMaster S1 controller</description>
+        <description>Instantiate a RoboMaster controller with the default configuration for S1:
+        `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=false`, `enable_gripper=false`, `enable_gimbal=true`
+      </description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
           <param name="index" type="int">
-            <description></description>
+            <description>The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix</description>
           </param>
           <param name="remote_api_network" type="string" default='""'>
-              <description>Which address should the remote API use? Leave empty to disable the remote API</description>
+              <description>The address that the remote API should use `"&lt;ip&gt;/&lt;subnet size in bits&gt;"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.</description>
           </param>
           <param name="serial_number" type="string" default='""'>
-              <description>the robot serial number</description>
+              <description>The robot serial number</description>
           </param>
         </params>
         <return>
-            <param name="handle" type="int">
-                <description>handle</description>
-            </param>
+          <param name="handle" type="int">
+              <description>An handle that identifies the RoboMaster controller</description>
+          </param>
         </return>
     </command>
 
@@ -87,7 +96,7 @@
         <description></description>
         <params>
           <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
           </param>
           <param name="x" type="float">
               <description>x (front)</description>
@@ -104,7 +113,7 @@
         <description></description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="x" type="float">
               <description>x (front)</description>
@@ -121,7 +130,7 @@
         <description></description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="alpha" type="float">
               <description>alpha (front)</description>
@@ -138,204 +147,204 @@
     <struct name="CS_Twist2D">
         <description></description>
         <param name="x" type="float" default="0.0">
-            <description></description>
+            <description>Longitudinal linear speed [m/s], positive towards forward</description>
         </param>
         <param name="y" type="float" default="0.0">
-            <description></description>
+            <description>Transversal linear speed [m/s], positive towards left</description>
         </param>
         <param name="theta" type="float" default="0.0">
-            <description></description>
+            <description>Angular speed [rad/s] around the vertical axis</description>
         </param>
     </struct>
 
     <struct name="CS_Pose2D">
         <description></description>
         <param name="x" type="float" default="0.0">
-            <description></description>
+            <description>x-component of position [m]</description>
         </param>
         <param name="y" type="float" default="0.0">
-            <description></description>
+            <description>y-component of position [m]</description>
         </param>
         <param name="theta" type="float" default="0.0">
-            <description></description>
+            <description>orintation [rad]</description>
         </param>
     </struct>
 
     <command name="set_target_twist">
-        <description></description>
+        <description>Set the chassis target twist (linear and angular velocity)</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="twist" type="CS_Twist2D">
-              <description></description>
+              <description>The target twist</description>
             </param>
         </params>
     </command>
 
     <command name="get_twist">
-        <description></description>
+        <description>Get the chassis current twist estimation (linear and angular velocity)</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
             <param name="twist" type="CS_Twist2D">
-                <description></description>
+                <description>The current twist</description>
             </param>
         </return>
     </command>
 
     <struct name="CS_WheelFloatValues">
-        <description></description>
+        <description>A structure with one number per wheel</description>
         <param name="front_left" type="float" default="0.0">
-            <description></description>
+            <description>Front left wheel value</description>
         </param>
         <param name="front_right" type="float" default="0.0">
-            <description></description>
+            <description>Front right wheel value</description>
         </param>
         <param name="rear_left" type="float" default="0.0">
-            <description></description>
+            <description>Rear left wheel value</description>
         </param>
         <param name="rear_right" type="float" default="0.0">
-            <description></description>
+            <description>Rear right wheel value</description>
         </param>
     </struct>
 
     <command name="get_wheel_speeds">
-        <description></description>
+        <description>Get the current wheel speeds estimation</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
             <param name="speeds" type="CS_WheelFloatValues">
-                <description></description>
+                <description>The current wheel speeds in m/s</description>
             </param>
         </return>
     </command>
 
     <command name="set_target_wheel_speeds">
-        <description></description>
+        <description>Set the target wheel speeds</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="speeds" type="CS_WheelFloatValues">
-                <description></description>
+                <description>The target wheel speeds in m/s</description>
             </param>
         </params>
     </command>
 
     <struct name="CS_Odometry">
-        <description></description>
+        <description>Odometry (pose and twist)</description>
         <param name="pose" type="CS_Pose2D">
-            <description></description>
+            <description>The pose</description>
         </param>
         <param name="twist" type="CS_Twist2D">
-            <description></description>
+            <description>The twist</description>
         </param>
     </struct>
 
     <command name="get_odometry">
-        <description></description>
+        <description>Get the current odometry state estimation</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
             <param name="odometry" type="CS_Odometry">
-                <description></description>
+                <description>The current odometry</description>
             </param>
         </return>
     </command>
 
     <struct name="CS_Vector3">
-        <description></description>
+        <description>A 3D vector</description>
         <param name="x" type="float">
-            <description></description>
+            <description>x-component</description>
         </param>
         <param name="y" type="float">
-            <description></description>
+            <description>y-component</description>
         </param>
         <param name="z" type="float">
-            <description></description>
+            <description>z-component</description>
         </param>
     </struct>
 
     <struct name="CS_IMU">
-        <description></description>
+        <description>IMU state</description>
         <param name="angular_velocity" type="CS_Vector3">
-            <description></description>
+            <description>Angular velocity</description>
         </param>
         <param name="acceleration" type="CS_Vector3">
-            <description></description>
+            <description>Acceleration</description>
         </param>
     </struct>
 
     <command name="get_imu">
-        <description></description>
+        <description>Get the current IMU estimation</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
             <param name="imu" type="CS_IMU">
-                <description></description>
+                <description>The current IMU</description>
             </param>
         </return>
     </command>
 
     <struct name="CS_Attitude">
-        <description></description>
+        <description>Attitude (Tait–Bryan)</description>
         <param name="yaw" type="float">
-            <description></description>
+            <description>Yaw [rad]</description>
         </param>
         <param name="pitch" type="float">
-            <description></description>
+            <description>Pitch [rad]</description>
         </param>
         <param name="roll" type="float">
-            <description></description>
+            <description>Roll [rad]</description>
         </param>
     </struct>
 
     <command name="get_attitude">
-        <description></description>
+        <description>Get the current attitude estimation</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
             <param name="attitude" type="CS_Attitude">
-                <description></description>
+                <description>The current attitude</description>
             </param>
         </return>
     </command>
 
     <command name="move_to">
-        <description></description>
+        <description>Make the robot go to a target pose. This will create an possibly long running action.</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="pose" type="CS_Pose2D">
-                <description></description>
+                <description>The target pose</description>
             </param>
             <param name="linear_speed" type="float" default="0.5">
-                <description></description>
+                <description>The desired linear speed</description>
             </param>
             <param name="angular_speed" type="float" default="1.0">
-                <description></description>
+                <description>The angular linear speed</description>
             </param>
         </params>
         <return>
             <param name="handle" type="int">
-                <description></description>
+                <description>The action handle</description>
             </param>
         </return>
     </command>
@@ -344,18 +353,20 @@
         <description></description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="action" type="int">
-                <description></description>
+                <description>The action handle</description>
             </param>
         </params>
         <return>
             <param name="status" type="string">
-                <description></description>
+                <description>The status of the action, one of `"failed"`, `"rejected"`, `"running"`, `"undefined"`, `"started"`</description>
             </param>
         </return>
     </command>
+
+
 
     <!-- <enum name="LedEffect" item-prefix="" base="0">
         <item name="off" />
@@ -366,328 +377,375 @@
     </enum> -->
 
     <command name="set_led_effect">
-        <description></description>
+        <description>Apply a LED effect</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="r" type="float">
-              <description></description>
+              <description>The red intensity between 0 and 1</description>
             </param>
             <param name="g" type="float">
-              <description></description>
+              <description>The green intensity between 0 and 1</description>
             </param>
             <param name="b" type="float">
-              <description></description>
+              <description>The blue intensity between 0 and 1</description>
             </param>
             <param name="effect" type="string" default='"on"'>
-                <description></description>
+                <description>The effect to apply, on of `"on"`, `"off"`, `"breath"`, `"flash"`, `"scrolling"`</description>
             </param>
             <param name="mask" type="int" default="0xFF">
-                <description></description>
+                <description>A bit-mask to select LED:
+                  chassis back (0x1)
+                  chassis front (0x2)
+                  chassis left (0x4)
+                  chassis right (0x8)
+                  gimbal left (0x10)
+                  gimbal right (0x20)
+                </description>
             </param>
             <param name="led_mask" type="int"  default="0xFF">
-                <description></description>
+                <description>A bit mask to select the individual portions of gimbal LEDs</description>
             </param>
             <param name="period_on" type="float" default="0.5">
-                <description></description>
+                <description>The duration of the on-time [ms]</description>
             </param>
             <param name="period_off" type="float" default="0.5">
-                <description></description>
+                <description>The duration of the off-time [ms]</description>
             </param>
             <param name="loop" type="bool" default="true">
-                <description></description>
+                <description>Whever the effect should be repeated continously</description>
             </param>
         </params>
     </command>
 
     <command name="set_gripper_target">
-        <description></description>
+        <description>Set the gripper target state</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="state" type="string">
-              <description></description>
+              <description>The target state, one of `"open"`, `"close"`, `"pause"`</description>
             </param>
             <param name="power" type="float" default="0.5">
-              <description></description>
+              <description>The desired power level between 0 and 1</description>
             </param>
         </params>
     </command>
 
     <command name="get_gripper">
-        <description></description>
+        <description>Get the gripper current state</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
           <param name="state" type="string">
-            <description></description>
+            <description>The current state, one of `"open"`, `"close"`, `"pause"`</description>
           </param>
         </return>
     </command>
 
     <command name="get_arm_position">
-        <description></description>
+        <description>Get the robotic arm end effector current position estimation</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
         </params>
         <return>
           <param name="position" type="CS_Vector3">
-            <description></description>
+            <description>The current position</description>
           </param>
         </return>
     </command>
 
     <command name="move_arm">
-        <description></description>
+        <description>Make the robotic arm move the end effect to a target position</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="x" type="float">
-                <description></description>
+                <description>The x-coordination of the target position [m]</description>
             </param>
             <param name="z" type="float">
-                <description></description>
+                <description>The z-coordination of the target position [m]</description>
             </param>
             <param name="absolute" type="bool">
-                <description></description>
+                <description>Whenver to consider the position absolute with respect to the robot frame, or relative with respect to the current arm position</description>
             </param>
         </params>
         <return>
             <param name="handle" type="int">
-                <description></description>
+                <description>The handle of the action</description>
             </param>
         </return>
     </command>
 
     <command name="enable_camera">
-        <description></description>
+        <description>Set the camera module state</description>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="enabled" type="bool">
-                <description></description>
+                <description>The camera state</description>
             </param>
             <param name="resolution" type="string" default='"720p"'>
-                <description></description>
+                <description>The camera vertical resolution, one of `"480p"`, `"540p"`, and `"720p"`</description>
             </param>
         </params>
     </command>
 
     <command name="move_gimbal">
-        <description></description>
+        <description>Make the gimbal move to a target attitude</description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="yaw" type="float">
-                <description></description>
+                <description>The target yaw [rad]</description>
             </param>
             <param name="pitch" type="float">
-                <description></description>
+                <description>The target pitch [rad]</description>
             </param>
             <param name="yaw_speed" type="float">
-                <description></description>
+                <description>The desired yaw speed [rad/s]</description>
             </param>
             <param name="pitch_speed" type="float">
-                <description></description>
+                <description>The desired pitch speed [rad/s]</description>
             </param>
             <param name="yaw_frame" type="string" default='"chassis"'>
-                <description></description>
+                <description>The target yaw frame, one of `"chassis"`, `"fixed"`, or `"gimbal"`</description>
             </param>
             <param name="pitch_frame" type="string" default='"fixed"'>
-                <description></description>
+                <description>The target pitch frame, one of `"fixed"` or `"gimbal"`</description>
             </param>
         </params>
         <return>
             <param name="handle" type="int">
-                <description></description>
+                <description>The action handle</description>
             </param>
         </return>
     </command>
 
     <command name="get_gimbal_angles">
-        <description></description>
+        <description>Get the current gimbal state estimation</description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="yaw_frame" type="string" default='"chassis"'>
-                <description></description>
+                <description>The yaw frame, one of `"chassis"`, `"fixed"`, or `"gimbal"`</description>
             </param>
             <param name="pitch_frame" type="string" default='"fixed"'>
-                <description></description>
+                <description>The pitch frame, one of `"fixed"` or `"gimbal"`</description>
             </param>
         </params>
         <return>
             <param name="yaw" type="float">
-                <description></description>
+                <description>The current yaw [rad]</description>
             </param>
             <param name="pitch" type="float">
-                <description></description>
+                <description>The current pitch [rad]</description>
             </param>
         </return>
     </command>
 
     <command name="set_gimbal_target_speeds">
-        <description></description>
+        <description>Set the gimbal target angular speeds</description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="yaw" type="float">
-                <description></description>
+                <description>The target yaw speed [rad/s]</description>
             </param>
             <param name="pitch" type="float">
-                <description></description>
+                <description>The target pitch speed [rad/s]</description>
             </param>
         </params>
     </command>
 
     <command name="get_servo_angle">
-        <description></description>
+        <description>Get the current servo angle estimation</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="servo" type="int">
-              <description></description>
+              <description>The index of the servo (0, 1, 2)</description>
             </param>
         </params>
         <return>
             <param name="angle" type="float">
-              <description></description>
+              <description>The current servo angle [rad]</description>
             </param>
         </return>
     </command>
 
     <command name="enable_gimbal">
-        <description></description>
+        <description>Set the gimbal state</description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="value" type="bool">
-                <description></description>
+                <description>Set to true to enable the gimbal motors, set to false to disable them</description>
             </param>
         </params>
     </command>
 
     <command name="set_blaster_led">
-        <description></description>
+        <description>Set the intensity of the blaster LED</description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="intensity" type="float">
-                <description></description>
+                <description>The intensity between 0 (off) and 1</description>
             </param>
         </params>
     </command>
 
     <command name="move_servo">
-        <description></description>
+        <description>Make the robot move one of the servo motors to a target angle</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="servo" type="int">
-                <description></description>
+                <description>The index of the servo (0, 1, 2)</description>
             </param>
             <param name="angle" type="float">
-                <description></description>
+                <description>The target angle [rad]</description>
             </param>
         </params>
         <return>
             <param name="handle" type="int">
-                <description></description>
+                <description>The handle of the action</description>
             </param>
         </return>
     </command>
 
     <command name="set_servo_target_speed">
-        <description></description>
+        <description>Set the target speed of one the servo motors</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="servo" type="int">
-                <description></description>
+                <description>The index of the servo (0, 1, 2)</description>
             </param>
             <param name="speed" type="float">
-                <description></description>
+                <description>The target speed [rad/s]</description>
             </param>
         </params>
     </command>
 
     <command name="set_servo_mode">
-        <description></description>
+        <description>Set the control mode of one the servo motors</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="servo" type="int">
-                <description></description>
+                <description>The index of the servo (0, 1, 2)</description>
             </param>
             <param name="mode" type="string">
-                <description></description>
+                <description>The control mode, one of `"angle"` and `"speed"`</description>
             </param>
         </params>
     </command>
 
     <command name="enable_servo">
-        <description></description>
+        <description>Set the state of one of the servo motors</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="servo" type="int">
-                <description></description>
+                <description>The index of the servo (0, 1, 2)</description>
             </param>
             <param name="value" type="bool">
-                <description></description>
+                <description>Set to true to enable motor control or to false to disable it</description>
             </param>
         </params>
     </command>
 
-
-
     <command name="set_mode">
-        <description></description>
+        <description>Set how the robot controller couples chassis and gimbal </description>
+        <categories>
+          <category name="s1"/>
+        </categories>
         <params>
             <param name="handle" type="int">
-              <description>handle</description>
+              <description>The RoboMaster controller handle</description>
             </param>
             <param name="mode" type="string">
-                <description></description>
+                <description>On of `"free"` (uncoupled), `"gimbal_led"` (the chassis follows the gimbal), `"chassis_lead"` (the gimbal follows the chassis)</description>
             </param>
         </params>
     </command>
 
     <command name="set_log_level">
-        <description></description>
+        <description>Set the log level of all Robomaster controllers. Log are displayed on the console.</description>
         <params>
-            <!-- <param name="handle" type="int">
-              <description>handle</description>
-            </param> -->
             <param name="log_level" type="string">
-                <description></description>
+                <description>The log level, one of `"debug"`,  `"info"`, `"warning"`, `"error"`</description>
             </param>
         </params>
     </command>
     <command name="get_handles">
-        <description></description>
+        <description>Get the handles of all active RoboMaster controllers</description>
         <return>
             <param name="handles" type="table" item-type="int">
-                <description></description>
+                <description>The list of handles</description>
             </param>
         </return>
     </command>

@@ -4,21 +4,8 @@ import time
 import robomaster.config
 import robomaster.config  # noqa
 from robomaster import robot, logger, logging  # noqa
+import patch_ftp
 import robomaster.conn
-
-
-class FakeFtpConnection:
-    def connect(self, ip):
-        logger.info("Fake FtpConnection: connect ip: {0}".format(ip))
-
-    def upload(self, src_file, target_file):
-        ...
-
-    def stop(self):
-        ...
-
-
-robomaster.conn.FtpConnection = FakeFtpConnection
 
 
 def main():
