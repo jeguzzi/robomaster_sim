@@ -67,7 +67,7 @@ target_link_libraries(robot PRIVATE
   spdlog::spdlog
 )
 
-add_executable(test_robot test_robot.cpp src/dummy_robot.cpp)
+add_executable(test_robot src/test_robot.cpp src/dummy_robot.cpp)
 
 target_link_libraries(test_robot PRIVATE
   robot
@@ -107,9 +107,9 @@ target_link_libraries(robomaster PRIVATE
   ${Boost_LIBRARIES}
 )
 
-add_executable(test test.cpp)
+add_executable(test src/test.cpp)
 
-add_executable(test_encoder test_encoder.cpp src/encoder.cpp)
+add_executable(test_encoder src/test_encoder.cpp src/encoder.cpp)
 
 target_link_libraries(test PRIVATE
   robomaster
