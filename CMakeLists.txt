@@ -131,7 +131,8 @@ target_link_libraries(test_encoder PRIVATE
 # /usr/local/opt/icu4c/lib
 # )
 
-if (EXISTS "coppeliaSim_plugin")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/coppeliaSim_plugin")
+
   IF (WIN32)
     add_compile_options(-DSIM_REQUIRED_PROGRAM_VERSION_NB=4010000)
   ENDIF()

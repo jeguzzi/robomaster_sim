@@ -1433,6 +1433,8 @@ struct GimbalSetWorkMode : Proto<0x4, 0x4c> {
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
     // Client is not using this request!
+    // TODO(Jerome): reverse eng. what it does on a real s1. Maybe it is useful to switch
+    // from speed to angle or from chassis to world
     spdlog::warn("Anwer to {} not implemented yet", request);
     return true;
   }
@@ -1583,6 +1585,7 @@ struct GimbalRecenter : Proto<0x3f, 0xb2> {
     Request(uint8_t _sender, uint8_t _receiver, uint16_t _seq_id, uint8_t _attri,
             const uint8_t *buffer)
         : RequestT(_sender, _receiver, _seq_id, _attri) {
+      // spdlog::warn("Got GimbalRecenter data: %d %d", buffer[0], buffer[1]);
       action_id = buffer[0];
       action_ctrl = buffer[1] & 0x3;
       freq = buffer[1] >> 2;

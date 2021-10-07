@@ -13,7 +13,8 @@ struct Chassis {
   static constexpr float wheel_radius = 0.05;
 
   Chassis()
-      : wheel_speeds({})
+      : wheel_angles()
+      , wheel_speeds({})
       , imu()
       , odometry()
       , body_twist()
