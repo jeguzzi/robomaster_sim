@@ -102,7 +102,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_subject<ServoSubject>();
   register_subject<TofSubject>();
   register_subject<GimbalPosSubject>();
-
+  register_subject<AdapterSubject>();
   spdlog::info("[Commands] Start listening on {}", local_endpoint());
   start();
 }

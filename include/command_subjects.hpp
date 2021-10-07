@@ -28,7 +28,7 @@
 // DDS_STICK: 0x0002000955e9a0fa,
 // DDS_MOVE_MODE: 0x00020009784c7bfd,
 // * DDS_TOF: 0x0002000986e4c05a,
-// DDS_PINBOARD: 0x00020009eebb9ffc,
+// * DDS_PINBOARD: 0x00020009eebb9ffc,
 
 // NOTE(jerome): Currently the firmware set the angular component to 0
 Twist2D from_robot(Twist2D twist) { return {twist.x, -twist.y, rad2deg(0.0)}; }
@@ -470,5 +470,32 @@ struct GimbalPosSubject : SubjectWithUID<0x00020009f79b3c97> {
     pitch_ground_angle = -round(rad2deg(10 * attitude.pitch));
   }
 };
+
+struct AdapterSubject : SubjectWithUID<0x00020009eebb9ffc> {
+  std::string name() { return "SensorAdapter"; }
+
+  std::vector<uint8_t> encode() {
+    std::vector<uint8_t> buffer(36, 0);
+    // TODO(Jerome): Pay attention, here 6 sensor [adapters]
+    // while `SensorGetData` seems to support 8
+    for (size_t i = 0; i < 6; i++) {
+      // io port 0
+      buffer[6 * i] = 0;
+      // io port 1
+      buffer[6 * i + 1] = 0;
+      // adc port 1
+      write<int16_t>(buffer, 6 * i + 2, 548);
+      // adc port 2
+      write<int16_t>(buffer, 6 * i + 4, 548);
+    }
+    return buffer;
+  }
+
+  void update(Robot *robot) {
+    spdlog::warn("AdapterSubject has dummy values");
+  }
+};
+
+
 
 #endif  // INCLUDE_COMMAND_SUBJECTS_HPP_
