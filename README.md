@@ -28,7 +28,7 @@ $ sudo apt update && sudo apt install libspdlog-dev boost cmake libavcodec-dev l
 
 #### MacOs
 
-On MacOs, we require a C++-17 compiler. Fist[homebrew](https://brew.sh) if you don't have it already.
+On MacOs, we require a C++-17 compiler. First install [homebrew](https://brew.sh) if you don't have it already.
 
 ```bash
 $ brew install spdlog boost cmake ffmpeg
@@ -109,12 +109,12 @@ connects to the robot,
 $ cd <this repo>/examples
 $ python camera.py
 ```
-visualize the video stream (you will dummy stream)
+visualizes the video stream (you will dummy stream)
 ```
 $ cd <this repo>/examples
 $ python chassis.py
 ```
-move the robots while gathering data from the chassis.
+moves the robots while gathering data from the chassis.
 
 ### CoppeliaSim simulation
 
@@ -132,7 +132,7 @@ Internally in CoppeliaSim, we expose a similar interface to the remote API in Py
 ```
 and inside the CoppeliaSim through
 ```lua
-  simRobomaster.set_target_twist](0, {x=0.1})
+  simRobomaster.set_target_twist(0, {x=0.1})
   -- 0 identifies on of the robot
 ```
 

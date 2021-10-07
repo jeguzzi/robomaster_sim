@@ -1,7 +1,6 @@
 # type: ignore
 
 import time
-
 import patch_ftp
 import robomaster.config  # noqa
 from robomaster import robot, logger, logging  # noqa
