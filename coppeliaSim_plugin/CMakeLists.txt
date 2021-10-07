@@ -4,10 +4,13 @@ set(CMAKE_MACOSX_RPATH 1)
 if(NOT LIBPLUGIN_DIR)
     if(DEFINED ENV{COPPELIASIM_ROOT_DIR})
         set(LIBPLUGIN_DIR $ENV{COPPELIASIM_ROOT_DIR}/programming/libPlugin)
+        set(MODEL_FOLDER $ENV{COPPELIASIM_ROOT_DIR}/models/robots/mobile)
+        install(FILES ../models/RoboMasterEP.ttm ../models/RoboMasterS1.ttm  DESTINATION ${MODEL_FOLDER})
     else()
         set(LIBPLUGIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../libPlugin)
     endif()
 endif()
+
 list(APPEND CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules
     ${LIBPLUGIN_DIR}/cmake)
