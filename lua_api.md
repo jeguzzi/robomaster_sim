@@ -58,7 +58,7 @@
 #### CS_Twist2D
 
 ```C++
-CS_Twist2D = {float x= 0.0, float y= 0.0, float theta= 0.0})
+CS_Twist2D = {float x= 0.0, float y= 0.0, float theta= 0.0}
 ```
 
 *fields*
@@ -70,7 +70,7 @@ CS_Twist2D = {float x= 0.0, float y= 0.0, float theta= 0.0})
 #### CS_Pose2D
 
 ```C++
-CS_Pose2D = {float x= 0.0, float y= 0.0, float theta= 0.0})
+CS_Pose2D = {float x= 0.0, float y= 0.0, float theta= 0.0}
 ```
 
 *fields*
@@ -82,7 +82,7 @@ CS_Pose2D = {float x= 0.0, float y= 0.0, float theta= 0.0})
 #### CS_WheelFloatValues
 A structure with one number per wheel
 ```C++
-CS_WheelFloatValues = {float front_left= 0.0, float front_right= 0.0, float rear_left= 0.0, float rear_right= 0.0})
+CS_WheelFloatValues = {float front_left= 0.0, float front_right= 0.0, float rear_left= 0.0, float rear_right= 0.0}
 ```
 
 *fields*
@@ -95,7 +95,7 @@ CS_WheelFloatValues = {float front_left= 0.0, float front_right= 0.0, float rear
 #### CS_Odometry
 Odometry (pose and twist)
 ```C++
-CS_Odometry = {CS_Pose2D pose, CS_Twist2D twist})
+CS_Odometry = {CS_Pose2D pose, CS_Twist2D twist}
 ```
 
 *fields*
@@ -106,7 +106,7 @@ CS_Odometry = {CS_Pose2D pose, CS_Twist2D twist})
 #### CS_Vector3
 A 3D vector
 ```C++
-CS_Vector3 = {float x, float y, float z})
+CS_Vector3 = {float x, float y, float z}
 ```
 
 *fields*
@@ -118,7 +118,7 @@ CS_Vector3 = {float x, float y, float z})
 #### CS_IMU
 IMU state
 ```C++
-CS_IMU = {CS_Vector3 angular_velocity, CS_Vector3 acceleration})
+CS_IMU = {CS_Vector3 angular_velocity, CS_Vector3 acceleration}
 ```
 
 *fields*
@@ -129,7 +129,7 @@ CS_IMU = {CS_Vector3 angular_velocity, CS_Vector3 acceleration})
 #### CS_Attitude
 Attitude (Tait–Bryan)
 ```C++
-CS_Attitude = {float yaw, float pitch, float roll})
+CS_Attitude = {float yaw, float pitch, float roll}
 ```
 
 *fields*
