@@ -22,7 +22,7 @@ You can use the [official Python client API](https://github.com/dji-sdk/RoboMast
 
 On Linux, we require a C++-17 compiler.
 ```bash
-$ sudo apt update && sudo apt install libspdlog-dev boost cmake libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev
+$ sudo apt update && sudo apt install libspdlog-dev libboost-system-dev libboost-thread-dev cmake libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx264-dev
 ```
 
 #### MacOs
