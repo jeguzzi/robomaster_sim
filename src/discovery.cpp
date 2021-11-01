@@ -40,7 +40,7 @@ void Discovery::publish() {
   for (const auto port : ports) {
     udp::endpoint ep(broadcast_address, port);
     spdlog::debug("[Discovery] publish {} on {}:{}", message, ep.address().to_string(), ep.port());
-    socket.async_send_to(boost::asio::buffer(message.data(), message.size()), ep,
+    socket.async_send_to(boost::asio::buffer(message.data(), message.size() + 1), ep,
                          [](boost::system::error_code, std::size_t) {});
   }
 }

@@ -40,7 +40,7 @@ RoboMaster::RoboMaster(std::shared_ptr<boost::asio::io_context> _io_context, Rob
   // spdlog::cfg::load_env_levels();
   discovery.start();
   robot->add_callback(std::bind(&RoboMaster::do_step, this, std::placeholders::_1));
-  spdlog::info("Created a RobotMaster with serial number {}", serial_number);
+  spdlog::info("Created a RobotMaster with serial number {}", pad_serial(serial_number));
 }
 
 void RoboMaster::do_step(float time_step) {
