@@ -13,9 +13,13 @@ Discovery::Discovery(boost::asio::io_context *io_context, std::string serial_num
   socket.set_option(boost::asio::socket_base::broadcast(true));
   message = serial_number;
   ports = {45678, 40927};
-  broadcast_address =
-      boost::asio::ip::network_v4(socket.local_endpoint().address().to_v4(), prefix_len)
-          .broadcast();
+  if (socket.local_endpoint().address().is_loopback()) {
+    broadcast_address = socket.local_endpoint().address().to_v4();
+  } else {
+    broadcast_address =
+        boost::asio::ip::network_v4(socket.local_endpoint().address().to_v4(), prefix_len)
+            .broadcast();
+  }
 }
 
 void Discovery::start() {
