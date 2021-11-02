@@ -141,3 +141,39 @@ function sysCall_init()
     handle = simRobomaster.create_s1(index, "")
 end
 ```
+
+### Multiple robots
+
+If you want to run multiple instances of the dummy simulation or have multiple robomaster in one CoppeliaSim scene, you need to give to each robot a distinct ip address, as they all use the same ports.
+
+You can use [ip aliasing](https://en.wikipedia.org/wiki/IP_aliasing) to add addresses to one of the available network interfaces. For instance, you may want to use the local loopback interface `lo` to control 2 simulated robots (the same would apply for any other network interface):
+
+1. add a second ip address (we assume that `127.0.0.1/8` is already available)
+   ```
+     sudo ifconfig lo0 alias 127.0.1.1/8 up
+   ```
+2. setup the two robots with different addresses and different serial numbers (see below).
+3. when finished, you can remove the IP alias with
+    ```
+      sudo ifconfig lo0 -alias 127.0.1.1
+    ```
+
+To setup the robots, for the dummy simulation, launch two simulations
+  ```
+  ./test --ip=127.0.0.1 --prefix_len=8 --serial_number="RM0"
+  ./test --ip=127.0.1.1 --prefix_len=8 --serial_number="RM1"
+  ```
+and in CoppeliaSim, change the lua scripts of the robots to
+```lua
+  function sysCall_init()
+      local index = sim.getNameSuffix(nil)
+      handle = simRobomaster.create_s1(index, "127.0.0.1/8", "RM0")
+  end
+```
+and
+```lua
+  function sysCall_init()
+      local index = sim.getNameSuffix(nil)
+      handle = simRobomaster.create_s1(index, "127.0.1.1/8", "RM1")
+  end
+```
