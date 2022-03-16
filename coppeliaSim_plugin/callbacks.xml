@@ -733,6 +733,50 @@
         </params>
     </command>
 
+    <command name="enable_distance_sensor">
+        <description>Attach a distance sensor</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param>
+            <param name="port" type="int">
+                <description>The port (from 0 to 3) of the sensor</description>
+            </param>
+            <param name="sensor_handle" type="int">
+                <description>The handle of the sensor object</description>
+            </param>
+        </params>
+    </command>
+
+    <command name="disable_distance_sensor">
+        <description>Attach a distance sensor</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param>
+            <param name="port" type="int">
+                <description>The port (from 0 to 3) of the sensor</description>
+            </param>
+        </params>
+    </command>
+
+    <command name="get_distance_reading">
+        <description>Get the chassis current twist estimation (linear and angular velocity)</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param>
+            <param name="port" type="int">
+                <description>The port (from 0 to 3) of the sensor</description>
+            </param>
+        </params>
+        <return>
+            <param name="distance" type="float">
+                <description>The current reading (or 0.0 if the sensor is disabled)</description>
+            </param>
+        </return>
+    </command>
+
     <command name="set_log_level">
         <description>Set the log level of all Robomaster controllers. Log are displayed on the console.</description>
         <params>
@@ -749,4 +793,5 @@
             </param>
         </return>
     </command>
+
 </plugin>

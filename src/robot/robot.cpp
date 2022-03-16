@@ -132,7 +132,13 @@ void Robot::do_step(float time_step) {
   read_hit_events();
   read_ir_events();
   if (has_tof) {
-    tof.readings = read_tof();
+    size_t index = 0;
+    for (auto & tof_reading : tof.readings) {
+      if (tof_reading.active) {
+        tof_reading.distance = read_tof(index);
+      }
+      index++;
+    }
   }
   if (has_gripper) {
     gripper.state.current = read_gripper_state();

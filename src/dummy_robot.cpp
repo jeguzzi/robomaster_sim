@@ -133,6 +133,6 @@ hit_event_t DummyRobot::read_hit_events() const { return {{.type = 0, .index = 0
 
 ir_event_t DummyRobot::read_ir_events() const { return {{}}; }
 
-std::vector<ToFReading> DummyRobot::read_tof() const {
-  return {{.distance = 0.89, .active = true}};
+float DummyRobot::read_tof(size_t index) const {
+  return 0.89;
 }

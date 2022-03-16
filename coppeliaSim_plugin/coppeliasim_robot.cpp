@@ -228,6 +228,26 @@ DetectedObjects CoppeliaSimRobot::read_detected_objects() const { return {}; }
 
 hit_event_t CoppeliaSimRobot::read_hit_events() const { return {}; }
 
-std::vector<ToFReading> CoppeliaSimRobot::read_tof() const { return {}; }
+float CoppeliaSimRobot::read_tof(size_t index) const {
+  if (!tof_handles.count(index)) return 0.0f;
+  simInt h = tof_handles.at(index);
+  simFloat p[4];
+  simInt r = simCheckProximitySensor(h, sim_handle_all, p);
+  if (r == 1) {
+    return p[3];
+  } else if (r == 0) {
+    return -1.0;
+  }
+  return 0.0f;
+}
 
 ir_event_t CoppeliaSimRobot::read_ir_events() const { return {}; }
+
+void CoppeliaSimRobot::enable_tof(size_t index, simInt sensor_handle) {
+  if (index < MAX_NUMBER_OF_TOF_SENSORS) {
+    tof_handles[index] = sensor_handle;
+    tof.set_enable(index, true);
+    has_tof = true;
+    spdlog::info("Enabled distance sensor");
+  }
+}

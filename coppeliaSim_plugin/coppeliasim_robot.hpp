@@ -57,10 +57,11 @@ class CoppeliaSimRobot : public Robot {
   float read_servo_speed(size_t index) const;
   void forward_servo_mode(size_t index, Servo::Mode mode);
   void forward_servo_enabled(size_t index, bool value);
-  std::vector<ToFReading> read_tof() const;
   void forward_target_gimbal_speed(const GimbalValues<float> &speed);
   void forward_target_gimbal_angle(const GimbalValues<float> &angle);
   void forward_blaster_led(float value) const;
+  void enable_tof(size_t index, simInt sensor_handle);
+  float read_tof(size_t index) const;
 
   // void has_read_accelerometer(float x, float y, float z);
   // void has_read_gyro(float x, float y, float z);
@@ -72,6 +73,7 @@ class CoppeliaSimRobot : public Robot {
   GimbalLEDValues<std::vector<simInt>> gimbal_led_handles;
   simInt blaster_light_handle;
   const std::map<unsigned, int> servo_handles;
+  std::map<unsigned, int> tof_handles;
   simInt camera_handle;
   std::string gripper_state_signal;
   std::string gripper_target_signal;

@@ -66,7 +66,7 @@ class Robot {
   virtual float read_servo_speed(size_t index) const = 0;
   virtual void forward_servo_mode(size_t index, Servo::Mode mode) = 0;
   virtual void forward_servo_enabled(size_t index, bool value) = 0;
-  virtual std::vector<ToFReading> read_tof() const = 0;
+  virtual float read_tof(size_t index) const = 0;
   virtual void forward_blaster_led(float value) const = 0;
 
   void read_chassis();
@@ -94,7 +94,7 @@ class Robot {
   }
 
   Camera *get_camera() { return &camera; }
-  const std::vector<ToFReading> &get_tof_readings() { return tof.readings; }
+  const ToFReadings & get_tof_readings() { return tof.readings; }
   /**
    * Set the current LED effect
    * @param color      Color

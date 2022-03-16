@@ -32,7 +32,7 @@ class DummyRobot : public Robot {
   float read_servo_speed(size_t index) const;
   void forward_servo_mode(size_t index, Servo::Mode mode);
   void forward_servo_enabled(size_t index, bool value);
-  std::vector<ToFReading> read_tof() const;
+  float read_tof(size_t index) const;
   void forward_target_gimbal_speed(const GimbalValues<float> &speed);
   void forward_target_gimbal_angle(const GimbalValues<float> &angle);
   void forward_blaster_led(float value) const;

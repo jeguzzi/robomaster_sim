@@ -427,13 +427,18 @@ struct TofSubject : SubjectWithUID<0x0002000986e4c05a> {
   }
 
   void update(Robot *robot) {
-    std::vector<ToFReading> readings = robot->get_tof_readings();
+    auto readings = robot->get_tof_readings();
     for (size_t i = 0; i < std::min(NUMBER_OF_TOF, readings.size()); i++) {
       if (readings[i].active) {
         cmd_id[i] = 20;
         direct[i] = 65;
-        flag[i] = 0xFF;
-        distance[i] = encode_distance(readings[i].distance);
+        if (readings[i].distance < 0) {
+          flag[i] = 0x0;
+          distance[i] = 65534;
+        } else {
+          flag[i] = 0xFF;
+          distance[i] = encode_distance(readings[i].distance);
+        }
       } else {
         cmd_id[i] = direct[i] = flag[i] = distance[i] = 0;
       }

@@ -566,6 +566,29 @@ class Plugin : public sim::Plugin {
     }
   }
 
+  void enable_distance_sensor(enable_distance_sensor_in *in,
+                              enable_distance_sensor_out *out) {
+    if (_robots.count(in->handle)) {
+        _robots[in->handle]->enable_tof(in->port, in->sensor_handle);
+    }
+  }
+
+  void disable_distance_sensor(disable_distance_sensor_in *in, disable_distance_sensor_out *out) {
+    if (_robots.count(in->handle)) {
+      _robots[in->handle]->tof.set_enable(in->port, false);
+    }
+  }
+
+  void get_distance_reading(get_distance_reading_in *in, get_distance_reading_out *out) {
+    if (_robots.count(in->handle)) {
+      auto readings = _robots[in->handle]->tof.readings;
+      if (in->port < readings.size()) {
+        out->distance = readings[in->port].distance;
+      }
+    }
+  }
+
+
   void set_log_level(set_log_level_in *in, set_log_level_out *out) {
     spdlog::set_level(spdlog::level::from_str(in->log_level));
   }
@@ -582,10 +605,10 @@ class Plugin : public sim::Plugin {
   // }
   //
   void onModuleHandle(char *customData) {
-    std::string module = customData ? std::string(customData) : "ALL";
+    // std::string module = customData ? std::string(customData) : "ALL";
     simFloat time_step = simGetSimulationTimeStep();
-    simFloat time_ = simGetSimulationTime();
-    spdlog::debug("onModuleHandle {} {} ({})", module, time_step, time_);
+    // simFloat time_ = simGetSimulationTime();
+    // spdlog::debug("onModuleHandle {} {} ({})", module, time_step, time_);
     for (auto const &[key, val] : _robots) {
       spdlog::debug("Will update RM #{}", key);
       val->do_step(time_step);
@@ -593,12 +616,12 @@ class Plugin : public sim::Plugin {
     }
   }
 
-  void onModuleHandleInSensingPart(char *customData) {
-    std::string module = customData ? std::string(customData) : "ALL";
-    simFloat time_step = simGetSimulationTimeStep();
-    simFloat time_ = simGetSimulationTime();
-    spdlog::debug("onModuleHandleInSensingPart {} {} ({})", module, time_step, time_);
-  }
+  // void onModuleHandleInSensingPart(char *customData) {
+  //   std::string module = customData ? std::string(customData) : "ALL";
+  //   simFloat time_step = simGetSimulationTimeStep();
+  //   simFloat time_ = simGetSimulationTime();
+  //   spdlog::debug("onModuleHandleInSensingPart {} {} ({})", module, time_step, time_);
+  // }
 };
 
 SIM_PLUGIN(PLUGIN_NAME, PLUGIN_VERSION, Plugin)
