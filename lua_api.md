@@ -25,6 +25,9 @@
 | [simRobomaster.get_action_state](#get_action_state)               |
 | [simRobomaster.set_led_effect](#set_led_effect)                   |
 | [simRobomaster.enable_camera](#enable_camera)                     |
+| [simRobomaster.enable_distance_sensor](#enable_distance_sensor)                     |
+| [simRobomaster.enable_disable_distance_sensor](#enable_disable_distance_sensor)                     |
+| [simRobomaster.get_distance_reading](#get_distance_reading)                     |
 | [simRobomaster.set_log_level](#set_log_level)                     |
 | [simRobomaster.get_handles](#get_handles)                         |
 | [simRobomaster.wait_for_completed](#wait_for_completed)            |
@@ -588,8 +591,6 @@ Get the handles of all active RoboMaster controllers
 table[int] handles = simRobomaster.get_handles()
 ```
 
-
-
 *return*
   - **handles** The list of handles
 
@@ -633,3 +634,39 @@ simRobomaster.close_gripper(int robot_handle, bool wait=true)
 *parameters*
   - **robot_handle** The RoboMaster controller handle
   - **wait** Whenever the call should block until the robot finishes closing the gripper
+
+
+#### enable_distance_sensor
+Connect a distance sensor to the robot and enable it.
+```C++
+simRobomaster.enable_distance_sensor(int handle, int port, int sensor_handle)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **port** The port at which the sensor is connected (from 0 to 3)
+  - **sensor_handle** The handle of the distance sensor
+
+
+#### disable_distance_sensor
+Disable a distance sensor.
+```C++
+simRobomaster.disable_distance_sensor(int handle, int port)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **port** The port at which the sensor is connected (from 0 to 3)
+
+#### get_distance_reading
+Disable a distance sensor.
+```C++
+float simRobomaster.get_distance_reading(int handle, int port)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **port** The port at which the sensor is connected (from 0 to 3)
+
+*return*
+  - **distance** The distance reading in meters: negative if no object is in range, 0 if the sensor is not enabled, positive if an object was detected.
