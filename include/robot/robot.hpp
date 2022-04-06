@@ -69,6 +69,14 @@ class Robot {
   virtual float read_tof(size_t index) const = 0;
   virtual void forward_blaster_led(float value) const = 0;
 
+  bool enable_tof(size_t index) {
+    if (tof.set_enable(index, true)) {
+      has_tof = true;
+      return true;
+    }
+    return false;
+  }
+
   void read_chassis();
   void control_chassis();
   void control_leds();

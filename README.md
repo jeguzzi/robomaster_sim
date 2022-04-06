@@ -142,6 +142,38 @@ function sysCall_init()
 end
 ```
 
+### Distance sensor
+
+We provide a simple model of the [Robomaster distance sensor](https://www.djieducation.com/robomaster.html) implemented in coppeliaSim using a proximity sensor with a single ray.
+
+You find it in the models under `components > sensors > RoboMasterDistanceSensor`.
+To use it, drag it to the scene and attach it to a RoboMaster using a [force sensor](https://www.coppeliarobotics.com/helpFiles/en/forceSensors.htm), which is the way to rigidly connect dynamically enabled objects. Then, add the following lines to the `sysCall_init` of the RoboMaster lua script:
+```lua
+  -- From CoppeliaSim 4.3
+  local sensor_handle = sim.getObject('./ToF_sensor')
+  -- Before CoppeliaSim 4.3
+  -- local sensor_handle = sim.getObjectHandle('ToF_sensor')
+  simRobomaster.enable_distance_sensor(handle, 3, sensor_handle)
+```
+
+The RoboMaster support up to 4 distance sensors. To enable multiple sensors, loop over each sensor handle:
+```lua
+  local i=0
+  while true do
+      -- From CoppeliaSim 4.3
+      local sensor_handle = sim.getObject(":/ToF_sensor", {index=i, noError=true})
+      -- Before CoppeliaSim 4.3
+      -- local sensor_handle = sim.getObjectHandle("ToF_sensor#"..i.."@silentError")
+      if sensor_handle < 0 then
+          break
+      end
+      simRobomaster.enable_distance_sensor(handle, i, sensor_handle)
+      i = i + 1
+  end
+```
+
+We include two scenes (`playground_tof_{s1|ep}.ttm`) where 1 (above the s1 camera) or 4 (on the ep chassis) sensors are already attached and enabled.
+
 ### Multiple robots
 
 If you want to run multiple instances of the dummy simulation or have multiple robomaster in one CoppeliaSim scene, you need to give to each robot a distinct ip address, as they all use the same ports.

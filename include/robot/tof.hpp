@@ -2,6 +2,7 @@
 #define INCLUDE_ROBOT_TOF_HPP_
 
 #include <vector>
+#include "spdlog/spdlog.h"
 
 #define MAX_NUMBER_OF_TOF_SENSORS 4
 
@@ -16,10 +17,13 @@ using ToFReadings = std::array<ToFReading, MAX_NUMBER_OF_TOF_SENSORS>;
 
 struct ToF {
   ToFReadings readings;
-  void set_enable(size_t index, bool value) {
+  bool set_enable(size_t index, bool value) {
     if (index < MAX_NUMBER_OF_TOF_SENSORS) {
       readings[index].active = value;
+      spdlog::info("{} distance sensor {}", value ? "Enabled" : "Disabled", index);
+      return true;
     }
+    return false;
   }
 };
 

@@ -18,6 +18,7 @@ static void show_usage(std::string name) {
             << "  --bitrate=<BITRATE>\t\tVideo stream bitrate (default: 200000)" << std::endl
             << "  --armor_hits\t\t\tPublish armor hits" << std::endl
             << "  --ir_hits\t\t\tPublish IR hits" << std::endl
+            << "  --tof=<PORT>\t\t\Enable tof on a port" << std::endl
             << "  --period=<PERIOD>\t\tUpdate step [s] (default: 0.05)" << std::endl;
 }
 
@@ -32,6 +33,8 @@ int main(int argc, char **argv) {
   char ip[100] = "";
   float period = 0.05;
   unsigned prefix_len = 0;
+  unsigned tof_port;
+  std::vector<unsigned> tof_ports;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--udp") == 0) {
       use_udp = true;
@@ -63,6 +66,10 @@ int main(int argc, char **argv) {
     if (sscanf(argv[i], "--prefix_len=%d", &prefix_len)) {
       continue;
     }
+    if (sscanf(argv[i], "--tof=%d", &tof_port)) {
+      tof_ports.push_back(tof_port);
+      continue;
+    }
     if (strcmp(argv[i], "--help") == 0) {
       show_usage(argv[0]);
       return 0;
@@ -75,6 +82,10 @@ int main(int argc, char **argv) {
                            true);
   RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, prefix_len,
                    armor_hits, ir_hits);
+  for (auto port : tof_ports) {
+    printf("port %d\n", port);
+    dummy.enable_tof(port);
+  }
   spdlog::info("Start spinning");
   robot.spin(false);
   std::cout << "Goodbye" << std::endl;

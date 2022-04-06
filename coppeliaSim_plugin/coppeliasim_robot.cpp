@@ -244,10 +244,7 @@ float CoppeliaSimRobot::read_tof(size_t index) const {
 ir_event_t CoppeliaSimRobot::read_ir_events() const { return {}; }
 
 void CoppeliaSimRobot::enable_tof(size_t index, simInt sensor_handle) {
-  if (index < MAX_NUMBER_OF_TOF_SENSORS) {
+  if (index < MAX_NUMBER_OF_TOF_SENSORS && Robot::enable_tof(index)) {
     tof_handles[index] = sensor_handle;
-    tof.set_enable(index, true);
-    has_tof = true;
-    spdlog::info("Enabled distance sensor");
   }
 }
