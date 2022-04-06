@@ -38,6 +38,7 @@ class Encoder {
   AVFrame *frame;
   AVPacket *pkt;
   int seq;
+  bool ready;
 };
 
 #endif  // INCLUDE_ENCODER_HPP_

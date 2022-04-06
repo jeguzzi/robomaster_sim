@@ -6,8 +6,8 @@ extern "C" {
 #include "libavutil/opt.h"
 }
 
-Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
-  // uint8_t endcode[] = { 0, 0, 1, 0xb7 };
+Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) :
+  codec(nullptr), c(nullptr), frame(nullptr), pkt(nullptr), seq(0), ready(false) {
   spdlog::info("Initializing an H264 encoder with input ({}, {}), fps {} and bitrate {}", width,
                height, fps, bitrate);
   // avcodec_register_all();
@@ -33,7 +33,7 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   c->width = width;
   c->height = height;
 
-  //   format_ctx->max_delay = 0;
+  // format_ctx->max_delay = 0;
   // format_ctx->probesize = 64;
 
   /* frames per second */
@@ -82,12 +82,13 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) {
   //     fprintf(stderr, "could not alloc the frame data\n");
   //     return;
   // }
-  seq = 0;
+  ready = true;
 
   // printf("Has a latency of %d frames\n", c->delay);
 }
 
 std::vector<uint8_t> Encoder::encode(uint8_t *buffer) {
+  if (!ready) return {};
   av_image_fill_arrays(frame->data, frame->linesize, buffer, AV_PIX_FMT_RGB24, frame->width,
                        frame->height, 1);
   // av_image_copy(frame->data, frame->linesize, (const uint8_t **) &buffer, frame->linesize,
@@ -106,7 +107,7 @@ std::vector<uint8_t> Encoder::encode(uint8_t *buffer) {
   /* send the frame to the encoder */
   ret = avcodec_send_frame(c, frame);
   if (ret < 0) {
-    fprintf(stderr, "error sending a frame for encoding\n");
+    spdlog::error("error sending a frame for encoding");
     return {};
   }
   av_packet_unref(pkt);
@@ -116,7 +117,7 @@ std::vector<uint8_t> Encoder::encode(uint8_t *buffer) {
       // fprintf(stderr, "ret error %d %d %d\n", ret, AVERROR(EAGAIN), AVERROR_EOF);
       return {};
     } else if (ret < 0) {
-      fprintf(stderr, "error during encoding\n");
+      spdlog::error("error during encoding");
       return {};
     }
     // printf("encoded frame %3" PRId64" %lld (size=%5d) %d \n", pkt->pts, pkt->dts, pkt->size,
@@ -131,7 +132,7 @@ std::vector<uint8_t> Encoder::encode(uint8_t *buffer) {
 }
 
 Encoder::~Encoder() {
-  avcodec_free_context(&c);
-  av_frame_free(&frame);
-  av_packet_free(&pkt);
+  if (c) avcodec_free_context(&c);
+  if (frame) av_frame_free(&frame);
+  if (pkt) av_packet_free(&pkt);
 }
