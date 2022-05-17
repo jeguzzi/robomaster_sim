@@ -36,6 +36,11 @@ void Chassis::set_target_velocity(const Twist2D &twist) {
   wheel_speeds.set_target(speeds);
 }
 
+void Chassis::stop() {
+  WheelSpeeds speeds {0.0f};
+  wheel_speeds.set_target(speeds);
+}
+
 void Chassis::update_odometry(float time_step) {
   // spdlog::info("[Chassis] Wheel speed {}", wheel_speeds.current);
   body_twist = twist_from_wheel_speeds(wheel_speeds.current);

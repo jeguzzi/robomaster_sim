@@ -18,7 +18,8 @@ struct Chassis {
       , imu()
       , odometry()
       , body_twist()
-      , attitude() {}
+      , attitude()
+      , wheel_motors_engaged(true) {}
 
   WheelValues<float> wheel_angles;
   // Control the angular speed of the wheels in [rad/s] with respect to robot y-axis
@@ -27,9 +28,11 @@ struct Chassis {
   Odometry odometry;
   Twist2D body_twist;
   Attitude attitude;
+  bool wheel_motors_engaged;
 
   Twist2D get_twist(Frame frame) const;
   void set_target_velocity(const Twist2D &twist);
+  void stop();
   void update_odometry(float time_step);
   void update_attitude(float time_step);
 

@@ -763,7 +763,8 @@ struct ChassisSetWorkMode : Proto<0x3f, 0x19> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Answer to {} not implemented", request);
+    // spdlog::warn("Answer to {} not implemented", request);
+    robot->engage_wheel_motors(request.mode != 0);
     return true;
   }
 };

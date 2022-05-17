@@ -60,7 +60,7 @@ void Robot::read_chassis() {
 }
 
 void Robot::control_chassis() {
-  if (chassis.wheel_speeds.check()) {
+  if (chassis.wheel_motors_engaged && chassis.wheel_speeds.check()) {
     spdlog::debug("target_wheel_speed -> desired_target_wheel_speed = {}",
                   chassis.wheel_speeds.target);
     forward_target_wheel_speeds(chassis.wheel_speeds.target);

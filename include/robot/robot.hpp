@@ -50,6 +50,7 @@ class Robot {
   virtual WheelSpeeds read_wheel_speeds() const = 0;
   virtual void forward_target_wheel_speeds(const WheelSpeeds &) = 0;
   virtual WheelValues<float> read_wheel_angles() const = 0;
+  virtual void forward_engage_wheel_motors(bool value) {}
   virtual IMU read_imu() const = 0;
   virtual void forward_chassis_led(size_t index, const Color &) = 0;
   virtual void forward_gimbal_led(size_t index, size_t part, const Color &) = 0;
@@ -68,6 +69,17 @@ class Robot {
   virtual void forward_servo_enabled(size_t index, bool value) = 0;
   virtual float read_tof(size_t index) const = 0;
   virtual void forward_blaster_led(float value) const = 0;
+
+  void engage_wheel_motors(bool value) {
+    if (value != chassis.wheel_motors_engaged) {
+      spdlog::info("[Chassis] Set motor engaged to {}", value);
+      chassis.wheel_motors_engaged = value;
+      forward_engage_wheel_motors(value);
+      if (value) {
+        chassis.stop();
+      }
+    }
+  }
 
   bool enable_tof(size_t index) {
     if (tof.set_enable(index, true)) {
