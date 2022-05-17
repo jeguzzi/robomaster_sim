@@ -391,7 +391,7 @@ struct ServoSubject : SubjectWithUID<0x000200095f0059e7> {
   void update(Robot *robot) {
     for (size_t i = 0; i < 2; i++) {
       angle[i] = servo_angle_value(i, robot->get_servo_angle(i));
-      speed[i] = servo_speed_value(robot->get_servo_speed(i));
+      speed[i] = servo_speed_value(i, robot->get_servo_speed(i));
       valid[i] = 1;
     }
     for (size_t i = 2; i < 4; i++) {

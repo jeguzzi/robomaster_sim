@@ -586,23 +586,40 @@ struct BoundingBox {
 
 // The values at the RM reset position (maximal flexion)
 constexpr ArmServoValues<float> SERVO_RESET_ANGLES = {.right = -0.274016f, .left = 0.073304f};
-constexpr ArmServoValues<int> SERVO_RESET_VALUES = {.right = 1273, .left = 1242};
-constexpr float SERVO_RAD2UNIT = 325.95f;
-constexpr float SERVO_RAD_PER_SECOND2UNIT = 325.95f * 5.0f;
+// constexpr ArmServoValues<int> SERVO_RESET_VALUES = {.right = 1273, .left = 1242};
+// CHANGED(Jerome): 1024 is the value set when adding/connecting the servos.
+// i.e., we get the same values on the real robot when adding servos
+// in the fully retracted position (SERVO_RESET_ANGLES)
+constexpr ArmServoValues<int> SERVO_RESET_VALUES = {.right = 1024, .left = 1024};
+// HACK(Jerome): the left an right servos are spinning in opposite direction.
+// It would be better to manage it in the robot controller and in Coppelia.
+constexpr ArmServoValues<int> SERVO_DIRECTION = {.right = -1, .left = 1};
+// 1024 = /pi
+constexpr float SERVO_RAD2UNIT = 1024 * M_1_PI;
+// rmp / 2
+//
+constexpr float SERVO_RAD_PER_SECOND2UNIT = SERVO_RAD2UNIT * 5.0f;
 constexpr ArmServoValues<float> SERVO_RESET_EXT_ANGLES = {
     .right = static_cast<float>(SERVO_RESET_VALUES.right / SERVO_RAD2UNIT),
     .left = static_cast<float>(SERVO_RESET_VALUES.left / SERVO_RAD2UNIT)};
 
 constexpr ArmServoValues<float> SERVO_BIASES = {
-    .right = SERVO_RESET_VALUES.right + SERVO_RAD2UNIT * SERVO_RESET_ANGLES.right,
-    .left = SERVO_RESET_VALUES.left + SERVO_RAD2UNIT * SERVO_RESET_ANGLES.left};
+    .right = SERVO_RESET_VALUES.right -
+             SERVO_DIRECTION.right * SERVO_RAD2UNIT * SERVO_RESET_ANGLES.right,
+    .left = SERVO_RESET_VALUES.left -
+            SERVO_DIRECTION.left * SERVO_RAD2UNIT * SERVO_RESET_ANGLES.left};
 
-inline int servo_speed_value(float speed) {
-  return static_cast<int>(round(-SERVO_RAD_PER_SECOND2UNIT * speed));
+inline int servo_speed_value(size_t index, float speed) {
+  return static_cast<int>(round(SERVO_RAD_PER_SECOND2UNIT * speed * SERVO_DIRECTION[index]));
 }
 
 inline int servo_angle_value(size_t index, float angle) {
-  return static_cast<int>(round(-SERVO_RAD2UNIT * angle + SERVO_BIASES[index]));
+  return static_cast<int>(
+      round(SERVO_DIRECTION[index] * SERVO_RAD2UNIT * angle + SERVO_BIASES[index]));
+}
+
+inline float servo_angle(size_t index, float angle) {
+  return rad2deg(SERVO_DIRECTION[index] * angle + SERVO_BIASES[index]);
 }
 
 struct IMU {

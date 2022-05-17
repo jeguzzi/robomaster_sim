@@ -1219,7 +1219,10 @@ struct ServoGetAngle : Proto<0x33, 0x15> {
     }
     // Attention!
     uint8_t servo_id = request.id - 1;
-    response.angle = servo_angle_value(servo_id, robot->get_servo_angle(servo_id));
+    // Get angle in the Python SDK is in degrees and it's shifted by 180 with respect
+    // to move to angle action and the value displayed by the app
+    response.angle = static_cast<uint32_t>(
+        180.0 + servo_angle(servo_id, robot->get_servo_angle(servo_id))) * 10;
     return true;
   }
 };
@@ -1282,8 +1285,10 @@ struct ServoControl : Proto<0x33, 0x17> {
 
     inline float angular_speed() const {
       float v = static_cast<float>(value);
+      // TODO(Jerome): speed is NOT in rpm. 1 unit is about 20 deg/s
       v = (v * 98) / 900 - 49;
-      return angular_speed_from_rpm(round(v));
+      float speed = angular_speed_from_rpm(round(v));
+      return speed;
     }
   };
 
@@ -1299,6 +1304,10 @@ struct ServoControl : Proto<0x33, 0x17> {
     size_t servo_id = request.id - 1;
     robot->enable_servo(servo_id, request.enable);
     float speed = request.angular_speed();
+    // TODO(Jerome): check
+    if (servo_id < 2) {
+      speed *= -SERVO_DIRECTION[servo_id];
+    }
     spdlog::info("Should set target speed of servo {} to {}", servo_id, speed);
     robot->set_target_servo_speed(servo_id, speed);
     return true;
@@ -1333,8 +1342,8 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
 
     inline float angle() const {
       if (servo_id == 1 || servo_id == 2)
-        return SERVO_RESET_ANGLES[servo_id - 1] + SERVO_RESET_EXT_ANGLES[servo_id - 1] -
-               deg2rad(value / 10.0 - 180.0);
+        return SERVO_RESET_ANGLES[servo_id - 1] + SERVO_RESET_EXT_ANGLES[servo_id - 1] +
+               SERVO_DIRECTION[servo_id - 1] * deg2rad(value / 10.0 - 180.0);
       return 0.0;
     }
   };

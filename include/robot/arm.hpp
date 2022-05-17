@@ -5,16 +5,26 @@
 
 #include "servo.hpp"
 
+// CHANGED(Jerome): invert left motor direction ... here or in coppelia => in utils.hpp
+// CHANGED(Jerome): modify zeros to match coppelia/model
+
 struct Arm {
   // Length of an arm
   static constexpr float L = 0.12f;
   // The coordinate system of the arm is located at the middle top of the arm [trapeziodal] platfom
   // The end effector is longitudinally at start of edge of the gripper, at an altitude
   // about 1 cm below the arm end effector
-  static constexpr ArmServoValues<float> ZERO{1.5508f, 2.6578f};
 
-  // Defined to that (0.071, 0.057) is the point with maximal flection (like in the real RM)
-  static constexpr Vector3 OFFSET{-0.0007f, 0.0f, 0.0043f};
+  static constexpr ArmServoValues<float> ZERO{1.5359f, 2.6442f};
+  // static constexpr ArmServoValues<float> ZERO{1.5508f, 2.6578f};
+  //
+  // pitch arm top (left motor): 27.72 deg != 28.5 deg in coppelia
+  // pitch arm bottom (right motor): -88.85 deg != -88 deg in coppelia
+
+  // TODO(Jerome): should be (0.074, 0.057)
+  // Defined so to that (0.071, 0.057) is the point with maximal flection (like in the real RM)
+  static constexpr Vector3 OFFSET{-0.00157f, 0.0f, 0.00523f};
+  // static constexpr Vector3 OFFSET{-0.0007f, 0.0f, 0.0043f};
   // {0.0032f, 0.0f, 0.0179f};
 
   ArmServoValues<Servo &> motors;
