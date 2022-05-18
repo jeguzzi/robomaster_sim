@@ -229,9 +229,9 @@ struct SetWheelSpeed : Proto<0x3f, 0x20> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    WheelSpeeds speeds = {.front_left = -angular_speed_from_rpm(request.w2_speed),
+    WheelSpeeds speeds = {.front_left = angular_speed_from_rpm(request.w2_speed),
                           .front_right = angular_speed_from_rpm(request.w1_speed),
-                          .rear_left = -angular_speed_from_rpm(request.w3_speed),
+                          .rear_left = angular_speed_from_rpm(request.w3_speed),
                           .rear_right = angular_speed_from_rpm(request.w4_speed)};
     robot->chassis.wheel_speeds.set_target(speeds);
     return true;
