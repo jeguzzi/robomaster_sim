@@ -60,6 +60,7 @@ class CoppeliaSimRobot : public Robot {
   void forward_target_gimbal_speed(const GimbalValues<float> &speed);
   void forward_target_gimbal_angle(const GimbalValues<float> &angle);
   void forward_blaster_led(float value) const;
+  void forward_engage_wheel_motors(bool value);
   void enable_tof(size_t index, simInt sensor_handle);
   float read_tof(size_t index) const;
 

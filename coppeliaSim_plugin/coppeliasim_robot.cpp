@@ -248,3 +248,12 @@ void CoppeliaSimRobot::enable_tof(size_t index, simInt sensor_handle) {
     tof_handles[index] = sensor_handle;
   }
 }
+
+void CoppeliaSimRobot::forward_engage_wheel_motors(bool value) {
+  simInt v = value ? 1 : 0;
+
+  for (size_t i = 0; i < wheel_joint_handles.size; i++) {
+    spdlog::info("[Chassis] Set joint {} motor enabled to {}", wheel_joint_handles[i], v);
+    simSetObjectInt32Param(wheel_joint_handles[i], sim_jointintparam_motor_enabled, v);
+  }
+}
