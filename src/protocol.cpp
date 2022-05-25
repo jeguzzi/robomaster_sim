@@ -67,6 +67,44 @@ static uint16_t crc16_calc(const uint8_t *data, unsigned length) {
   return crc;
 }
 
+static std::vector<uint8_t> encrypt(const std::vector<uint8_t> & data) {
+    std::vector<uint8_t> buf;
+    uint32_t key = 0x07;
+    for (uint8_t byte : data) {
+        buf.push_back((byte ^ key) & 0xff);
+        key = (key + 7) ^ 178;
+    }
+    return buf;
+}
+
+
+std::vector<uint8_t> discovery_message(bool is_pairing, const std::array<uint8_t, 4> & ip,
+                                       const std::array<uint8_t, 6> & mac,
+                                       const std::string & app_id ) {
+  std::vector<uint8_t> buffer(24, 0);
+  uint16_t sof = 0x5a5b;
+
+  // Only this message is big-endian
+  // write<uint16_t>(buffer, 0, sof);
+  // write<uint32_t>(buffer, 2, is_pairing_);
+
+  buffer[0] = (sof >> 8);
+  buffer[1] = sof & 0xFF;
+  if (is_pairing) buffer[5] = 1;
+
+  for (size_t i = 0; i < ip.size(); i++) {
+    buffer[6 + i] = ip[i];
+  }
+  for (size_t i = 0; i < mac.size(); i++) {
+    buffer[10 + i] = mac[i];
+  }
+  for (size_t i = 0; i < (app_id.size() + 1) && i < 8; i++) {
+    buffer[16 + i] = app_id[i];
+  }
+  return encrypt(buffer);
+}
+
+
 std::vector<uint8_t> ResponseT::encode_msg(uint8_t set, uint8_t id) {
   // TODO(Jerome): do I need to treat differently the request/no-ack case?
   auto payload = encode();

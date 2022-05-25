@@ -2,6 +2,7 @@
 #define INCLUDE_PROTOCOL_HPP_
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "spdlog/fmt/bin_to_hex.h"
@@ -83,5 +84,9 @@ template <uint8_t _set, uint8_t _cmd> struct Proto {
 bool decode_request(const uint8_t *buffer, size_t length, uint8_t *cmd_set, uint8_t *cmd_id,
                     uint16_t *seq_id, uint8_t *attri, uint8_t *sender, uint8_t *receiver,
                     const uint8_t **payload);
+
+std::vector<uint8_t> discovery_message(bool is_pairing, const std::array<uint8_t, 4> & ip,
+                                       const std::array<uint8_t, 6> & mac,
+                                       const std::string & app_id);
 
 #endif  // INCLUDE_PROTOCOL_HPP_

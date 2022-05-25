@@ -14,6 +14,7 @@ static void show_usage(std::string name) {
             << "  --ip=<IP>\t\t\tRobot ip (default: 0.0.0.0)" << std::endl
             << "  --prefix_len=<LENGTH>\t\t\tRobot network prefix length (default: 0)" << std::endl
             << "  --serial_number=<SERIAL>\tRobot serial number (default: RM0001)" << std::endl
+            << "  --app=<ID>\t\tThe app ID for discovery(default: '')" << std::endl
             << "  --udp\t\t\t\tVideo stream via UDP" << std::endl
             << "  --bitrate=<BITRATE>\t\tVideo stream bitrate (default: 200000)" << std::endl
             << "  --armor_hits\t\t\tPublish armor hits" << std::endl
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
   float period = 0.05;
   unsigned prefix_len = 0;
   unsigned tof_port;
+  char app_id[8] = "";
   std::vector<unsigned> tof_ports;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--udp") == 0) {
@@ -43,13 +45,16 @@ int main(int argc, char **argv) {
     if (sscanf(argv[i], "--bitrate=%d", &bitrate)) {
       continue;
     }
-    if (sscanf(argv[i], "--serial_number=%s", serial)) {
+    if (sscanf(argv[i], "--serial_number=%99s", serial)) {
       continue;
     }
-    if (sscanf(argv[i], "--ip=%s", ip)) {
+    if (sscanf(argv[i], "--app=%7s", app_id)) {
       continue;
     }
-    if (sscanf(argv[i], "--log_level=%s", log_level)) {
+    if (sscanf(argv[i], "--ip=%99s", ip)) {
+      continue;
+    }
+    if (sscanf(argv[i], "--log_level=%99s", log_level)) {
       continue;
     }
     if (strcmp(argv[i], "--armor_hits") == 0) {
@@ -80,8 +85,9 @@ int main(int argc, char **argv) {
   spdlog::set_level(spdlog::level::from_str(log_level));
   RealTimeDummyRobot dummy(io_context.get(), period, true, true, {true, true, false}, true, true,
                            true);
+  printf("app_id %s\n", app_id);
   RoboMaster robot(io_context, &dummy, std::string(serial), use_udp, bitrate, ip, prefix_len,
-                   armor_hits, ir_hits);
+                   armor_hits, ir_hits, app_id);
   for (auto port : tof_ports) {
     printf("port %d\n", port);
     dummy.enable_tof(port);

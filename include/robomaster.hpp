@@ -21,7 +21,7 @@ class RoboMaster {
                       std::string serial_number = "RM0001", bool udp_video_stream = false,
                       unsigned video_stream_bitrate = 200000, std::string ip = "",
                       unsigned prefix_len = 0, bool enable_armor_hits = false,
-                      bool enable_ir_hits = false);
+                      bool enable_ir_hits = false, const std::string app_id = "");
   void spin(bool);
   void do_step(float);
   ~RoboMaster() {
