@@ -239,9 +239,10 @@ struct ImuSubject : SubjectWithUID<0x00020009a7985b8d> {
     acc_x = acc(imu_body.acceleration.x);
     acc_y = -acc(imu_body.acceleration.y);
     acc_z = -acc(imu_body.acceleration.z);
-    gyro_x = rad2deg(imu_body.angular_velocity.x);
-    gyro_y = -rad2deg(imu_body.angular_velocity.y);
-    gyro_z = -rad2deg(imu_body.angular_velocity.z);
+    // CHANGED: now in radians
+    gyro_x = imu_body.angular_velocity.x;
+    gyro_y = -imu_body.angular_velocity.y;
+    gyro_z = -imu_body.angular_velocity.z;
   }
 };
 
