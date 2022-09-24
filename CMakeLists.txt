@@ -14,7 +14,7 @@ ELSE()
     add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers )  # -Wno-c99-extensions
 ENDIF()
 
-
+add_definitions(-DFMT_DEPRECATED_OSTREAM)
 
 # -pedantic
 find_package(Boost REQUIRED COMPONENTS system thread)
