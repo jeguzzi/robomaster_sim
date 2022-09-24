@@ -1116,7 +1116,7 @@ struct ChassisSerialSet : Proto<0x3f, 0xc0> {
     uint16_t tx_size = 0;
 
     template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
-      os << "SensorGetData::Request {"
+      os << "ChassisSerialSet::Request {"
          << " baud_rate=" << (int)r.baud_rate << " data_bit=" << (int)r.data_bit
          << " odd_even=" << (int)r.odd_even << " tx_en=" << (int)r.tx_en
          << " rx_en=" << (int)r.rx_en << " rx_size=" << (int)r.rx_size
@@ -1148,7 +1148,7 @@ struct ChassisSerialSet : Proto<0x3f, 0xc0> {
   }
 };
 
-struct ChassisSerialMsgSend : Proto<0x3f, 0x15> {
+struct ChassisSerialMsgSend : Proto<0x3f, 0xc1> {
   struct Request : RequestT {
     uint8_t msg_len;
     uint8_t msg_type;
