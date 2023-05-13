@@ -71,8 +71,11 @@ struct Vision {
   uint8_t enabled;
   enum Color { RED = 1, GREEN = 2, BLUE = 3 };
   std::map<DetectedObjects::Type, Color> color;
-  template <typename T> bool is_enabled() const { return (1 << T::type) & enabled; }
   DetectedObjects detected_objects;
+
+  template <typename T> bool is_enabled() const { return (1 << T::type) & enabled; }
+
+  Vision() : enabled(0) {}
 
   // ignored for now:
   // color {1: red, 2: green, 3: blue}
@@ -86,8 +89,17 @@ struct Vision {
       color[DetectedObjects::Type::MARKER] = c;
   }
 
-  void set_enable(uint8_t value) { enabled = value; }
-  uint8_t get_enable() { return enabled; }
+  void set_enable(uint8_t value) {
+    // CHANGED: It seems that the robot does not enable multiple detectors at the same time
+    // and that it does not accept a mask that is not one of 0 or {1, 2, 3, 4, 5, 7} << 1
+    if (value && enabled) return;
+    if (value != 0 && value != 2 && value != 4 && value != 8 && value != 16 && value != 32 &&
+        value != 128) return;
+    enabled = value;
+    spdlog::info("vision mask set to {}", value);
+  }
+
+  uint8_t get_enable() const { return enabled; }
   const DetectedObjects &get_detected_objects() { return detected_objects; }
 };
 

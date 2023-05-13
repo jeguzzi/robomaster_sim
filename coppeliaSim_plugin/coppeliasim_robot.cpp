@@ -133,7 +133,7 @@ std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() const {
 #if SIM_PROGRAM_VERSION_NB >= 40400
   unsigned char *buffer = simGetVisionSensorImg(camera_handle, 0, 0.0, nullptr, nullptr, resolution);
 #else
-  unsigned char *buffer = simGetVisionSensorCharImage(camera_handle, &width, &height);
+  unsigned char *buffer = simGetVisionSensorCharImage(handle, &resolution[0], &resolution[1]);
 #endif
   const int width = resolution[0];
   const int height = resolution[1];
@@ -245,7 +245,86 @@ Gripper::Status CoppeliaSimRobot::read_gripper_state() const {
   return Gripper::Status(value);
 }
 
-DetectedObjects CoppeliaSimRobot::read_detected_objects() const { return {}; }
+
+// static cv::Rect find_bounding_box(const cv::Mat & image, const cv::Scalar & color) {
+//   // cv::Mat mask(image.size(), CV_8UC1);
+//   cv::Mat mask;
+//   cv::inRange(image, color, color, mask);
+//   if (cv::countNonZero(mask)) {
+//     cv::Mat locations;
+//     cv::findNonZero(mask, locations);
+//     return cv::boundingRect(locations);
+//   }
+//   return cv::Rect();
+// }
+
+
+struct ImageRect {
+  uint16_t min_i, max_i, min_j, max_j;
+
+  ImageRect(uint16_t i, uint16_t j) : min_i(i), max_i(i), min_j(j), max_j(j) {}
+
+  void update(uint16_t i, uint16_t j) {
+    min_i = std::min(min_i, i);
+    min_j = std::min(min_j, j);
+    max_i = std::max(max_i, i);
+    max_j = std::max(max_j, j);
+  }
+
+  BoundingBox box(uint16_t w, uint16_t h) const {
+    return BoundingBox(
+        (float) (max_j + min_j) / w * 0.5, 1.0 - (float) (max_i + min_i) / h * 0.5,
+        (float) (max_j - min_j + 1) / w, (float) (max_i - min_i + 1) / h);
+  }
+};
+
+static DetectedObjects run_detector(const unsigned char * buffer, int width, int height,
+                                    uint8_t mask) {
+  std::map<uint8_t, ImageRect> boxes;
+  buffer++;
+  for (size_t i = 0; i < height; i++) {
+    for (size_t j = 0; j < width; j++) {
+      if (*buffer != 0) {
+        auto box = boxes.find(*buffer);
+        if (box == boxes.end()) {
+          boxes.emplace(std::piecewise_construct, std::make_tuple(*buffer), std::make_tuple(i, j));
+        } else {
+          box->second.update(i, j);
+        }
+      }
+      buffer+=3;
+    }
+  }
+  DetectedObjects objects;
+  for (auto & [k, v] : boxes) {
+    if (k == DetectedObjects::Type::PERSON && (1 << k) & mask) {
+      objects.people.emplace_back(v.box(width, height));
+    }
+    if (k == DetectedObjects::Type::ROBOT && (1 << k) & mask) {
+      objects.robots.emplace_back(v.box(width, height));
+    }
+  }
+  return objects;
+}
+
+DetectedObjects CoppeliaSimRobot::read_detected_objects() const {
+  if (vision_handle <= 0) {
+    spdlog::warn("No vision sensor");
+    return {};
+  }
+  simHandleVisionSensor(vision_handle, nullptr, nullptr);
+  int resolution[2]{};
+#if SIM_PROGRAM_VERSION_NB >= 40400
+  unsigned char *buffer = simGetVisionSensorImg(vision_handle, 0, 0.0, nullptr, nullptr, resolution);
+#else
+  unsigned char *buffer = simGetVisionSensorCharImage(vision_handle, &resolution[0], &resolution[1]);
+#endif
+  const int width = resolution[0];
+  const int height = resolution[1];
+  auto rs = run_detector(buffer, width, height, vision.get_enable());
+  simReleaseBuffer((const char *)buffer);
+  return rs;
+}
 
 hit_event_t CoppeliaSimRobot::read_hit_events() const { return {}; }
 

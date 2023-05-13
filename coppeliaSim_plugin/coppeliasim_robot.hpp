@@ -18,7 +18,8 @@ typedef float simFloat;
 class CoppeliaSimRobot : public Robot {
  public:
   CoppeliaSimRobot(WheelValues<int> _wheel_joint_handles, ChassisLEDValues<int> _led_handles,
-                   bool _enable_arm, int _camera_handle, ServoValues<int> _servo_motor,
+                   bool _enable_arm, int _camera_handle, int _vision_handle,
+                   ServoValues<int> _servo_motor,
                    GimbalValues<int> _gimbal_motor,
                    GimbalLEDValues<std::vector<int>> _gimbal_led_handles,
                    int _blaster_light_handle, bool _enable_gripper,
@@ -32,6 +33,7 @@ class CoppeliaSimRobot : public Robot {
       , gimbal_led_handles(_gimbal_led_handles)
       , blaster_light_handle(_blaster_light_handle)
       , camera_handle(_camera_handle)
+      , vision_handle(_vision_handle)
       , servo_handles({{0, _servo_motor[0]},
                        {1, _servo_motor[1]},
                        {2, _servo_motor[2]},
@@ -82,6 +84,7 @@ class CoppeliaSimRobot : public Robot {
   const std::map<unsigned, int> servo_handles;
   std::map<unsigned, int> tof_handles;
   int camera_handle;
+  int vision_handle;
   std::string gripper_state_signal;
   std::string gripper_target_signal;
   int imu_handle;

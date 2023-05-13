@@ -101,9 +101,10 @@ struct VisionEvent : Event<VisionDetectInfo> {
   template <typename T>
   void add_message(std::vector<VisionDetectInfo::Response> &msgs, const DetectedObjects &objects) {
     if (type & (1 << T::type)) {
+      if (!robot->vision.is_enabled<T>()) return;
       auto items = objects.get<T>();
       auto size = items.size();
-      if (size) {
+      if (true || size) {
         VisionDetectInfo::Response msg(sender, receiver, T::type, size);
         size_t location = 9;
         for (auto &item : items) {

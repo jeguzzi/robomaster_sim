@@ -137,12 +137,17 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/coppeliaSim_plugin")
     add_compile_options(-DSIM_REQUIRED_PROGRAM_VERSION_NB=4010000)
   ENDIF()
 
+# find_package(OpenCV 4 COMPONENTS core imgproc imgcodecs REQUIRED)
+
+
 add_subdirectory(coppeliaSim_plugin)
 
+target_include_directories(simExtRobomaster PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(simExtRobomaster
   robomaster
   spdlog::spdlog
   ${Boost_LIBRARIES}
+  # ${OpenCV_LIBS}
 )
 
 IF (WIN32)

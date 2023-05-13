@@ -80,6 +80,7 @@ static const GimbalValues<std::string> gimbal_servo_names = {.yaw = "gimbal_yaw_
 
 static const char servo_name[] = "servo_motor_";
 static const char camera_name[] = "Vision_sensor";
+static const char vision_name[] = "Machine_vision_sensor";
 static const char blaster_light_name[] = "blaster_light";
 static const char gripper_name[] = "gripper_link_respondable";
 static const char gyro_name[] = "GyroSensor";
@@ -133,8 +134,10 @@ static int add_robot(int cs_handle, std::string serial_number,
                      bool enable_gimbal = true) {
   int handle = next_robot_handle;
   int camera_handle = -1;
+  int vision_handle = -1;
   if (enable_camera) {
     camera_handle = get_handle(camera_name, cs_handle);
+    vision_handle = get_handle(vision_name, cs_handle);
     if (camera_handle == -1) {
       spdlog::error("Could not locate camera");
       enable_camera = false;
@@ -210,7 +213,8 @@ static int add_robot(int cs_handle, std::string serial_number,
   std::string accelerometer_signal = "accelerometer#" + std::to_string(accelerometer_handle);
   
   _robots.emplace(handle, std::make_unique<CoppeliaSimRobot>(
-                              wheel_handles, chassis_led_handles, enable_arm, camera_handle,
+                              wheel_handles, chassis_led_handles, enable_arm,
+                              camera_handle, vision_handle,
                               servo_motors, gimbal_motors, gimbal_led_handles, blaster_light_handle,
                               enable_gripper, gripper_state, gripper_target, imu_handle,
                               accelerometer_signal, gyro_signal));
