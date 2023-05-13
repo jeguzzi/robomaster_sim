@@ -133,7 +133,7 @@ std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() const {
 #if SIM_PROGRAM_VERSION_NB >= 40400
   unsigned char *buffer = simGetVisionSensorImg(camera_handle, 0, 0.0, nullptr, nullptr, resolution);
 #else
-  unsigned char *buffer = simGetVisionSensorCharImage(camera_handle, &width, &height);
+  unsigned char *buffer = simGetVisionSensorCharImage(handle, &resolution[0], &resolution[1]);
 #endif
   const int width = resolution[0];
   const int height = resolution[1];
