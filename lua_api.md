@@ -143,11 +143,11 @@ CS_Attitude = {float yaw, float pitch, float roll}
 #### create
 Instantiate a RoboMaster controller
 ```C++
-int handle = simRobomaster.create(int index, string remote_api_network="", string serial_number="", bool camera_use_udp=false, int camera_bitrate=1000000, bool enable_camera=true, bool enable_gripper=true, bool enable_arm=true, bool enable_gimbal=true)
+int handle = simRobomaster.create(int handle, string remote_api_network="", string serial_number="", bool camera_use_udp=false, int camera_bitrate=1000000, bool enable_camera=true, bool enable_gripper=true, bool enable_arm=true, bool enable_gimbal=true)
 ```
 
 *parameters*
-  - **index** The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix
+  - **handle** The handle of the CoppeliaSim robot.
   - **remote_api_network** The address that the remote API should use `"<ip>/<subnet size in bits>"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.
   - **serial_number** The robot serial number
   - **camera_use_udp** Make the camera use UDP for streaming
@@ -166,11 +166,11 @@ Instantiate a RoboMaster controller with the default configuration for EP:
           `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=true`, `enable_gripper=true`, `enable_gimbal=false`
 
 ```C++
-int handle = simRobomaster.create_ep(int index, string remote_api_network="", string serial_number="")
+int handle = simRobomaster.create_ep(int handle, string remote_api_network="", string serial_number="")
 ```
 
 *parameters*
-  - **index** The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix
+  - **handle** The handle of the CoppeliaSim robot.
   - **remote_api_network** The address that the remote API should use `"<ip>/<subnet size in bits>"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.
   - **serial_number** The robot serial number
 
@@ -183,11 +183,11 @@ Instantiate a RoboMaster controller with the default configuration for S1:
         `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=false`, `enable_gripper=false`, `enable_gimbal=true`
 
 ```C++
-int handle = simRobomaster.create_s1(int index, string remote_api_network="", string serial_number="")
+int handle = simRobomaster.create_s1(int handle, string remote_api_network="", string serial_number="")
 ```
 
 *parameters*
-  - **index** The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix
+  - **handle** The handle of the CoppeliaSim robot.
   - **remote_api_network** The address that the remote API should use `"<ip>/<subnet size in bits>"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.
   - **serial_number** The robot serial number
 

@@ -141,8 +141,7 @@ while inside CoppeliaSim, you can send the same command like this
 If you don't need to access the remote API, disable it by setting the network to `''`. Then, you can control as many robots as you want without worrying about networking.
 ```lua
 function sysCall_init()
-    local index = sim.getNameSuffix(nil)
-    handle = simRobomaster.create_s1(index, "")
+    handle = simRobomaster.create_s1(sim.getObject("."), "")
 end
 ```
 
@@ -202,15 +201,13 @@ To setup the robots, for the dummy simulation, launch two simulations
 and in CoppeliaSim, change the lua scripts of the robots to
 ```lua
   function sysCall_init()
-      local index = sim.getNameSuffix(nil)
-      handle = simRobomaster.create_s1(index, "127.0.0.1/8", "RM0")
+      handle = simRobomaster.create_s1(sim.getObject("."), "127.0.0.1/8", "RM0")
   end
 ```
 and
 ```lua
   function sysCall_init()
-      local index = sim.getNameSuffix(nil)
-      handle = simRobomaster.create_s1(index, "127.0.1.1/8", "RM1")
+      handle = simRobomaster.create_s1(sim.getObject("."), "127.0.1.1/8", "RM1")
   end
 ```
 
