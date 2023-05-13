@@ -41,4 +41,5 @@ include/spdlog
 coppeliaSim_plugin_debug
 linux_build
 xcode
+build*
 __pycache__

@@ -7,8 +7,8 @@
     <command name="create">
         <description>Instantiate a RoboMaster controller</description>
         <params>
-          <param name="index" type="int">
-            <description>The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix</description>
+          <param name="handle" type="int">
+            <description>The handle of the CoppeliaSim robot.</description>
           </param>
           <param name="remote_api_network" type="string" default='""'>
               <description>The address that the remote API should use `"&lt;ip&gt;/&lt;subnet size in bits&gt;"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.</description>
@@ -50,8 +50,8 @@
           <category name="ep"/>
         </categories>
         <params>
-          <param name="index" type="int">
-            <description>The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix</description>
+          <param name="handle" type="int">
+            <description>The handle of the CoppeliaSim robot.</description>
           </param>
           <param name="remote_api_network" type="string" default='""'>
               <description>The address that the remote API should use `"&lt;ip&gt;/&lt;subnet size in bits&gt;"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.</description>
@@ -75,8 +75,8 @@
           <category name="s1"/>
         </categories>
         <params>
-          <param name="index" type="int">
-            <description>The suffix of the CoppeliaSim robot. Use `-1` for an empty suffix</description>
+          <param name="handle" type="int">
+            <description>The handle of the CoppeliaSim robot.</description>
           </param>
           <param name="remote_api_network" type="string" default='""'>
               <description>The address that the remote API should use `"&lt;ip&gt;/&lt;subnet size in bits&gt;"`. E.g., use `"127.0.0.1/24"` for local network, `"/0"` to bind to any network interface. Leave empty to disable the remote API.</description>

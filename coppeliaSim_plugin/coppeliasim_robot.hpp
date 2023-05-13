@@ -9,15 +9,21 @@
 
 #include <simPlusPlus/Lib.h>
 
+#if SIM_PROGRAM_VERSION_NB >= 40500
+typedef double simFloat;
+#else
+typedef float simFloat;
+#endif
+
 class CoppeliaSimRobot : public Robot {
  public:
-  CoppeliaSimRobot(WheelValues<simInt> _wheel_joint_handles, ChassisLEDValues<simInt> _led_handles,
-                   bool _enable_arm, simInt _camera_handle, ServoValues<simInt> _servo_motor,
-                   GimbalValues<simInt> _gimbal_motor,
-                   GimbalLEDValues<std::vector<simInt>> _gimbal_led_handles,
-                   simInt _blaster_light_handle, bool _enable_gripper,
+  CoppeliaSimRobot(WheelValues<int> _wheel_joint_handles, ChassisLEDValues<int> _led_handles,
+                   bool _enable_arm, int _camera_handle, ServoValues<int> _servo_motor,
+                   GimbalValues<int> _gimbal_motor,
+                   GimbalLEDValues<std::vector<int>> _gimbal_led_handles,
+                   int _blaster_light_handle, bool _enable_gripper,
                    std::string _gripper_state_signal, std::string _gripper_target_signal,
-                   simInt _imu_handle, std::string _accelerometer_signal, std::string _gyro_signal)
+                   int _imu_handle, std::string _accelerometer_signal, std::string _gyro_signal)
       : Robot(_enable_arm, _enable_gripper,
               {_servo_motor[0] > 0, _servo_motor[1] > 0, _servo_motor[2] > 0},
               (_gimbal_motor.yaw > 0 && _gimbal_motor.pitch > 0), _camera_handle > 0, false)
@@ -61,7 +67,7 @@ class CoppeliaSimRobot : public Robot {
   void forward_target_gimbal_angle(const GimbalValues<float> &angle);
   void forward_blaster_led(float value) const;
   void forward_engage_wheel_motors(bool value);
-  void enable_tof(size_t index, simInt sensor_handle);
+  void enable_tof(size_t index, int sensor_handle);
   float read_tof(size_t index) const;
 
   // void has_read_accelerometer(float x, float y, float z);
@@ -69,16 +75,16 @@ class CoppeliaSimRobot : public Robot {
   // void update_orientation(float alpha, float beta, float gamma);
 
  private:
-  WheelValues<simInt> wheel_joint_handles;
-  ChassisLEDValues<simInt> chassis_led_handles;
-  GimbalLEDValues<std::vector<simInt>> gimbal_led_handles;
-  simInt blaster_light_handle;
+  WheelValues<int> wheel_joint_handles;
+  ChassisLEDValues<int> chassis_led_handles;
+  GimbalLEDValues<std::vector<int>> gimbal_led_handles;
+  int blaster_light_handle;
   const std::map<unsigned, int> servo_handles;
   std::map<unsigned, int> tof_handles;
-  simInt camera_handle;
+  int camera_handle;
   std::string gripper_state_signal;
   std::string gripper_target_signal;
-  simInt imu_handle;
+  int imu_handle;
   std::string accelerometer_signal;
   std::string gyro_signal;
 };

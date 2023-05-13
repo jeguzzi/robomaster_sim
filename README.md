@@ -40,13 +40,17 @@ On Linux, we require a C++-20 compiler.
 
 ### CoppeliaSim
 
-To compile and then use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com).
-Download release 4.4, as we do not yet support the lastest release. Export the location where you place it.
+To compile and then use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). We support CoppeliaSim from v4 on.
+Download the latest release. Export the location where you place it.
 
 ```bash
 export COPPELIASIM_ROOT_DIR=<path to the folder containing the programming subfolder>
 ```
 which on Linux is the root folder that you download, while on MacOs is `/Applications/coppeliaSim.app/Contents/Resources`, if you install the app to the default location.
+
+You also need to install Python>=3.8 and two common dependencies for CoppeliaSim plugins:
+- [xsltproc](http://xmlsoft.org/xslt/xsltproc.html). Linux: `sudo apt install xsltproc`. MacOs comes with `xsltproc` installed.
+- [xmlschema](https://github.com/sissaschool/xmlschema) (optional): `python3 -m pip install xmlschema`
 
 ## Build
 
@@ -95,7 +99,7 @@ Then run one of the Python scripts in `examples`
 $ cd <this repo>/examples
 $ python discovery.py
 ```
-which discovers any Robomaster avaible on the network.
+which discovers any Robomaster available on the network.
 
 Other scripts showcase various parts of the remote API. For instance
 ```
@@ -209,3 +213,19 @@ and
       handle = simRobomaster.create_s1(index, "127.0.1.1/8", "RM1")
   end
 ```
+
+### Trubleshooting
+
+#### simIK
+
+The initial release of Coppelia v4.5 has [a bug](https://forum.coppeliarobotics.com/viewtopic.php?p=38863) 
+in the lua script of `simIK`. If you experience errors
+using the Robomaster gripper, add the following lines at the begin 
+of `simIK.debugGroupIfNeeded` in `simIK.lua`
+```lua
+function simIK.debugGroupIfNeeded(ikEnv,ikGroup,debugFlags)
+  if not _S.ikEnvs then
+      _S.ikEnvs={}
+  end
+  ...
+``` 

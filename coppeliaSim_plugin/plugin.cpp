@@ -35,9 +35,10 @@
 
 #include "config.h"
 #include "plugin.h"
-#include "simPlusPlus/Handle.h"
 #include "simPlusPlus/Plugin.h"
 #include "stubs.h"
+
+#include <cstdlib>
 
 CS_Vector3 to_cs(const Vector3 &value) { return CS_Vector3(value.x, value.y, value.z); }
 
@@ -80,16 +81,39 @@ static const GimbalValues<std::string> gimbal_servo_names = {.yaw = "gimbal_yaw_
 static const char servo_name[] = "servo_motor_";
 static const char camera_name[] = "Vision_sensor";
 static const char blaster_light_name[] = "blaster_light";
-
+static const char gripper_name[] = "gripper_link_respondable";
+static const char gyro_name[] = "GyroSensor";
 static const char imu_name[] = "GyroSensor_reference";
-static const char accelerometer_signal_name[] = "accelerometer";
-static const char gyro_signal_name[] = "gyro";
+static const char accelerometer_name[] = "Accelerometer";
 
-static int get_handle(std::string name, std::string suffix) {
-  std::string complete_name = name + suffix + "@silentError";
-  spdlog::info("Getting handle of {}", complete_name);
-  return simGetObjectHandle(complete_name.data());
+
+#if SIM_PROGRAM_VERSION_NB < 40300
+
+static int get_index(int handle) {
+  const char * name = simGetObjectName(handle);
+  return simGetNameSuffix(name);
 }
+
+static int get_handle(std::string name, int handle) {
+  std::string suffix = "#";
+  const int index = get_index(handle);
+  if (index >= 0) {
+    suffix += std::to_string(index);
+  }
+  name = name + suffix + "@silentError";
+  spdlog::info("Getting handle of {}", name);
+  return simGetObjectHandle(name.data());
+}
+
+#else
+
+static int get_handle(std::string name, int handle) {
+  name = "./" + name;
+  spdlog::info("Getting handle of {} in {}", name, handle);
+  return simGetObject(name.data(), -1, handle, 1);
+}
+
+#endif
 
 static std::string get_ip(std::string network, unsigned *prefix_len) {
   size_t pos = network.find_first_of('/');
@@ -102,29 +126,25 @@ static std::string get_ip(std::string network, unsigned *prefix_len) {
   return ip;
 }
 
-static int add_robot(int coppelia_index, std::string serial_number,
+static int add_robot(int cs_handle, std::string serial_number,
                      std::string remote_api_network = "", bool enable_camera = true,
                      bool camera_use_udp = false, int camera_bitrate = 1000000,
                      bool enable_arm = true, bool enable_gripper = true,
                      bool enable_gimbal = true) {
   int handle = next_robot_handle;
-  std::string suffix = "#";
-  if (coppelia_index >= 0) {
-    suffix += std::to_string(coppelia_index);
-  }
   int camera_handle = -1;
   if (enable_camera) {
-    camera_handle = get_handle(camera_name, suffix);
+    camera_handle = get_handle(camera_name, cs_handle);
     if (camera_handle == -1) {
       spdlog::error("Could not locate camera");
       enable_camera = false;
     }
   }
 
-  WheelValues<simInt> wheel_handles;
+  WheelValues<int> wheel_handles;
 
   for (size_t i = 0; i < wheel_handles.size; i++) {
-    simInt h = get_handle(wheel_names[i], suffix);
+    int h = get_handle(wheel_names[i], cs_handle);
     if (h == -1) {
       spdlog::error("Could not locate wheel #{}", i);
       return -1;
@@ -132,9 +152,9 @@ static int add_robot(int coppelia_index, std::string serial_number,
     wheel_handles[i] = h;
   }
 
-  ChassisLEDValues<simInt> chassis_led_handles;
+  ChassisLEDValues<int> chassis_led_handles;
   for (size_t i = 0; i < chassis_led_handles.size; i++) {
-    simInt h = get_handle(chassis_led_names[i], suffix);
+    int h = get_handle(chassis_led_names[i], cs_handle);
     if (h == -1) {
       spdlog::error("Could not locate led #{}", i);
       return -1;
@@ -142,33 +162,33 @@ static int add_robot(int coppelia_index, std::string serial_number,
     chassis_led_handles[i] = h;
   }
 
-  ServoValues<simInt> servo_motors;
+  ServoValues<int> servo_motors;
   for (size_t i = 0; i < servo_motors.size(); i++) {
-    servo_motors[i] = get_handle(servo_name + std::to_string(i), suffix);
+    servo_motors[i] = get_handle(servo_name + std::to_string(i), cs_handle);
     if (servo_motors[i] == -1 && i < 2 && enable_arm) {
       spdlog::error("Could not locate arm servo motor #{}", i);
       enable_arm = false;
     }
   }
-  simInt blaster_light_handle = -1;
-  GimbalValues<simInt> gimbal_motors{-1, -1};
+  int blaster_light_handle = -1;
+  GimbalValues<int> gimbal_motors{-1, -1};
   if (enable_gimbal) {
     for (size_t i = 0; i < gimbal_motors.size; i++) {
-      gimbal_motors[i] = get_handle(gimbal_servo_names[i], suffix);
+      gimbal_motors[i] = get_handle(gimbal_servo_names[i], cs_handle);
       if (gimbal_motors[i] == -1) {
         spdlog::error("Could not locate gimbal motor #{}", i);
         enable_gimbal = false;
         break;
       }
     }
-    blaster_light_handle = get_handle(blaster_light_name, suffix);
+    blaster_light_handle = get_handle(blaster_light_name, cs_handle);
   }
 
-  GimbalLEDValues<std::vector<simInt>> gimbal_led_handles;
+  GimbalLEDValues<std::vector<int>> gimbal_led_handles;
   if (enable_gimbal) {
     for (size_t i = 0; i < gimbal_led_handles.size; i++) {
       for (size_t j = 0; j < 8; j++) {
-        simInt h = get_handle(gimbal_led_names[i] + std::to_string(j), suffix);
+        int h = get_handle(gimbal_led_names[i] + std::to_string(j), cs_handle);
         if (h == -1) {
           spdlog::error("Could not locate gimbal led #{}_{}", i, j);
           return -1;
@@ -177,15 +197,18 @@ static int add_robot(int coppelia_index, std::string serial_number,
       }
     }
   }
-  std::string gripper_state = "gripper" + suffix;
-  std::string gripper_target = "target_gripper" + suffix;
+  int gripper_handle = get_handle(gripper_name, cs_handle);
+  std::string gripper_state = "gripper#" + std::to_string(gripper_handle);
+  std::string gripper_target = "target_gripper#" + std::to_string(gripper_handle);
 
   spdlog::info("Gripper signals {} {}", gripper_state, gripper_target);
 
-  int imu_handle = get_handle(imu_name, suffix);
-  std::string accelerometer_signal = accelerometer_signal_name + suffix;
-  std::string gyro_signal = gyro_signal_name + suffix;
-
+  int imu_handle = get_handle(imu_name, cs_handle);
+  int gyro_handle = get_handle(gyro_name, cs_handle);
+  std::string gyro_signal = "gyro#" + std::to_string(gyro_handle);
+  int accelerometer_handle = get_handle(accelerometer_name, cs_handle);
+  std::string accelerometer_signal = "accelerometer#" + std::to_string(accelerometer_handle);
+  
   _robots.emplace(handle, std::make_unique<CoppeliaSimRobot>(
                               wheel_handles, chassis_led_handles, enable_arm, camera_handle,
                               servo_motors, gimbal_motors, gimbal_led_handles, blaster_light_handle,
@@ -246,18 +269,18 @@ class Plugin : public sim::Plugin {
   }
 
   void create(create_in *in, create_out *out) {
-    out->handle = add_robot(in->index, in->serial_number, in->remote_api_network, in->enable_camera,
+    out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, in->enable_camera,
                             in->camera_use_udp, in->camera_bitrate, in->enable_arm,
                             in->enable_gripper, in->enable_gimbal);
   }
 
   void create_ep(create_ep_in *in, create_ep_out *out) {
-    out->handle = add_robot(in->index, in->serial_number, in->remote_api_network, true, false,
+    out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, true, false,
                             1000000, true, true, false);
   }
 
   void create_s1(create_s1_in *in, create_s1_out *out) {
-    out->handle = add_robot(in->index, in->serial_number, in->remote_api_network, true, false,
+    out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, true, false,
                             1000000, false, false, true);
   }
 
@@ -606,7 +629,7 @@ class Plugin : public sim::Plugin {
   //
   void onModuleHandle(char *customData) {
     // std::string module = customData ? std::string(customData) : "ALL";
-    simFloat time_step = simGetSimulationTimeStep();
+    auto time_step = simGetSimulationTimeStep();
     // simFloat time_ = simGetSimulationTime();
     // spdlog::debug("onModuleHandle {} {} ({})", module, time_step, time_);
     for (auto const &[key, val] : _robots) {
