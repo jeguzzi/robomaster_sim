@@ -13,6 +13,7 @@
 #include "event.hpp"
 #include "robomaster.hpp"
 #include "subscriber_messages.hpp"
+#include "utils.hpp"
 
 #define MAX_HEARTBEAT_DELAY 3.0
 
@@ -103,7 +104,7 @@ Commands::Commands(boost::asio::io_context *_io_context, Robot *robot, RoboMaste
   register_subject<TofSubject>();
   register_subject<GimbalPosSubject>();
   register_subject<AdapterSubject>();
-  spdlog::info("[Commands] Start listening on {}", local_endpoint());
+  spdlog::info("[Commands] Start listening on {}", STREAM(local_endpoint()));
   start();
 }
 

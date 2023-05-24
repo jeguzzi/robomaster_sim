@@ -211,7 +211,7 @@ and
   end
 ```
 
-### Trubleshooting
+### Troubleshooting
 
 #### simIK
 

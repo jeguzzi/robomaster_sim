@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <map>
 
+#include <fmt/ostream.h>
+#include <fmt/core.h>
+
+
 #include "../utils.hpp"
 
 using LedMask = uint8_t;
@@ -39,6 +43,11 @@ template <typename OStream> OStream &operator<<(OStream &os, const Color &v) {
   return os;
 }
 
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Color> : ostream_formatter {};
+#endif
+
+
 class ActiveLED {
  public:
   enum LedEffect { off = 0, on = 1, breath = 2, flash = 3, scrolling = 4 };
@@ -66,6 +75,21 @@ class ActiveLED {
   float _time;
   unsigned changed;
 };
+
+template <> struct fmt::formatter<ActiveLED::LedEffect>: formatter<std::string_view> {
+  auto format(ActiveLED::LedEffect value, format_context& ctx) const {
+  std::string_view name = "";
+  switch (value) {
+    case ActiveLED::LedEffect::off: name = "off"; break;
+    case ActiveLED::LedEffect::on: name = "on"; break;
+    case ActiveLED::LedEffect::breath: name = "breath"; break;
+    case ActiveLED::LedEffect::flash: name = "flash"; break;
+    case ActiveLED::LedEffect::scrolling: name = "scrolling"; break;
+  }
+  return formatter<string_view>::format(name, ctx);    
+  }
+};
+
 
 using CompositeLedMask = uint8_t;
 
