@@ -26,4 +26,18 @@ struct Gripper {
   Status get_status() const { return state.current; }
 };
 
+
+template <> struct fmt::formatter<Gripper::Status>: formatter<std::string_view> {
+  auto format(Gripper::Status value, format_context& ctx) const {
+  std::string_view name = "";
+  switch (value) {
+    case Gripper::Status::pause: name = "pause"; break;
+    case Gripper::Status::open: name = "open"; break;
+    case Gripper::Status::close: name = "close"; break;
+  }
+  return formatter<string_view>::format(name, ctx);    
+  }
+};
+
+
 #endif  //  INCLUDE_ROBOT_GRIPPER_HPP_ */

@@ -11,6 +11,14 @@
 
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
+#include <fmt/ostream.h>
+#include <fmt/core.h>
+
+#if FMT_VERSION >= 90000 
+#define STREAM(X) fmt::streamed(X)
+#else
+#define STREAM(X) (X)
+#endif
 
 enum ValueType { CURRENT, TARGET, DESIRED };
 
@@ -99,6 +107,10 @@ struct Vector3 {
   inline float norm() const { return sqrt(x * x + y * y + z * z); }
 };
 
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Vector3> : ostream_formatter {};
+#endif
+
 template <typename T> struct GimbalValues;
 
 struct Attitude {
@@ -117,6 +129,10 @@ struct Attitude {
   operator GimbalValues<float>() const;
 };
 
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Attitude> : ostream_formatter {};
+#endif
+
 struct Twist2D {
   float x, y, theta;
 
@@ -134,6 +150,10 @@ struct Twist2D {
     return os;
   }
 };
+
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Twist2D> : ostream_formatter {};
+#endif
 
 struct Pose2D {
   float x, y, theta;
@@ -191,6 +211,10 @@ struct Pose2D {
     return os;
   }
 };
+
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Pose2D> : ostream_formatter {};
+#endif
 
 template <typename T> struct WheelValues {
   T front_left;
@@ -254,6 +278,10 @@ template <typename OStream, typename T> OStream &operator<<(OStream &os, const W
   return os;
 }
 
+#if FMT_VERSION >= 90000 
+  template <typename T> struct fmt::formatter<WheelValues<T>> : ostream_formatter {};
+#endif
+
 template <typename T> struct ChassisLEDValues {
   T front;
   T left;
@@ -306,6 +334,10 @@ OStream &operator<<(OStream &os, const ChassisLEDValues<T> &v) {
   return os;
 }
 
+#if FMT_VERSION >= 90000 
+  template <typename T> struct fmt::formatter<ChassisLEDValues<T>> : ostream_formatter {};
+#endif
+
 template <typename T> struct GimbalLEDValues {
   T top_left;
   T top_right;
@@ -347,6 +379,10 @@ OStream &operator<<(OStream &os, const GimbalLEDValues<T> &v) {
   return os;
 }
 
+#if FMT_VERSION >= 90000 
+  template <typename T> struct fmt::formatter<GimbalLEDValues<T>> : ostream_formatter {};
+#endif
+
 inline unsigned key_from(uint8_t _set, uint8_t _cmd) { return _cmd + 256 * _set; }
 
 constexpr float angular_speed_from_rpm(int rpm) { return 2 * M_PI * rpm / 60.0; }
@@ -383,6 +419,10 @@ template <typename OStream, typename T> OStream &operator<<(OStream &os, const S
   os << " >";
   return os;
 }
+
+#if FMT_VERSION >= 90000 
+  template <typename T> struct fmt::formatter<ServoValues<T>> : ostream_formatter {};
+#endif
 
 template <typename T> struct ArmServoValues {
   T right;
@@ -433,6 +473,11 @@ OStream &operator<<(OStream &os, const ArmServoValues<T> &v) {
      << "left: " << v.left << ", right: " << v.right << " >";
   return os;
 }
+
+#if FMT_VERSION >= 90000 
+  template <typename T> struct fmt::formatter<ArmServoValues<T>> : ostream_formatter {};
+#endif
+
 
 template <typename T> struct GimbalValues {
   T yaw;
@@ -488,6 +533,11 @@ template <typename OStream, typename T> OStream &operator<<(OStream &os, const G
   return os;
 }
 
+
+#if FMT_VERSION >= 90000 
+  template <typename T> struct fmt::formatter<GimbalValues<T>> : ostream_formatter {};
+#endif
+
 inline Attitude::operator GimbalValues<float>() const { return {.yaw = yaw, .pitch = pitch}; }
 
 struct Vector2 {
@@ -537,6 +587,10 @@ struct Vector2 {
   }
 };
 
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Vector2> : ostream_formatter {};
+#endif
+
 struct Matrix2 {
   float values[2][2];
 
@@ -571,6 +625,10 @@ struct Matrix2 {
     return os;
   }
 };
+
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Matrix2> : ostream_formatter {};
+#endif
 
 struct BoundingBox {
   float x;
@@ -634,6 +692,10 @@ struct IMU {
   }
 };
 
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<IMU> : ostream_formatter {};
+#endif
+
 struct Odometry {
   Pose2D pose;
   Twist2D twist;
@@ -643,5 +705,9 @@ struct Odometry {
     return os;
   }
 };
+
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<Odometry> : ostream_formatter {};
+#endif
 
 #endif  // INCLUDE_UTILS_HPP_

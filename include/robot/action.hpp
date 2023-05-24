@@ -39,6 +39,21 @@ struct Action {
   Callback callback;
 };
 
+template <> struct fmt::formatter<Action::State>: formatter<std::string_view> {
+  auto format(Action::State value, format_context& ctx) const {
+  std::string_view name = "";
+  switch (value) {
+    case Action::State::running: name = "running"; break;
+    case Action::State::succeed: name = "succeed"; break;
+    case Action::State::failed: name = "failed"; break;
+    case Action::State::started: name = "started"; break;
+    case Action::State::undefined: name = "undefined"; break;
+    case Action::State::rejected: name = "rejected"; break;
+  }
+  return formatter<string_view>::format(name, ctx);    
+  }
+};
+
 inline float time_to_goal(const Pose2D &goal_pose, float linear_speed, float angular_speed) {
   return std::max(std::abs(normalize(goal_pose.theta)) / angular_speed,
                   goal_pose.distance() / linear_speed);

@@ -1,6 +1,7 @@
 #include "spdlog/spdlog.h"
 
 #include "streamer.hpp"
+#include "utils.hpp"
 
 // DONE(jerome): pass ip from command
 #define PORT 40921
@@ -88,7 +89,8 @@ TCPVideoStreamer::TCPVideoStreamer(boost::asio::io_context *io_context, Robot *r
                                 ? ba::ip::tcp::endpoint(ba::ip::address::from_string(ip), PORT)
                                 : ba::ip::tcp::endpoint(ba::ip::tcp::v4(), PORT))
     , tcp_socket(*io_context) {
-  spdlog::info("Creating a TCP video streamer on {} @ {} bps", acceptor.local_endpoint(), bitrate);
+  spdlog::info("Creating a TCP video streamer on {} @ {} bps",
+               STREAM(acceptor.local_endpoint()), bitrate);
 }
 
 void TCPVideoStreamer::send_buffer(boost::asio::const_buffer &buffer) {
@@ -114,8 +116,8 @@ UDPVideoStreamer::UDPVideoStreamer(boost::asio::io_context *io_context, Robot *r
     , udp_socket(*io_context,
                  ip.size() ? ba::ip::udp::endpoint(ba::ip::address::from_string(ip), UDP_PORT)
                            : ba::ip::udp::endpoint(ba::ip::udp::v4(), UDP_PORT)) {
-  spdlog::info("Creating an UDP video streamer on {} @ {} bps", udp_socket.local_endpoint(),
-               bitrate);
+  spdlog::info("Creating an UDP video streamer on {} @ {} bps", 
+               STREAM(udp_socket.local_endpoint()), bitrate);
 }
 
 void UDPVideoStreamer::send_buffer(boost::asio::const_buffer &buffer) {

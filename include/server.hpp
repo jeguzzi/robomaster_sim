@@ -12,6 +12,8 @@
 
 #include "spdlog/fmt/bin_to_hex.h"
 
+#include "utils.hpp"
+
 // #include "robot.hpp"
 
 class Robot;
@@ -47,7 +49,7 @@ class Server {
                                      uint8_t attri, const uint8_t *buffer) -> std::vector<uint8_t> {
       typename R::Request request(sender, receiver, seq_id, attri, buffer);
       typename R::Response response(request);
-      spdlog::debug("Got {} ({})", request, request.need_ack());
+      spdlog::debug("Got {} ({})", STREAM(request), request.need_ack());
       bool valid = R::answer(request, response, r, args...);
       if (valid) {
         return response.encode_msg(R::set, R::cmd);

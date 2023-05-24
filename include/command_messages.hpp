@@ -1357,7 +1357,7 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
-    spdlog::info("Move servo action? {}", request);
+    spdlog::info("Move servo action? {}", STREAM(request));
     if (request.servo_id != 1 && request.servo_id != 2) {
       // Should I return false?
       return true;
@@ -1445,7 +1445,7 @@ struct GimbalSetWorkMode : Proto<0x4, 0x4c> {
     // Client is not using this request!
     // TODO(Jerome): reverse eng. what it does on a real s1. Maybe it is useful to switch
     // from speed to angle or from chassis to world
-    spdlog::warn("Anwer to {} not implemented yet", request);
+    spdlog::warn("Anwer to {} not implemented yet", STREAM(request));
     return true;
   }
 };
@@ -1482,7 +1482,7 @@ struct GimbalCtrl : Proto<0x4, 0xd> {
       robot->gimbal.enable(true);
       return true;
     }
-    spdlog::warn("Unexpect order_code in {}", request);
+    spdlog::warn("Unexpect order_code in {}", STREAM(request));
     return false;
   }
 };
@@ -1561,7 +1561,7 @@ struct GimbalRotate : Proto<0x3f, 0xb0> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot, Commands *cmd) {
-    spdlog::info("Got {}", request);
+    spdlog::info("Got {}", STREAM(request));
     if (request.action_ctrl == 0) {
       auto push = std::make_unique<GimbalActionPush::Response>(request);
       push->is_ack = false;
@@ -1670,7 +1670,7 @@ struct BlasterFire : Proto<0x3f, 0x51> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Ignoring {}", request);
+    spdlog::warn("Ignoring {}", STREAM(request));
     return true;
   }
 };
@@ -1713,7 +1713,7 @@ struct BlasterSetLed : Proto<0x3f, 0x55> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Partial implementation {}", request);
+    spdlog::warn("Partial implementation {}", STREAM(request));
     robot->set_blaster_led(request.g / 255.0, request.effect > 0);
     return true;
   }
@@ -1741,7 +1741,7 @@ struct TakePhoto : Proto<0x2, 0x1> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Ignoring {}", request);
+    spdlog::warn("Ignoring {}", STREAM(request));
     return true;
   }
 };
@@ -1773,7 +1773,7 @@ struct SetZoom : Proto<0x2, 0x34> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Ignoring {}", request);
+    spdlog::warn("Ignoring {}", STREAM(request));
     return true;
   }
 };
@@ -1795,7 +1795,7 @@ struct GetZoom : Proto<0x2, 0x35> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Ignoring {}", request);
+    spdlog::warn("Ignoring {}", STREAM(request));
     return true;
   }
 };
@@ -1830,7 +1830,7 @@ struct SetWhiteBalance : Proto<0x2, 0x2c> {
   };
 
   static bool answer(const Request &request, Response &response, Robot *robot) {
-    spdlog::warn("Ignoring {}", request);
+    spdlog::warn("Ignoring {}", STREAM(request));
     return true;
   }
 };

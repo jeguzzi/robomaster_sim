@@ -216,4 +216,17 @@ class Robot {
   std::map<std::string, Action::State> previous_action_state;
 };
 
+
+template <> struct fmt::formatter<Robot::Mode>: formatter<std::string_view> {
+  auto format(Robot::Mode value, format_context& ctx) const {
+  std::string_view name = "";
+  switch (value) {
+    case Robot::Mode::FREE:   name = "FREE"; break;
+    case Robot::Mode::GIMBAL_LEAD: name = "GIMBAL_LEAD"; break;
+    case Robot::Mode::CHASSIS_LEAD:  name = "CHASSIS_LEAD"; break;
+  }
+  return formatter<string_view>::format(name, ctx);    
+  }
+};
+
 #endif  // INCLUDE_ROBOT_ROBOT_HPP_
