@@ -1333,7 +1333,7 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
     }
 
     template <typename OStream> friend OStream &operator<<(OStream &os, const Request &r) {
-      os << "SetSystemLed::Request {"
+      os << "ServoCtrlSet::Request {"
          << " action_id=" << (int)r.action_id << " action_ctrl=" << (int)r.action_ctrl
          << " freq=" << (int)r.freq << " servo_id=" << (int)r.servo_id << " value=" << r.value
          << "}";
@@ -1341,9 +1341,11 @@ struct ServoCtrlSet : Proto<0x3f, 0xb7> {
     }
 
     inline float angle() const {
-      if (servo_id == 1 || servo_id == 2)
-        return SERVO_RESET_ANGLES[servo_id - 1] + SERVO_RESET_EXT_ANGLES[servo_id - 1] +
-               SERVO_DIRECTION[servo_id - 1] * deg2rad(value / 10.0 - 180.0);
+      if (servo_id == 1 || servo_id == 2) {
+        // angle with respect to the zeroing of the servo
+        const float alpha = value / 10.0 - 180.0;
+        return angle_to_servo(servo_id - 1, alpha);
+      }
       return 0.0;
     }
   };
