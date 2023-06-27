@@ -1205,9 +1205,8 @@ struct ServoGetAngle : Proto<0x33, 0x15> {
 
     std::vector<uint8_t> encode() {
       std::vector<uint8_t> buffer(5, 0);
-      uint32_t value = 10 * angle;
       for (size_t i = 0; i < 4; i++) {
-        buffer[i + 1] = (value >> (8 * i)) & 0xFF;
+        buffer[i + 1] = (angle >> (8 * i)) & 0xFF;
       }
       return buffer;
     }
@@ -1223,7 +1222,7 @@ struct ServoGetAngle : Proto<0x33, 0x15> {
     // Get angle in the Python SDK is in degrees and it's shifted by 180 with respect
     // to move to angle action and the value displayed by the app
     response.angle = static_cast<uint32_t>(
-        180.0 + servo_angle(servo_id, robot->get_servo_angle(servo_id))) * 10;
+      10 * (180.0 + servo_angle(servo_id, robot->get_servo_angle(servo_id))));
     return true;
   }
 };

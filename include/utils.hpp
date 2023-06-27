@@ -677,7 +677,7 @@ inline int servo_angle_value(size_t index, float angle) {
 }
 
 inline float servo_angle(size_t index, float angle) {
-  return rad2deg(SERVO_DIRECTION[index] * angle + SERVO_BIASES[index]);
+  return rad2deg(SERVO_DIRECTION[index] * (angle - SERVO_RESET_ANGLES[index]));
 }
 
 struct IMU {
