@@ -39,6 +39,7 @@ struct Action {
   Callback callback;
 };
 
+#if FMT_VERSION >= 90000 
 template <> struct fmt::formatter<Action::State>: formatter<std::string_view> {
   auto format(Action::State value, format_context& ctx) const {
   std::string_view name = "";
@@ -53,6 +54,7 @@ template <> struct fmt::formatter<Action::State>: formatter<std::string_view> {
   return formatter<string_view>::format(name, ctx);    
   }
 };
+#endif
 
 inline float time_to_goal(const Pose2D &goal_pose, float linear_speed, float angular_speed) {
   return std::max(std::abs(normalize(goal_pose.theta)) / angular_speed,

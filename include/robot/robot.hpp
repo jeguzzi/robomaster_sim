@@ -216,7 +216,7 @@ class Robot {
   std::map<std::string, Action::State> previous_action_state;
 };
 
-
+#if FMT_VERSION >= 90000 
 template <> struct fmt::formatter<Robot::Mode>: formatter<std::string_view> {
   auto format(Robot::Mode value, format_context& ctx) const {
   std::string_view name = "";
@@ -228,5 +228,6 @@ template <> struct fmt::formatter<Robot::Mode>: formatter<std::string_view> {
   return formatter<string_view>::format(name, ctx);    
   }
 };
+#endif
 
 #endif  // INCLUDE_ROBOT_ROBOT_HPP_
