@@ -27,6 +27,7 @@ struct Gripper {
 };
 
 
+#if FMT_VERSION >= 90000 
 template <> struct fmt::formatter<Gripper::Status>: formatter<std::string_view> {
   auto format(Gripper::Status value, format_context& ctx) const {
   std::string_view name = "";
@@ -38,6 +39,7 @@ template <> struct fmt::formatter<Gripper::Status>: formatter<std::string_view> 
   return formatter<string_view>::format(name, ctx);    
   }
 };
+#endif
 
 
 #endif  //  INCLUDE_ROBOT_GRIPPER_HPP_ */

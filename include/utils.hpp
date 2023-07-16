@@ -676,8 +676,14 @@ inline int servo_angle_value(size_t index, float angle) {
       round(SERVO_DIRECTION[index] * SERVO_RAD2UNIT * angle + SERVO_BIASES[index]));
 }
 
+// From absolute rad to servo deg
 inline float servo_angle(size_t index, float angle) {
-  return rad2deg(SERVO_DIRECTION[index] * angle + SERVO_BIASES[index]);
+  return rad2deg(SERVO_DIRECTION[index] * (angle - SERVO_RESET_ANGLES[index]));
+}
+
+// From zero deg to absolute rad, i.e. the inverse of servo_angle
+inline float angle_to_servo(size_t index, float zero_angle) {
+  return SERVO_DIRECTION[index] * deg2rad(zero_angle) + SERVO_RESET_ANGLES[index];
 }
 
 struct IMU {

@@ -76,6 +76,7 @@ class ActiveLED {
   unsigned changed;
 };
 
+#if FMT_VERSION >= 90000 
 template <> struct fmt::formatter<ActiveLED::LedEffect>: formatter<std::string_view> {
   auto format(ActiveLED::LedEffect value, format_context& ctx) const {
   std::string_view name = "";
@@ -89,6 +90,7 @@ template <> struct fmt::formatter<ActiveLED::LedEffect>: formatter<std::string_v
   return formatter<string_view>::format(name, ctx);    
   }
 };
+#endif
 
 
 using CompositeLedMask = uint8_t;
