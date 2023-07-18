@@ -180,9 +180,9 @@ We include two scenes (`playground_tof_{s1|ep}.ttm`) where 1 (above the s1 camer
 
 ### Vision
 
-The [real RoboMaster can detect objects](https://robomaster-dev.readthedocs.io/en/latest/python_sdk/robomaster.html#module-robomaster.vision) in the camera stream. This simulation is it limited to detecting *people* and *robots* and works as the following:
-1. it renders objects using their CoppeliaSim handle as color (see [OpenGL, color coded handles](https://www.coppeliarobotics.com/helpFiles/en/visionSensorPropertiesDialog.htm))
-2. it computes the bounding boxes associated to a given object tree
+The [real RoboMaster can detect objects](https://robomaster-dev.readthedocs.io/en/latest/python_sdk/robomaster.html#module-robomaster.vision) in the camera stream. In this simulation, it is limited to detecting *people* and *robots* and works as the following:
+1. it renders objects using their CoppeliaSim handle as color (see [OpenGL, color coded handles](https://www.coppeliarobotics.com/helpFiles/en/visionSensorPropertiesDialog.htm));
+2. it computes the bounding boxes associated to a given object tree;
 3. if the bounding box is large enough with respect to the ideal (unobstructed) object size, it is detected.
 
 By default, every "Bill" model is detected as a person and every "RoboMaster" model as a robot.
@@ -195,28 +195,21 @@ or
   simRobomaster.set_vision_class(handle, "MyRobot", simRobomaster.VISION.ROBOT)
 ```
 
-You can configure how large detected bounding boxes must be using
+You can configure how large detected bounding boxes must be
 ```lua
   simRobomaster.configure_vision(handle, 0.5, 0.9)
 ```
-by passing the minimal width (0.5, in this case) and height (0.9, in this case) proportions.
+passing the minimal width (0.5, in this case) and height (0.9, in this case) proportions.
 
 To get the currently detected objects, you can use the Python SDK. Alternatively, from coppeliaSim, you can use the lua API: first, enable the vision module (for example to detect robots)
 ```lua
-  > simRobomaster.enable_vision(handle, 1 << simRobomaster.VISION.ROBOT)
+  simRobomaster.enable_vision(handle, 1 << simRobomaster.VISION.ROBOT)
 ```
 and then get the detected objects
 ```lua
-  > simRobomaster.get_detected_people(handle)
-{{
-        handle=90,
-        height=0.6666666865,
-        width=0.137500003,
-        x=0.4875000119,
-        y=0.3444444537
-    }}
+  simRobomaster.get_detected_people(handle)
 ```
-Note that contrary to the Python SDK, the lua API also provide the CoppeliaSim handle of the object being detected, which you can use to access it from CoppeliaSim.
+Note that, contrary to the Python SDK, the lua API includes the CoppeliaSim handle of the object being detected.
 
 ### Multiple robots
 
