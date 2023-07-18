@@ -177,6 +177,47 @@ The RoboMaster support up to 4 distance sensors. To enable multiple sensors, loo
 
 We include two scenes (`playground_tof_{s1|ep}.ttm`) where 1 (above the s1 camera) or 4 (on the ep chassis) sensors are already attached and enabled.
 
+
+### Vision
+
+The [real RoboMaster can detect objects](https://robomaster-dev.readthedocs.io/en/latest/python_sdk/robomaster.html#module-robomaster.vision) in the camera stream. This simulation is it limited to detecting *people* and *robots* and works as the following:
+1. it renders objects using their CoppeliaSim handle as color (see [OpenGL, color coded handles](https://www.coppeliarobotics.com/helpFiles/en/visionSensorPropertiesDialog.htm))
+2. it computes the bounding boxes associated to a given object tree
+3. if the bounding box is large enough with respect to the ideal (unobstructed) object size, it is detected.
+
+By default, every "Bill" model is detected as a person and every "RoboMaster" model as a robot.
+If you want to associate other models (e.g., if in the scene there are a person named "MyPerson" and a robot named "MyRobot") with people or robots, call
+```lua
+  simRobomaster.set_vision_class(handle, "MyPerson", simRobomaster.VISION.PERSON)
+```
+or
+```lua
+  simRobomaster.set_vision_class(handle, "MyRobot", simRobomaster.VISION.ROBOT)
+```
+
+You can configure how large detected bounding boxes must be using
+```lua
+  simRobomaster.configure_vision(handle, 0.5, 0.9)
+```
+by passing the minimal width (0.5, in this case) and height (0.9, in this case) proportions.
+
+To get the currently detected objects, you can use the Python SDK. Alternatively, from coppeliaSim, you can use the lua API: first, enable the vision module (for example to detect robots)
+```lua
+  > simRobomaster.enable_vision(handle, 1 << simRobomaster.VISION.ROBOT)
+```
+and then get the detected objects
+```lua
+  > simRobomaster.get_detected_people(handle)
+{{
+        handle=90,
+        height=0.6666666865,
+        width=0.137500003,
+        x=0.4875000119,
+        y=0.3444444537
+    }}
+```
+Note that contrary to the Python SDK, the lua API also provide the CoppeliaSim handle of the object being detected, which you can use to access it from CoppeliaSim.
+
 ### Multiple robots
 
 If you want to run multiple instances of the dummy simulation or have multiple robomaster in one CoppeliaSim scene, you need to give to each robot a distinct ip address, as they all use the same ports.

@@ -17,7 +17,8 @@ typedef float simFloat;
 
 class CoppeliaSimRobot : public Robot {
  public:
-  CoppeliaSimRobot(WheelValues<int> _wheel_joint_handles, ChassisLEDValues<int> _led_handles,
+  CoppeliaSimRobot(int root_handle, WheelValues<int> _wheel_joint_handles, 
+                   ChassisLEDValues<int> _led_handles,
                    bool _enable_arm, int _camera_handle, int _vision_handle,
                    ServoValues<int> _servo_motor,
                    GimbalValues<int> _gimbal_motor,
@@ -43,7 +44,15 @@ class CoppeliaSimRobot : public Robot {
       , gripper_target_signal(_gripper_target_signal)
       , imu_handle(_imu_handle)
       , accelerometer_signal(_accelerometer_signal)
-      , gyro_signal(_gyro_signal) {}
+      , gyro_signal(_gyro_signal)
+      , vision_class_for_handle()
+      , vertices_for_root()
+      , root_for_handle()
+      , root_handle(root_handle)
+      , min_detection_width(0.5)
+      , min_detection_height(0.5) {
+        init_vision();
+      }
 
   // void update_led_colors(LEDColors &);
   WheelSpeeds read_wheel_speeds() const;
@@ -71,6 +80,9 @@ class CoppeliaSimRobot : public Robot {
   void forward_engage_wheel_motors(bool value);
   void enable_tof(size_t index, int sensor_handle);
   float read_tof(size_t index) const;
+  void set_vision_class(const std::string & name, uint8_t kind);
+  void configure_vision(float min_width, float min_height);
+  void init_vision();
 
   // void has_read_accelerometer(float x, float y, float z);
   // void has_read_gyro(float x, float y, float z);
@@ -90,6 +102,17 @@ class CoppeliaSimRobot : public Robot {
   int imu_handle;
   std::string accelerometer_signal;
   std::string gyro_signal;
+  std::map<int, uint8_t> vision_class_for_handle;
+  std::map<int, std::array<std::array<simFloat, 3>, 8>> vertices_for_root;
+  std::map<int, int> root_for_handle;
+  int root_handle;
+  float tan_fov_2;
+  float min_detection_width;
+  float min_detection_height;
+
+  std::map<uint8_t, std::map<int, BoundingBox>> detect_bounding_boxes(const unsigned char *buffer, int width, int height, uint8_t mask) const;
+  DetectedObjects run_detector(const unsigned char *buffer, int width, int height, uint8_t mask) const;
+  BoundingBox project_model(int handle, int camera_handle, float image_ratio) const;
 };
 
 #endif  // COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_

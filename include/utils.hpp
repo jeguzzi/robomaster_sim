@@ -640,7 +640,20 @@ struct BoundingBox {
       , y(y)
       , width(width)
       , height(height) {}
+
+  // BoundingBox(const BoundingBox & other) = default;
+
+  template <typename OStream> friend OStream &operator<<(OStream &os, const BoundingBox &value) {
+    os << std::fixed << std::setprecision(3) << "BoundingBox <" << value.x 
+       << ", " << value.y << ", " << value.width << ", " << value.height
+       << " >";
+    return os;
+  }
 };
+
+#if FMT_VERSION >= 90000 
+  template <> struct fmt::formatter<BoundingBox> : ostream_formatter {};
+#endif
 
 // The values at the RM reset position (maximal flexion)
 constexpr ArmServoValues<float> SERVO_RESET_ANGLES = {.right = -0.274016f, .left = 0.073304f};

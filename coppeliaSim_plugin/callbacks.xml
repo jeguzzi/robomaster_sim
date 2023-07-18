@@ -34,6 +34,9 @@
           <param name="enable_gimbal" type="bool" default="true">
               <description>Enable the gimbal module</description>
           </param>
+          <param name="enable_vision" type="bool" default="true">
+              <description>Enable the vision module</description>
+          </param>
         </params>
         <return>
           <param name="handle" type="int">
@@ -793,5 +796,99 @@
             </param>
         </return>
     </command>
+
+    <command name="set_vision_class">
+        <description>Set the vision class associated to a model</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param> 
+           <param name="name" type="string">
+              <description>TThe name of the model (without the leading "/")</description>
+            </param>
+           <param name="type" type="int">
+              <description>The vision type associated to the model (enum of type VISION)</description>
+            </param>
+        </params>
+    </command>
+
+    <command name="configure_vision">
+        <description>Set the vision tolerance, i.e., how much of the object has to be visible to be detected.</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param> 
+           <param name="min_width" type="float" default="0.5">
+              <description>Minimal visible horizontal portion of the object to be detectable</description>
+            </param>
+           <param name="min_height" type="float" default="0.5">
+              <description>Minimal visible vertical portion of the object to be detectable</description>
+            </param>
+        </params>
+    </command>
+
+    <command name="enable_vision">
+        <description>Enable/disable vision. It replicates the SDK API.</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param> 
+           <param name="mask" type="int">
+              <description>A bit mask: set to 0 to disable vision, to 2 to detect people, or to 128 to detect robots</description>
+            </param>
+        </params>
+    </command>
+
+    <command name="get_detected_robots">
+        <description>Get the last detection</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param> 
+        </params>
+        <return>
+           <param name="bounding_boxes" type="table" item-type="bounding_box_t">
+              <description>A list with bounding boxes and handles of the currently detected robots.</description>
+            </param>
+        </return>
+    </command>
+
+    <command name="get_detected_people">
+        <description>Get the last detection</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param> 
+        </params>
+        <return>
+           <param name="bounding_boxes" type="table" item-type="bounding_box_t">
+              <description>A list with bounding boxes and handles of the currently detected robots.</description>
+            </param>
+        </return>
+    </command>
+
+    <struct name="bounding_box_t">
+        <description></description>
+        <param name="handle" type="int">
+            <description>Object handle</description>
+        </param>
+        <param name="x" type="float">
+            <description></description>
+        </param>
+        <param name="y" type="float">
+            <description></description>
+        </param>
+        <param name="width" type="float">
+            <description></description>
+        </param>
+        <param name="height" type="float">
+            <description></description>
+        </param>
+    </struct>
+
+    <enum name="VISION" item-prefix="" base="0">
+        <item name="PERSON" value="1" />
+        <item name="ROBOT" value="7" />
+    </enum>
 
 </plugin>

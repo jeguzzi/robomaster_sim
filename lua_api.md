@@ -28,6 +28,11 @@
 | [simRobomaster.enable_distance_sensor](#enable_distance_sensor)                     |
 | [simRobomaster.enable_disable_distance_sensor](#enable_disable_distance_sensor)                     |
 | [simRobomaster.get_distance_reading](#get_distance_reading)                     |
+| [simRobomaster.enable_vision](#enable_vision)                     |
+| [simRobomaster.configure_vision](#configure_vision)                     |
+| [simRobomaster.set_vision_class](#set_vision_class)                     |
+| [simRobomaster.get_detected_robots](#get_detected_robots)                     |
+| [simRobomaster.get_detected_people](#get_detected_people)                     |
 | [simRobomaster.set_log_level](#set_log_level)                     |
 | [simRobomaster.get_handles](#get_handles)                         |
 | [simRobomaster.wait_for_completed](#wait_for_completed)            |
@@ -143,7 +148,7 @@ CS_Attitude = {float yaw, float pitch, float roll}
 #### create
 Instantiate a RoboMaster controller
 ```C++
-int handle = simRobomaster.create(int handle, string remote_api_network="", string serial_number="", bool camera_use_udp=false, int camera_bitrate=1000000, bool enable_camera=true, bool enable_gripper=true, bool enable_arm=true, bool enable_gimbal=true)
+int handle = simRobomaster.create(int handle, string remote_api_network="", string serial_number="", bool camera_use_udp=false, int camera_bitrate=1000000, bool enable_camera=true, bool enable_gripper=true, bool enable_arm=true, bool enable_gimbal=true, bool enable_vision=true)
 ```
 
 *parameters*
@@ -156,6 +161,7 @@ int handle = simRobomaster.create(int handle, string remote_api_network="", stri
   - **enable_gripper** Enable the camera module
   - **enable_arm** Enable the robotic arm module
   - **enable_gimbal** Enable the gimbal module
+  - **enable_vision** Enable the vision module
 
 *return*
   - **handle** An handle that identifies the RoboMaster controller
@@ -163,7 +169,7 @@ int handle = simRobomaster.create(int handle, string remote_api_network="", stri
 
 #### create_ep
 Instantiate a RoboMaster controller with the default configuration for EP:
-          `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=true`, `enable_gripper=true`, `enable_gimbal=false`
+          `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=true`, `enable_gripper=true`, `enable_gimbal=false`, `enable_vision=true`
 
 ```C++
 int handle = simRobomaster.create_ep(int handle, string remote_api_network="", string serial_number="")
@@ -180,7 +186,7 @@ int handle = simRobomaster.create_ep(int handle, string remote_api_network="", s
 
 #### create_s1
 Instantiate a RoboMaster controller with the default configuration for S1:
-        `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=false`, `enable_gripper=false`, `enable_gimbal=true`
+        `enable_camera=true`, `camera_use_udp=false`, `camera_bitrate=1000000`, `enable_arm=false`, `enable_gripper=false`, `enable_gimbal=true`, `enable_vision=true`
 
 ```C++
 int handle = simRobomaster.create_s1(int handle, string remote_api_network="", string serial_number="")
@@ -670,3 +676,63 @@ float simRobomaster.get_distance_reading(int handle, int port)
 
 *return*
   - **distance** The distance reading in meters: negative if no object is in range, 0 if the sensor is not enabled, positive if an object was detected.
+
+
+#### enable_vision
+Enable/disable vision. It replicates the SDK API.
+```C++
+simRobomaster.enable_vision(int handle, int mask)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **mask** A bit mask: set to 0 to disable vision, to 2 (1<<1) to detect people, or to 128 (1 << 7) to detect robots.
+
+
+#### configure_vision
+Set the vision tolerance, i.e., how much of the object has to be visible to be detected.
+```C++
+simRobomaster.configure_vision(int handle, float min_width, float min_height)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **min_width** Minimal visible horizontal portion of the object to be detectable.
+  - **min_height** Minimal visible vertical portion of the object to be detectable.
+
+
+#### set_vision_class
+Set the vision class associated to a model
+```C++
+simRobomaster.set_vision_class(int handle, string name, int type)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **name** The name of the model (without the leading "/")
+  - **type** The vision type associated to the model (enum of type VISION)
+
+
+#### get_detected_robots
+Disable a distance sensor.
+```C++
+[bounding_box_t] simRobomaster.get_detected_robots(int handle)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+
+*return*
+  - **bounding_boxes** A list with bounding boxes and handles of the currently detected robots.
+
+#### get_detected_people
+Disable a distance sensor.
+```C++
+[bounding_box_t] simRobomaster.get_detected_people(int handle)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+
+*return*
+  - **bounding_boxes** A list with bounding boxes and handles of the currently detected people.

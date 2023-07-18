@@ -14,6 +14,7 @@ Encoder::Encoder(unsigned bitrate, unsigned width, unsigned height, int fps) :
   /* find the h264 encoder */
   // codec = avcodec_find_encoder(AV_CODEC_ID_H264);
   codec = avcodec_find_encoder_by_name("libx264rgb");
+  // codec = avcodec_find_encoder_by_name("h264_videotoolbox");
   if (!codec) {
     spdlog::error("H264 codec not found");
     return;

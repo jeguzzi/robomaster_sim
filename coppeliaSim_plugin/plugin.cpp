@@ -131,17 +131,19 @@ static int add_robot(int cs_handle, std::string serial_number,
                      std::string remote_api_network = "", bool enable_camera = true,
                      bool camera_use_udp = false, int camera_bitrate = 1000000,
                      bool enable_arm = true, bool enable_gripper = true,
-                     bool enable_gimbal = true) {
+                     bool enable_gimbal = true, bool enable_vision = true) {
   int handle = next_robot_handle;
   int camera_handle = -1;
   int vision_handle = -1;
   if (enable_camera) {
     camera_handle = get_handle(camera_name, cs_handle);
-    vision_handle = get_handle(vision_name, cs_handle);
     if (camera_handle == -1) {
       spdlog::error("Could not locate camera");
       enable_camera = false;
     }
+  }
+  if (enable_camera && enable_vision) {
+    vision_handle = get_handle(vision_name, cs_handle);
   }
 
   WheelValues<int> wheel_handles;
@@ -213,6 +215,7 @@ static int add_robot(int cs_handle, std::string serial_number,
   std::string accelerometer_signal = "accelerometer#" + std::to_string(accelerometer_handle);
   
   _robots.emplace(handle, std::make_unique<CoppeliaSimRobot>(
+                              cs_handle,
                               wheel_handles, chassis_led_handles, enable_arm,
                               camera_handle, vision_handle,
                               servo_motors, gimbal_motors, gimbal_led_handles, blaster_light_handle,
@@ -275,17 +278,17 @@ class Plugin : public sim::Plugin {
   void create(create_in *in, create_out *out) {
     out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, in->enable_camera,
                             in->camera_use_udp, in->camera_bitrate, in->enable_arm,
-                            in->enable_gripper, in->enable_gimbal);
+                            in->enable_gripper, in->enable_gimbal, in->enable_vision);
   }
 
   void create_ep(create_ep_in *in, create_ep_out *out) {
     out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, true, false,
-                            1000000, true, true, false);
+                            1000000, true, true, false, true);
   }
 
   void create_s1(create_s1_in *in, create_s1_out *out) {
     out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, true, false,
-                            1000000, false, false, true);
+                            1000000, false, false, true, true);
   }
 
   // void has_read_accelerometer(has_read_accelerometer_in *in, has_read_accelerometer_out *out) {
@@ -623,6 +626,44 @@ class Plugin : public sim::Plugin {
   void get_handles(get_handles_in *in, get_handles_out *out) {
     for (auto &[key, _] : _robots) {
       out->handles.push_back(key);
+    }
+  }
+
+  void set_vision_class(set_vision_class_in *in, set_vision_class_out *out) {
+    if (_robots.count(in->handle)) {
+      _robots[in->handle]->set_vision_class(in->name, in->type);
+    }
+  }
+
+  void enable_vision(enable_vision_in *in, enable_vision_out *out) {
+    if (_robots.count(in->handle)) {
+      _robots[in->handle]->vision.set_enable(in->mask);
+    }
+  }
+
+  void get_detected_robots(get_detected_robots_in *in, get_detected_robots_out *out) {
+    if (_robots.count(in->handle)) {
+      const auto & o = _robots[in->handle]->vision.get_detected_objects();
+      for (const auto & r : o.robots) {
+        const auto & bb = r.bounding_box;
+        out->bounding_boxes.emplace_back(r.uid, bb.x, bb.y, bb.width, bb.height);
+      }
+    }
+  }
+
+  void get_detected_people(get_detected_people_in *in, get_detected_people_out *out) {
+    if (_robots.count(in->handle)) {
+      const auto & o = _robots[in->handle]->vision.get_detected_objects();
+      for (const auto & p : o.people) {
+        const auto & bb = p.bounding_box;
+        out->bounding_boxes.emplace_back(p.uid, bb.x, bb.y, bb.width, bb.height);
+      }
+    }
+  }
+
+  void configure_vision(configure_vision_in *in, configure_vision_out *out) {
+    if (_robots.count(in->handle)) {
+      _robots[in->handle]->configure_vision(in->min_width, in->min_height);
     }
   }
 

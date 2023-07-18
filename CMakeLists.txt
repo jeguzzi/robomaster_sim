@@ -14,6 +14,8 @@ ELSE()
     add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers )  # -Wno-c99-extensions
 ENDIF()
 
+option(USE_OPENCV "use OpenCV for vision" OFF)
+
 # -pedantic
 find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(spdlog REQUIRED )
@@ -135,8 +137,13 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/coppeliaSim_plugin")
     add_compile_options(-DSIM_REQUIRED_PROGRAM_VERSION_NB=4010000)
   ENDIF()
 
-# find_package(OpenCV 4 COMPONENTS core imgproc imgcodecs REQUIRED)
 
+
+if (USE_OPENCV)
+find_package(OpenCV 4 COMPONENTS core imgproc imgcodecs REQUIRED)
+add_compile_definitions(USE_OPENCV)
+message("Will use OpenCV for vision")
+endif()
 
 add_subdirectory(coppeliaSim_plugin)
 
@@ -145,8 +152,12 @@ target_link_libraries(simExtRobomaster
   robomaster
   spdlog::spdlog
   ${Boost_LIBRARIES}
-  # ${OpenCV_LIBS}
 )
+
+if (USE_OPENCV)
+ target_link_libraries(simExtRobomaster ${OpenCV_LIBS}) 
+endif() 
+  
 
 IF (WIN32)
   target_compile_options(simExtRobomaster PUBLIC

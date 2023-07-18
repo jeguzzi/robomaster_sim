@@ -12,8 +12,9 @@ struct DetectedObjects {
   struct Person {
     constexpr static Type type{PERSON};
     BoundingBox bounding_box;
-    explicit Person(BoundingBox bounding_box)
-        : bounding_box(bounding_box) {}
+    int uid;
+    explicit Person(BoundingBox bounding_box, int uid=0)
+        : bounding_box(bounding_box), uid(uid) {}
   };
 
   struct Gesture {
@@ -54,8 +55,9 @@ struct DetectedObjects {
   struct Robot {
     constexpr static Type type{ROBOT};
     BoundingBox bounding_box;
-    explicit Robot(BoundingBox bounding_box)
-        : bounding_box(bounding_box) {}
+    int uid;
+    explicit Robot(BoundingBox bounding_box, int uid=0)
+        : bounding_box(bounding_box), uid(uid) {}
   };
 
   std::vector<Person> people;
@@ -89,6 +91,7 @@ struct Vision {
       color[DetectedObjects::Type::MARKER] = c;
   }
 
+  // TODO(jerome): should move this logic to the protocol
   void set_enable(uint8_t value) {
     // CHANGED: It seems that the robot does not enable multiple detectors at the same time
     // and that it does not accept a mask that is not one of 0 or {1, 2, 3, 4, 5, 7} << 1
