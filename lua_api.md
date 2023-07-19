@@ -9,6 +9,7 @@
 | [CS_Vector3](#CS_Vector3) |
 | [CS_IMU](#CS_IMU) |
 | [CS_Attitude](#CS_Attitude) |
+| [CS_BoundingBox](#CS_BoundingBox) |
 
 ## Functions
 | generic functions                                                 |
@@ -144,6 +145,20 @@ CS_Attitude = {float yaw, float pitch, float roll}
   - **yaw** Yaw [rad]
   - **pitch** Pitch [rad]
   - **roll** Roll [rad]
+
+
+#### CS_BoundingBox
+Bounding box in image frame of a detected object. 
+```C++
+CS_BoundingBox = {float handle, float x, float y, float width, float height}
+```
+
+*fields*
+  - **handle** The handle of the object.
+  - **x** Horizontal position in the image, normalized between 0 (left) and 1 (right)
+  - **y** Vertical position in the image, normalized between 0 (bottom) and 1 (top)
+  - **width** Width as fraction of the frame width
+  - **height** Height as fraction of the frame height
 
 #### create
 Instantiate a RoboMaster controller
@@ -716,7 +731,7 @@ simRobomaster.set_vision_class(int handle, string name, int type)
 #### get_detected_robots
 Disable a distance sensor.
 ```C++
-[bounding_box_t] simRobomaster.get_detected_robots(int handle)
+[CS_BoundingBox] simRobomaster.get_detected_robots(int handle)
 ```
 
 *parameters*
@@ -728,7 +743,7 @@ Disable a distance sensor.
 #### get_detected_people
 Disable a distance sensor.
 ```C++
-[bounding_box_t] simRobomaster.get_detected_people(int handle)
+[CS_BoundingBox] simRobomaster.get_detected_people(int handle)
 ```
 
 *parameters*

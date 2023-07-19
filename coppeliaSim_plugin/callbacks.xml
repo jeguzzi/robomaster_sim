@@ -847,7 +847,7 @@
             </param> 
         </params>
         <return>
-           <param name="bounding_boxes" type="table" item-type="bounding_box_t">
+           <param name="bounding_boxes" type="table" item-type="CS_BoundingBox">
               <description>A list with bounding boxes and handles of the currently detected robots.</description>
             </param>
         </return>
@@ -861,28 +861,28 @@
             </param> 
         </params>
         <return>
-           <param name="bounding_boxes" type="table" item-type="bounding_box_t">
+           <param name="bounding_boxes" type="table" item-type="CS_BoundingBox">
               <description>A list with bounding boxes and handles of the currently detected robots.</description>
             </param>
         </return>
     </command>
 
-    <struct name="bounding_box_t">
+    <struct name="CS_BoundingBox">
         <description></description>
         <param name="handle" type="int">
-            <description>Object handle</description>
+            <description>The handle of the object</description>
         </param>
         <param name="x" type="float">
-            <description></description>
+            <description>Horizontal position in the image, normalized between 0 (left) and 1 (right)</description>
         </param>
         <param name="y" type="float">
-            <description></description>
+            <description>Vertical position in the image, normalized between 0 (bottom) and 1 (top)</description>
         </param>
         <param name="width" type="float">
-            <description></description>
+            <description>Width as fraction of the frame width</description>
         </param>
         <param name="height" type="float">
-            <description></description>
+            <description>Height as fraction of the frame height</description>
         </param>
     </struct>
 

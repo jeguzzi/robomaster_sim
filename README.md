@@ -207,9 +207,9 @@ To get the currently detected objects, you can use the Python SDK. Alternatively
 ```
 and then get the detected objects
 ```lua
-  simRobomaster.get_detected_people(handle)
+  simRobomaster.get_detected_robots(handle)
 ```
-Note that, contrary to the Python SDK, the lua API includes the CoppeliaSim handle of the object being detected.
+Note that, contrary to the Python SDK, the response from the lua API includes the CoppeliaSim handle of the detected objects.
 
 ### Multiple robots
 
