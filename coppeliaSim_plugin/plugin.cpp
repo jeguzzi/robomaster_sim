@@ -663,7 +663,7 @@ class Plugin : public sim::Plugin {
 
   void configure_vision(configure_vision_in *in, configure_vision_out *out) {
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->configure_vision(in->min_width, in->min_height);
+      _robots[in->handle]->configure_vision(in->min_width, in->min_height, in->tolerance);
     }
   }
 

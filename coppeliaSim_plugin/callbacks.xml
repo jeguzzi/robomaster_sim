@@ -824,6 +824,9 @@
            <param name="min_height" type="float" default="0.5">
               <description>Minimal visible vertical portion of the object to be detectable</description>
             </param>
+           <param name="tolerance" type="float" default="0.0">
+              <description>Tolerance for the object to be detectable (between 0 and 1)</description>
+            </param>
         </params>
     </command>
 

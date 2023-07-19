@@ -50,7 +50,8 @@ class CoppeliaSimRobot : public Robot {
       , root_for_handle()
       , root_handle(root_handle)
       , min_detection_width(0.5)
-      , min_detection_height(0.5) {
+      , min_detection_height(0.5)
+      , detection_tolerance(0.0) {
         init_vision();
       }
 
@@ -81,7 +82,7 @@ class CoppeliaSimRobot : public Robot {
   void enable_tof(size_t index, int sensor_handle);
   float read_tof(size_t index) const;
   void set_vision_class(const std::string & name, uint8_t kind);
-  void configure_vision(float min_width, float min_height);
+  void configure_vision(float min_width, float min_height, float tolerance);
   void init_vision();
 
   // void has_read_accelerometer(float x, float y, float z);
@@ -109,6 +110,7 @@ class CoppeliaSimRobot : public Robot {
   float tan_fov_2;
   float min_detection_width;
   float min_detection_height;
+  float detection_tolerance;
 
   std::map<uint8_t, std::map<int, BoundingBox>> detect_bounding_boxes(const unsigned char *buffer, int width, int height, uint8_t mask) const;
   DetectedObjects run_detector(const unsigned char *buffer, int width, int height, uint8_t mask) const;

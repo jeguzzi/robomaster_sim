@@ -197,9 +197,9 @@ or
 
 You can configure how large detected bounding boxes must be
 ```lua
-  simRobomaster.configure_vision(handle, 0.5, 0.9)
+  simRobomaster.configure_vision(handle, 0.5, 0.9, 0.01)
 ```
-passing the minimal width (0.5, in this case) and height (0.9, in this case) proportions.
+passing the minimal relative width (0.5, in this case), minimal relative height (0.9, in this case) and tolerance (1% in this case).
 
 To get the currently detected objects, you can use the Python SDK. Alternatively, from coppeliaSim, you can use the lua API: first, enable the vision module (for example to detect robots)
 ```lua

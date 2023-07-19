@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#define TIME_VISION
+// #define TIME_VISION
 
 #ifdef TIME_VISION
 #include <chrono>
@@ -352,8 +352,8 @@ BoundingBox CoppeliaSimRobot::project_model(int handle, int camera_handle,
 
 static bool should_detect(const BoundingBox &actual, const BoundingBox &model,
                           float e, float min_width, float min_height) {
-  // spdlog::info("should_detect {} {}", actual, model, e, min_width,
-  // min_height);
+  spdlog::info("should_detect {} {} | {} {} {}", actual, model, e, min_width,
+  min_height);
   return ((actual.width + e) > model.width * min_width) &&
          ((actual.height + e) > model.height * min_height);
 }
@@ -477,14 +477,14 @@ DetectedObjects CoppeliaSimRobot::run_detector(const unsigned char *buffer,
   // {class -> {root -> BoundingBox}}
   auto boxes = detect_bounding_boxes(buffer, width, height, mask);
   DetectedObjects objects;
+  // const float detection_tolerance = 2.0f / std::min(width, height);
   const float image_ratio =
       static_cast<float>(width) / static_cast<float>(height);
-  const float e = 2.0f / std::min(width, height);
   for (const auto &[k, vs] : boxes) {
     if (k == DetectedObjects::Type::PERSON) {
       for (const auto &[h, b] : vs) {
         const auto bm = project_model(h, vision_handle, image_ratio);
-        if (should_detect(b, bm, e, min_detection_width,
+        if (should_detect(b, bm, detection_tolerance, min_detection_width,
                           min_detection_height)) {
           objects.people.emplace_back(b, h);
           // spdlog::info("detected person {} {}", h, b);
@@ -494,7 +494,7 @@ DetectedObjects CoppeliaSimRobot::run_detector(const unsigned char *buffer,
     if (k == DetectedObjects::Type::ROBOT) {
       for (const auto &[h, b] : vs) {
         const auto bm = project_model(h, vision_handle, image_ratio);
-        if (should_detect(b, bm, e, min_detection_width,
+        if (should_detect(b, bm, detection_tolerance, min_detection_width,
                           min_detection_height)) {
           objects.robots.emplace_back(b, h);
           // spdlog::info("detected robot {} {}", h, b);
@@ -554,9 +554,10 @@ void CoppeliaSimRobot::init_vision() {
   }
 }
 
-void CoppeliaSimRobot::configure_vision(float min_width, float min_height) {
+void CoppeliaSimRobot::configure_vision(float min_width, float min_height, float tolerance) {
   min_detection_width = std::max(min_width, 0.0f);
   min_detection_height = std::max(min_height, 0.0f);
+  detection_tolerance = std::max(tolerance, 0.0f);
 }
 
 hit_event_t CoppeliaSimRobot::read_hit_events() const { return {}; }

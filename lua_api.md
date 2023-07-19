@@ -707,13 +707,14 @@ simRobomaster.enable_vision(int handle, int mask)
 #### configure_vision
 Set the vision tolerance, i.e., how much of the object has to be visible to be detected.
 ```C++
-simRobomaster.configure_vision(int handle, float min_width, float min_height)
+simRobomaster.configure_vision(int handle, float min_width, float min_height, float tolerance)
 ```
 
 *parameters*
   - **handle** The RoboMaster controller handle
   - **min_width** Minimal visible horizontal portion of the object to be detectable.
   - **min_height** Minimal visible vertical portion of the object to be detectable.
+  - **tolerance** Tolerance for the object to be detectable (between 0 and 1)
 
 
 #### set_vision_class
