@@ -40,8 +40,8 @@ On Linux, we require a C++-20 compiler.
 
 ### CoppeliaSim
 
-To compile and then use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). We support CoppeliaSim from v4 on.
-Download the latest release. Export the location where you place it.
+To compile and then use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). At the moment, we support CoppeliaSim from v4.0 to v4.5. Adding support for v4.6 is in progress.
+Download the one of the supported version (we recommend v4.5). Export the location where you place it.
 
 ```bash
 export COPPELIASIM_ROOT_DIR=<path to the folder containing the programming subfolder>
