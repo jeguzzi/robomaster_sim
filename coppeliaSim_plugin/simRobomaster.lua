@@ -1,4 +1,9 @@
-local simRobomaster={}
+local simRobomaster = {}
+
+if loadPlugin then
+    simRobomaster = loadPlugin 'simRobomaster';
+    (require 'simRobomaster-typecheck')(simRobomaster)
+end
 
 function simRobomaster.wait_for_completed(robot_handle, action_handle)
     local savedLockLevel=sim.setThreadAutomaticSwitch(false) -- forbid automatic switches

@@ -16,7 +16,6 @@ if(NOT LIBPLUGIN_DIR)
     endif()
 endif()
 
-
 set(MODEL_FOLDER $ENV{COPPELIASIM_ROOT_DIR}/models/robots/mobile)
 set(MODEL_SENSOR_FOLDER $ENV{COPPELIASIM_ROOT_DIR}/models/components/sensors)
 
@@ -27,14 +26,27 @@ list(APPEND CMAKE_MODULE_PATH
 
 find_package(CoppeliaSim 4 REQUIRED)
 
+if(${COPPELIASIM_VERSION} VERSION_GREATER_EQUAL 4.6)
+    set(_PLUGIN_NAME simRobomaster)
+    set(_PLUGIN_NAME_XML simRobomaster)
+else()
+    set(_PLUGIN_NAME simExtRobomaster)
+    set(_PLUGIN_NAME_XML Robomaster)    
+endif()  
+
+set(COPPELIASIM_VERSION ${COPPELIASIM_VERSION}  PARENT_SCOPE) 
+set(_PLUGIN_NAME ${_PLUGIN_NAME}  PARENT_SCOPE) 
+
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external)
 
-coppeliasim_generate_stubs(${CMAKE_CURRENT_BINARY_DIR}/generated XML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/callbacks.xml LUA_FILE ${CMAKE_CURRENT_SOURCE_DIR}/simRobomaster.lua)
+execute_process(COMMAND bash -c "sed s/PLUGIN_NAME/${_PLUGIN_NAME_XML}/g ${CMAKE_CURRENT_SOURCE_DIR}/callbacks.xml > callbacks.xml" WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+coppeliasim_generate_stubs(${CMAKE_CURRENT_BINARY_DIR}/generated XML_FILE ${CMAKE_CURRENT_BINARY_DIR}/callbacks.xml LUA_FILE ${CMAKE_CURRENT_SOURCE_DIR}/simRobomaster.lua)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h ESCAPE_QUOTES)
 
-coppeliasim_add_plugin(simExtRobomaster SOURCES plugin.cpp coppeliasim_robot.cpp)
+coppeliasim_add_plugin(${_PLUGIN_NAME} SOURCES plugin.cpp coppeliasim_robot.cpp)
 
 install(FILES ../models/RoboMasterEP.ttm ../models/RoboMasterS1.ttm  DESTINATION ${MODEL_FOLDER})
 install(FILES ../models/RoboMasterDistanceSensor.ttm DESTINATION ${MODEL_SENSOR_FOLDER})

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <?xml-stylesheet type="text/xsl" href="callbacks.xsl"?>
 
-<plugin name="Robomaster" author="jerome@idsia.ch">
+<plugin name="PLUGIN_NAME" author="jerome@idsia.ch">
     <description></description>
 
     <command name="create">
@@ -172,6 +172,15 @@
             <description>orintation [rad]</description>
         </param>
     </struct>
+
+<!--     <command name="tick">
+        <description>Tick the controller</description>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param>
+        </params>
+    </command> -->
 
     <command name="set_target_twist">
         <description>Set the chassis target twist (linear and angular velocity)</description>

@@ -1,56 +1,33 @@
-// Copyright 2016 Coppelia Robotics AG. All rights reserved.
-// marc@coppeliarobotics.com
-// www.coppeliarobotics.com
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice, this
-//    list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright notice,
-//    this list of conditions and the following disclaimer in the documentation
-//    and/or other materials provided with the distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// -------------------------------------------------------------------
-// Authors:
-// Federico Ferri <federico.ferri.it at gmail dot com>
-// -------------------------------------------------------------------
-
-#include "robomaster.hpp"
-
-#include "coppeliasim_robot.hpp"
-
-#include "spdlog/spdlog.h"
-
-#include "config.h"
 #include "plugin.h"
-#include "simPlusPlus/Plugin.h"
-#include "stubs.h"
 
 #include <cstdlib>
 
-CS_Vector3 to_cs(const Vector3 &value) { return CS_Vector3(value.x, value.y, value.z); }
+#include "config.h"
+#include "coppeliasim_robot.hpp"
+#include "robomaster.hpp"
+#include "simPlusPlus/Plugin.h"
+#include "spdlog/spdlog.h"
+#include "stubs.h"
 
-CS_Attitude to_cs(const Attitude &value) { return CS_Attitude(value.yaw, value.pitch, value.roll); }
+CS_Vector3 to_cs(const Vector3 &value) {
+  return CS_Vector3(value.x, value.y, value.z);
+}
+
+CS_Attitude to_cs(const Attitude &value) {
+  return CS_Attitude(value.yaw, value.pitch, value.roll);
+}
 
 CS_IMU to_cs(const IMU &value) {
   return CS_IMU(to_cs(value.angular_velocity), to_cs(value.acceleration));
 }
 
-CS_Pose2D to_cs(const Pose2D &value) { return CS_Pose2D(value.x, value.y, value.theta); }
+CS_Pose2D to_cs(const Pose2D &value) {
+  return CS_Pose2D(value.x, value.y, value.theta);
+}
 
-CS_Twist2D to_cs(const Twist2D &value) { return CS_Twist2D(value.x, value.y, value.theta); }
+CS_Twist2D to_cs(const Twist2D &value) {
+  return CS_Twist2D(value.x, value.y, value.theta);
+}
 
 CS_Odometry to_cs(const Odometry &value) {
   return CS_Odometry(to_cs(value.pose), to_cs(value.twist));
@@ -62,21 +39,23 @@ static std::map<int, std::unique_ptr<RoboMaster>> _interfaces;
 
 // static boost::asio::io_context io_context;
 
-static const WheelValues<std::string> wheel_names = {.front_left = "front_left_wheel_joint",
-                                                     .front_right = "front_right_wheel_joint",
-                                                     .rear_left = "rear_left_wheel_joint",
-                                                     .rear_right = "rear_right_wheel_joint"};
+static const WheelValues<std::string> wheel_names = {
+    .front_left = "front_left_wheel_joint",
+    .front_right = "front_right_wheel_joint",
+    .rear_left = "rear_left_wheel_joint",
+    .rear_right = "rear_right_wheel_joint"};
 
-static const ChassisLEDValues<std::string> chassis_led_names = {.front = "front_led_link_visual",
-                                                                .left = "left_led_link_visual",
-                                                                .rear = "rear_led_link_visual",
-                                                                .right = "right_led_link_visual"};
+static const ChassisLEDValues<std::string> chassis_led_names = {
+    .front = "front_led_link_visual",
+    .left = "left_led_link_visual",
+    .rear = "rear_led_link_visual",
+    .right = "right_led_link_visual"};
 
-static const GimbalLEDValues<std::string> gimbal_led_names = {.top_left = "gimbal_left_led_",
-                                                              .top_right = "gimbal_right_led_"};
+static const GimbalLEDValues<std::string> gimbal_led_names = {
+    .top_left = "gimbal_left_led_", .top_right = "gimbal_right_led_"};
 
-static const GimbalValues<std::string> gimbal_servo_names = {.yaw = "gimbal_yaw_motor",
-                                                             .pitch = "gimbal_pitch_motor"};
+static const GimbalValues<std::string> gimbal_servo_names = {
+    .yaw = "gimbal_yaw_motor", .pitch = "gimbal_pitch_motor"};
 
 static const char servo_name[] = "servo_motor_";
 static const char camera_name[] = "Vision_sensor";
@@ -87,11 +66,10 @@ static const char gyro_name[] = "GyroSensor";
 static const char imu_name[] = "GyroSensor_reference";
 static const char accelerometer_name[] = "Accelerometer";
 
-
 #if SIM_PROGRAM_VERSION_NB < 40300
 
 static int get_index(int handle) {
-  const char * name = simGetObjectName(handle);
+  const char *name = simGetObjectName(handle);
   return simGetNameSuffix(name);
 }
 
@@ -128,10 +106,11 @@ static std::string get_ip(std::string network, unsigned *prefix_len) {
 }
 
 static int add_robot(int cs_handle, std::string serial_number,
-                     std::string remote_api_network = "", bool enable_camera = true,
-                     bool camera_use_udp = false, int camera_bitrate = 1000000,
-                     bool enable_arm = true, bool enable_gripper = true,
-                     bool enable_gimbal = true, bool enable_vision = true) {
+                     std::string remote_api_network = "",
+                     bool enable_camera = true, bool camera_use_udp = false,
+                     int camera_bitrate = 1000000, bool enable_arm = true,
+                     bool enable_gripper = true, bool enable_gimbal = true,
+                     bool enable_vision = true) {
   int handle = next_robot_handle;
   int camera_handle = -1;
   int vision_handle = -1;
@@ -204,7 +183,8 @@ static int add_robot(int cs_handle, std::string serial_number,
   }
   int gripper_handle = get_handle(gripper_name, cs_handle);
   std::string gripper_state = "gripper#" + std::to_string(gripper_handle);
-  std::string gripper_target = "target_gripper#" + std::to_string(gripper_handle);
+  std::string gripper_target =
+      "target_gripper#" + std::to_string(gripper_handle);
 
   spdlog::info("Gripper signals {} {}", gripper_state, gripper_target);
 
@@ -212,22 +192,25 @@ static int add_robot(int cs_handle, std::string serial_number,
   int gyro_handle = get_handle(gyro_name, cs_handle);
   std::string gyro_signal = "gyro#" + std::to_string(gyro_handle);
   int accelerometer_handle = get_handle(accelerometer_name, cs_handle);
-  std::string accelerometer_signal = "accelerometer#" + std::to_string(accelerometer_handle);
-  
-  _robots.emplace(handle, std::make_unique<CoppeliaSimRobot>(
-                              cs_handle,
-                              wheel_handles, chassis_led_handles, enable_arm,
-                              camera_handle, vision_handle,
-                              servo_motors, gimbal_motors, gimbal_led_handles, blaster_light_handle,
-                              enable_gripper, gripper_state, gripper_target, imu_handle,
-                              accelerometer_signal, gyro_signal));
-  // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context, _robots[handle].get());
+  std::string accelerometer_signal =
+      "accelerometer#" + std::to_string(accelerometer_handle);
+
+  _robots.emplace(handle,
+                  std::make_unique<CoppeliaSimRobot>(
+                      cs_handle, wheel_handles, chassis_led_handles, enable_arm,
+                      camera_handle, vision_handle, servo_motors, gimbal_motors,
+                      gimbal_led_handles, blaster_light_handle, enable_gripper,
+                      gripper_state, gripper_target, imu_handle,
+                      accelerometer_signal, gyro_signal));
+  // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context,
+  // _robots[handle].get());
   if (remote_api_network.length()) {
     unsigned prefix_len = 0;
     std::string ip = get_ip(remote_api_network, &prefix_len);
-    _interfaces.emplace(handle, std::make_unique<RoboMaster>(nullptr, _robots[handle].get(),
-                                                             serial_number, camera_use_udp,
-                                                             camera_bitrate, ip, prefix_len));
+    _interfaces.emplace(
+        handle, std::make_unique<RoboMaster>(nullptr, _robots[handle].get(),
+                                             serial_number, camera_use_udp,
+                                             camera_bitrate, ip, prefix_len));
     _interfaces[handle]->spin(true);
   }
   next_robot_handle += 1;
@@ -235,8 +218,11 @@ static int add_robot(int cs_handle, std::string serial_number,
   return handle;
 }
 
-static const std::map<std::string, int> action_handles = {
-    {"move", 1}, {"move_arm", 2}, {"move_gimbal", 3}, {"play_sound", 4}, {"move_servo", 5}};
+static const std::map<std::string, int> action_handles = {{"move", 1},
+                                                          {"move_arm", 2},
+                                                          {"move_gimbal", 3},
+                                                          {"play_sound", 4},
+                                                          {"move_servo", 5}};
 
 std::string action_name(int action_handle) {
   for (auto &[name, i] : action_handles) {
@@ -249,11 +235,28 @@ std::string action_name(int action_handle) {
 
 class Plugin : public sim::Plugin {
  public:
+#if SIM_PROGRAM_VERSION_NB < 40600
+  void onModuleHandle(char *customData) {
+#else
+  void onSimulationBeforeActuation() {
+#endif
+    auto time_step = simGetSimulationTimeStep();
+    for (auto const &[key, val] : _robots) {
+      spdlog::debug("Will update RM #{}", key);
+      val->do_step(time_step);
+      spdlog::debug("Has updated RM #{}", key);
+    }
+  }
+
+#if SIM_PROGRAM_VERSION_NB < 40600
   void onStart() {
+#else
+  void onInit() {
+#endif
     if (!registerScriptStuff())
       throw std::runtime_error("script stuff initialization failed");
 
-    setExtVersion("Example Plugin Skeleton");
+    setExtVersion("Robomaster");
     setBuildDate(BUILD_DATE);
   }
 
@@ -276,22 +279,27 @@ class Plugin : public sim::Plugin {
   }
 
   void create(create_in *in, create_out *out) {
-    out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, in->enable_camera,
-                            in->camera_use_udp, in->camera_bitrate, in->enable_arm,
-                            in->enable_gripper, in->enable_gimbal, in->enable_vision);
+    out->handle =
+        add_robot(in->handle, in->serial_number, in->remote_api_network,
+                  in->enable_camera, in->camera_use_udp, in->camera_bitrate,
+                  in->enable_arm, in->enable_gripper, in->enable_gimbal,
+                  in->enable_vision);
   }
 
   void create_ep(create_ep_in *in, create_ep_out *out) {
-    out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, true, false,
-                            1000000, true, true, false, true);
+    out->handle =
+        add_robot(in->handle, in->serial_number, in->remote_api_network, true,
+                  false, 1000000, true, true, false, true);
   }
 
   void create_s1(create_s1_in *in, create_s1_out *out) {
-    out->handle = add_robot(in->handle, in->serial_number, in->remote_api_network, true, false,
-                            1000000, false, false, true, true);
+    out->handle =
+        add_robot(in->handle, in->serial_number, in->remote_api_network, true,
+                  false, 1000000, false, false, true, true);
   }
 
-  // void has_read_accelerometer(has_read_accelerometer_in *in, has_read_accelerometer_out *out) {
+  // void has_read_accelerometer(has_read_accelerometer_in *in,
+  // has_read_accelerometer_out *out) {
   //   if (_robots.count(in->handle)) {
   //     _robots[in->handle]->has_read_accelerometer(in->x, in->y, in->z);
   //   }
@@ -303,9 +311,11 @@ class Plugin : public sim::Plugin {
   //   }
   // }
 
-  // void update_orientation(update_orientation_in *in, update_orientation_out *out) {
+  // void update_orientation(update_orientation_in *in, update_orientation_out
+  // *out) {
   //   if (_robots.count(in->handle)) {
-  //     _robots[in->handle]->update_orientation(in->alpha, in->beta, in->gamma);
+  //     _robots[in->handle]->update_orientation(in->alpha, in->beta,
+  //     in->gamma);
   //   }
   // }
 
@@ -335,12 +345,14 @@ class Plugin : public sim::Plugin {
     }
   }
 
-  void set_target_wheel_speeds(set_target_wheel_speeds_in *in, set_target_wheel_speeds_out *out) {
+  void set_target_wheel_speeds(set_target_wheel_speeds_in *in,
+                               set_target_wheel_speeds_out *out) {
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->chassis.wheel_speeds.set_target({.front_left = in->speeds.front_left,
-                                                            .front_right = in->speeds.front_right,
-                                                            .rear_left = in->speeds.rear_left,
-                                                            .rear_right = in->speeds.rear_right});
+      _robots[in->handle]->chassis.wheel_speeds.set_target(
+          {.front_left = in->speeds.front_left,
+           .front_right = in->speeds.front_right,
+           .rear_left = in->speeds.rear_left,
+           .rear_right = in->speeds.rear_right});
     }
   }
 
@@ -368,34 +380,36 @@ class Plugin : public sim::Plugin {
   void move_to(move_to_in *in, move_to_out *out) {
     out->handle = 0;
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->move_base({.x = in->pose.x, .y = in->pose.y, .theta = in->pose.theta},
-                                     in->linear_speed, in->angular_speed);
+      _robots[in->handle]->move_base(
+          {.x = in->pose.x, .y = in->pose.y, .theta = in->pose.theta},
+          in->linear_speed, in->angular_speed);
       out->handle = action_handles.at("move");
     }
   }
 
   void get_action_state(get_action_state_in *in, get_action_state_out *out) {
     if (_robots.count(in->handle)) {
-      auto state = _robots[in->handle]->get_action_state(action_name(in->action));
+      auto state =
+          _robots[in->handle]->get_action_state(action_name(in->action));
       switch (state) {
-      case Action::State::failed:
-        out->status = "failed";
-        break;
-      case Action::State::rejected:
-        out->status = "rejected";
-        break;
-      case Action::State::running:
-        out->status = "running";
-        break;
-      case Action::State::succeed:
-        out->status = "succeed";
-        break;
-      case Action::State::undefined:
-        out->status = "undefined";
-        break;
-      case Action::State::started:
-        out->status = "started";
-        break;
+        case Action::State::failed:
+          out->status = "failed";
+          break;
+        case Action::State::rejected:
+          out->status = "rejected";
+          break;
+        case Action::State::running:
+          out->status = "running";
+          break;
+        case Action::State::succeed:
+          out->status = "succeed";
+          break;
+        case Action::State::undefined:
+          out->status = "undefined";
+          break;
+        case Action::State::started:
+          out->status = "started";
+          break;
       }
     }
   }
@@ -416,13 +430,15 @@ class Plugin : public sim::Plugin {
       } else {
         return;
       }
-      _robots[in->handle]->set_led_effect({in->r, in->g, in->b}, LedMask(in->mask),
-                                          CompositeLedMask(in->led_mask), effect, in->period_on,
-                                          in->period_off, in->loop);
+      _robots[in->handle]->set_led_effect(
+          {in->r, in->g, in->b}, LedMask(in->mask),
+          CompositeLedMask(in->led_mask), effect, in->period_on, in->period_off,
+          in->loop);
     }
   }
 
-  void set_gripper_target(set_gripper_target_in *in, set_gripper_target_out *out) {
+  void set_gripper_target(set_gripper_target_in *in,
+                          set_gripper_target_out *out) {
     if (_robots.count(in->handle)) {
       Gripper::Status s;
       if (in->state == "pause") {
@@ -481,16 +497,20 @@ class Plugin : public sim::Plugin {
   void move_gimbal(move_gimbal_in *in, move_gimbal_out *out) {
     out->handle = 0;
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->move_gimbal(in->yaw, in->pitch, in->yaw_speed, in->pitch_speed,
-                                       gimbal_frame(in->yaw_frame), gimbal_frame(in->pitch_frame));
+      _robots[in->handle]->move_gimbal(
+          in->yaw, in->pitch, in->yaw_speed, in->pitch_speed,
+          gimbal_frame(in->yaw_frame), gimbal_frame(in->pitch_frame));
       out->handle = action_handles.at("move_gimbal");
     }
   }
 
   void get_gimbal_angles(get_gimbal_angles_in *in, get_gimbal_angles_out *out) {
     if (_robots.count(in->handle)) {
-      out->yaw = _robots[in->handle]->gimbal.attitude(gimbal_frame(in->yaw_frame)).yaw;
-      out->pitch = _robots[in->handle]->gimbal.attitude(gimbal_frame(in->pitch_frame)).pitch;
+      out->yaw =
+          _robots[in->handle]->gimbal.attitude(gimbal_frame(in->yaw_frame)).yaw;
+      out->pitch = _robots[in->handle]
+                       ->gimbal.attitude(gimbal_frame(in->pitch_frame))
+                       .pitch;
     }
   }
 
@@ -502,7 +522,8 @@ class Plugin : public sim::Plugin {
     }
   }
 
-  void set_servo_target_speed(set_servo_target_speed_in *in, set_servo_target_speed_out *out) {
+  void set_servo_target_speed(set_servo_target_speed_in *in,
+                              set_servo_target_speed_out *out) {
     if (_robots.count(in->handle)) {
       _robots[in->handle]->set_target_servo_speed(in->servo, in->speed);
     }
@@ -538,7 +559,8 @@ class Plugin : public sim::Plugin {
   void set_gimbal_target_speeds(set_gimbal_target_speeds_in *in,
                                 set_gimbal_target_speeds_out *out) {
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->gimbal.set_target_speeds({.yaw = in->yaw, .pitch = in->pitch});
+      _robots[in->handle]->gimbal.set_target_speeds(
+          {.yaw = in->yaw, .pitch = in->pitch});
     }
   }
 
@@ -550,8 +572,8 @@ class Plugin : public sim::Plugin {
 
   void set_blaster_led(set_blaster_led_in *in, set_blaster_led_out *out) {
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->set_blaster_led(std::clamp(in->intensity, 0.0f, 1.0f),
-                                           in->intensity > 0);
+      _robots[in->handle]->set_blaster_led(
+          std::clamp(in->intensity, 0.0f, 1.0f), in->intensity > 0);
     }
   }
 
@@ -572,8 +594,9 @@ class Plugin : public sim::Plugin {
     }
   }
 
-  Action::State move_gimbal(float target_yaw, float target_pitch, float yaw_speed,
-                            float pitch_speed, Gimbal::Frame yaw_frame, Gimbal::Frame pitch_frame);
+  Action::State move_gimbal(float target_yaw, float target_pitch,
+                            float yaw_speed, float pitch_speed,
+                            Gimbal::Frame yaw_frame, Gimbal::Frame pitch_frame);
 
   void enable_camera(enable_camera_in *in, enable_camera_out *out) {
     if (_robots.count(in->handle)) {
@@ -599,17 +622,19 @@ class Plugin : public sim::Plugin {
   void enable_distance_sensor(enable_distance_sensor_in *in,
                               enable_distance_sensor_out *out) {
     if (_robots.count(in->handle)) {
-        _robots[in->handle]->enable_tof(in->port, in->sensor_handle);
+      _robots[in->handle]->enable_tof(in->port, in->sensor_handle);
     }
   }
 
-  void disable_distance_sensor(disable_distance_sensor_in *in, disable_distance_sensor_out *out) {
+  void disable_distance_sensor(disable_distance_sensor_in *in,
+                               disable_distance_sensor_out *out) {
     if (_robots.count(in->handle)) {
       _robots[in->handle]->tof.set_enable(in->port, false);
     }
   }
 
-  void get_distance_reading(get_distance_reading_in *in, get_distance_reading_out *out) {
+  void get_distance_reading(get_distance_reading_in *in,
+                            get_distance_reading_out *out) {
     if (_robots.count(in->handle)) {
       auto readings = _robots[in->handle]->tof.readings;
       if (in->port < readings.size()) {
@@ -617,7 +642,6 @@ class Plugin : public sim::Plugin {
       }
     }
   }
-
 
   void set_log_level(set_log_level_in *in, set_log_level_out *out) {
     spdlog::set_level(spdlog::level::from_str(in->log_level));
@@ -641,56 +665,42 @@ class Plugin : public sim::Plugin {
     }
   }
 
-  void get_detected_robots(get_detected_robots_in *in, get_detected_robots_out *out) {
+  void get_detected_robots(get_detected_robots_in *in,
+                           get_detected_robots_out *out) {
     if (_robots.count(in->handle)) {
-      const auto & o = _robots[in->handle]->vision.get_detected_objects();
-      for (const auto & r : o.robots) {
-        const auto & bb = r.bounding_box;
-        out->bounding_boxes.emplace_back(r.uid, bb.x, bb.y, bb.width, bb.height);
+      const auto &o = _robots[in->handle]->vision.get_detected_objects();
+      for (const auto &r : o.robots) {
+        const auto &bb = r.bounding_box;
+        out->bounding_boxes.emplace_back(r.uid, bb.x, bb.y, bb.width,
+                                         bb.height);
       }
     }
   }
 
-  void get_detected_people(get_detected_people_in *in, get_detected_people_out *out) {
+  void get_detected_people(get_detected_people_in *in,
+                           get_detected_people_out *out) {
     if (_robots.count(in->handle)) {
-      const auto & o = _robots[in->handle]->vision.get_detected_objects();
-      for (const auto & p : o.people) {
-        const auto & bb = p.bounding_box;
-        out->bounding_boxes.emplace_back(p.uid, bb.x, bb.y, bb.width, bb.height);
+      const auto &o = _robots[in->handle]->vision.get_detected_objects();
+      for (const auto &p : o.people) {
+        const auto &bb = p.bounding_box;
+        out->bounding_boxes.emplace_back(p.uid, bb.x, bb.y, bb.width,
+                                         bb.height);
       }
     }
   }
 
   void configure_vision(configure_vision_in *in, configure_vision_out *out) {
     if (_robots.count(in->handle)) {
-      _robots[in->handle]->configure_vision(in->min_width, in->min_height, in->tolerance);
+      _robots[in->handle]->configure_vision(in->min_width, in->min_height,
+                                            in->tolerance);
     }
   }
-
-  // void onInstancePass(const sim::InstancePassFlags &flags, bool first)
-  // {
-  //   // spdlog::debug("Pass");
-  // }
-  //
-  void onModuleHandle(char *customData) {
-    // std::string module = customData ? std::string(customData) : "ALL";
-    auto time_step = simGetSimulationTimeStep();
-    // simFloat time_ = simGetSimulationTime();
-    // spdlog::debug("onModuleHandle {} {} ({})", module, time_step, time_);
-    for (auto const &[key, val] : _robots) {
-      spdlog::debug("Will update RM #{}", key);
-      val->do_step(time_step);
-      spdlog::debug("Has updated RM #{}", key);
-    }
-  }
-
-  // void onModuleHandleInSensingPart(char *customData) {
-  //   std::string module = customData ? std::string(customData) : "ALL";
-  //   simFloat time_step = simGetSimulationTimeStep();
-  //   simFloat time_ = simGetSimulationTime();
-  //   spdlog::debug("onModuleHandleInSensingPart {} {} ({})", module, time_step, time_);
-  // }
 };
 
+#if SIM_PROGRAM_VERSION_NB < 40600
 SIM_PLUGIN(PLUGIN_NAME, PLUGIN_VERSION, Plugin)
+#else
+SIM_PLUGIN(Plugin)
+#endif
+//
 #include "stubsPlusPlus.cpp"
