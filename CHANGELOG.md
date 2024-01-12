@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1] - 2024-01-12
+
+### Added
+
+- Support for CoppeliaSim v4.6
+
+### Changed
+
+- The models were changed to support CoppeliaSim 4.6, which requires to load the plugin explicitly. 
+- The scenes `playground_tof_{ep|s1}.ttt` were updated with the new robot models.
+
 ## [1.0] - 2023-05-13
 
 ### Added
