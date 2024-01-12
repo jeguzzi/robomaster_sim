@@ -214,9 +214,9 @@ void Robot::set_led_effect(Color color, LedMask mask, CompositeLedMask led_mask,
   if (mask & ARMOR_BOTTOM_FRONT)
     chassis_leds.front.update(color, effect, period_on, period_off, loop);
   if (mask & ARMOR_BOTTOM_LEFT)
-    chassis_leds.right.update(color, effect, period_on, period_off, loop);
-  if (mask & ARMOR_BOTTOM_RIGHT)
     chassis_leds.left.update(color, effect, period_on, period_off, loop);
+  if (mask & ARMOR_BOTTOM_RIGHT)
+    chassis_leds.right.update(color, effect, period_on, period_off, loop);
   if (mask & ARMOR_TOP_LEFT)
     gimbal_leds.top_left.update(color, effect, period_on, period_off, loop, led_mask);
   if (mask & ARMOR_TOP_RIGHT)
