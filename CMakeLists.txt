@@ -11,7 +11,7 @@ IF (WIN32)
 
 ELSE()
     set(CMAKE_CXX_STANDARD 17)
-    add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers )  # -Wno-c99-extensions
+    add_compile_options(-fPIC -Wall -Wextra  -Werror -Wno-unused-parameter -Wno-deprecated-declarations -Wno-missing-field-initializers -Wno-unused-variable)  # -Wno-c99-extensions
 ENDIF()
 
 option(USE_OPENCV "use OpenCV for vision" OFF)
@@ -147,23 +147,29 @@ endif()
 
 add_subdirectory(coppeliaSim_plugin)
 
-target_include_directories(simExtRobomaster PRIVATE ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(simExtRobomaster
+target_include_directories(${_PLUGIN_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
+
+if(${COPPELIASIM_VERSION} VERSION_GREATER_EQUAL 4.6)
+    set(KEYWORD PRIVATE)
+endif()
+
+
+target_link_libraries(${_PLUGIN_NAME} ${KEYWORD}
   robomaster
   spdlog::spdlog
   ${Boost_LIBRARIES}
 )
 
 if (USE_OPENCV)
- target_link_libraries(simExtRobomaster ${OpenCV_LIBS}) 
+ target_link_libraries(${_PLUGIN_NAME} ${KEYWORD} ${OpenCV_LIBS}) 
 endif() 
   
 
 IF (WIN32)
-  target_compile_options(simExtRobomaster PUBLIC
+  target_compile_options(${_PLUGIN_NAME} PUBLIC
   )
 ELSE()
-  target_compile_options(simExtRobomaster PUBLIC
+  target_compile_options(${_PLUGIN_NAME} PUBLIC
   "-Wno-reorder-ctor"
   "-Wno-sign-compare"
   "-Wno-delete-non-abstract-non-virtual-dtor"
