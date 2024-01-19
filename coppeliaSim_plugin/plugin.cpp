@@ -582,7 +582,7 @@ class Plugin : public sim::Plugin {
       Robot::Mode mode = Robot::Mode::CHASSIS_LEAD;
       if (in->mode == "free") {
         mode = Robot::Mode::FREE;
-      } else if (in->mode == "gimbal_led") {
+      } else if (in->mode == "gimbal_lead") {
         mode = Robot::Mode::GIMBAL_LEAD;
       } else if (in->mode == "chassis_lead") {
         mode = Robot::Mode::CHASSIS_LEAD;

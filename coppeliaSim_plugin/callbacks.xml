@@ -740,7 +740,7 @@
               <description>The RoboMaster controller handle</description>
             </param>
             <param name="mode" type="string">
-                <description>On of `"free"` (uncoupled), `"gimbal_led"` (the chassis follows the gimbal), `"chassis_lead"` (the gimbal follows the chassis)</description>
+                <description>On of `"free"` (uncoupled), `"gimbal_lead"` (the chassis follows the gimbal), `"chassis_lead"` (the gimbal follows the chassis)</description>
             </param>
         </params>
     </command>

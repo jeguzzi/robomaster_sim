@@ -589,7 +589,7 @@ simRobomaster.set_mode(int handle, string mode)
 
 *parameters*
   - **handle** The RoboMaster controller handle
-  - **mode** On of `"free"` (uncoupled), `"gimbal_led"` (the chassis follows the gimbal), `"chassis_lead"` (the gimbal follows the chassis)
+  - **mode** On of `"free"` (uncoupled), `"gimbal_lead"` (the chassis follows the gimbal), `"chassis_lead"` (the gimbal follows the chassis)
 
 
 
