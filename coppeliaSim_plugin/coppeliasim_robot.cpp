@@ -14,29 +14,30 @@
 
 #include "spdlog/spdlog.h"
 
-// bool read_vector_from_signal(const std::string name, Vector3 *out) {
-//   int buffer_lenght;
-//   char *buffer = simGetStringSignal(name.data(), &buffer_lenght);
-//   if (buffer && buffer_lenght == sizeof(Vector3)) {
-//     int stack = simCreateStack();
-//     int r = simUnpackTable(stack, buffer, buffer_lenght);
-//     if (r < 0) {
-//       return false;
-//     }
-//     r = simGetStackFloatTable(stack, &(out->x), 3);
-//     return (r >= 0);
-//   }
-// }
-
-bool read_vector_from_signal(const std::string name, Vector3 *out) {
-  int buffer_lenght;
-  char *buffer = simGetStringSignal(name.data(), &buffer_lenght);
-  if (buffer && buffer_lenght == sizeof(Vector3)) {
-    memcpy(&(out->x), buffer, buffer_lenght);
+#if SIM_PROGRAM_VERSION_NB >= 40800
+bool read_vector_from_signal(int handle, const std::string &name,
+                             Vector3 &out) {
+  double values[3];
+  int r = simGetVector3Property(handle, name.data(), values);
+  if (r) {
+    out.x = values[0];
+    out.y = values[1];
+    out.z = values[2];
     return true;
   }
   return false;
 }
+#else
+bool read_vector_from_signal(int, const std::string &name, Vector3 &out) {
+  int buffer_lenght;
+  char *buffer = simGetStringSignal(name.data(), &buffer_lenght);
+  if (buffer && buffer_lenght == sizeof(Vector3)) {
+    memcpy(&(out.x), buffer, buffer_lenght);
+    return true;
+  }
+  return false;
+}
+#endif
 
 void CoppeliaSimRobot::forward_target_wheel_speeds(const WheelSpeeds &speeds) {
   for (size_t i = 0; i < speeds.size; i++) {
@@ -72,7 +73,8 @@ void CoppeliaSimRobot::forward_gimbal_led(size_t index, size_t part,
 }
 
 void CoppeliaSimRobot::forward_blaster_led(float value) const {
-  if (blaster_light_handle <= 0) return;
+  if (blaster_light_handle <= 0)
+    return;
   const float rgb[3] = {0.0f, std::clamp(value, 0.0f, 1.0f), 0.0f};
   if (value)
     simSetLightParameters(blaster_light_handle, 1, nullptr, rgb, nullptr);
@@ -107,12 +109,12 @@ WheelValues<float> CoppeliaSimRobot::read_wheel_angles() const {
 // or maybe just get velocity and compute acceleration in the base class
 IMU CoppeliaSimRobot::read_imu() const {
   IMU imu;
-  if (!read_vector_from_signal(gyro_signal, &imu.angular_velocity)) {
-    spdlog::warn("Could not read signal {}", gyro_signal);
+  if (!read_vector_from_signal(gyro_handle, gyro_signal, imu.angular_velocity)) {
+    spdlog::warn("Could not read gyro");
     return {};
   }
-  if (!read_vector_from_signal(accelerometer_signal, &imu.acceleration)) {
-    spdlog::warn("Could not read signal {}", accelerometer_signal);
+  if (!read_vector_from_signal(accelerometer_handle, accelerometer_signal, imu.acceleration)) {
+    spdlog::warn("Could not read accelerometer");
     return {};
   }
   // TODO(IMU has no attitude->should move it in a separate method)
@@ -143,7 +145,8 @@ IMU CoppeliaSimRobot::read_imu() const {
 // }
 
 std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() const {
-  if (!camera_handle) return {};
+  if (!camera_handle)
+    return {};
   simHandleVisionSensor(camera_handle, nullptr, nullptr);
   int resolution[2]{};
 #if SIM_PROGRAM_VERSION_NB >= 40400
@@ -178,7 +181,8 @@ std::vector<uint8_t> CoppeliaSimRobot::read_camera_image() const {
 
 bool CoppeliaSimRobot::forward_camera_resolution(unsigned width,
                                                  unsigned height) {
-  if (!camera_handle) return false;
+  if (!camera_handle)
+    return false;
   int image_size[2]{};
 #if SIM_PROGRAM_VERSION_NB >= 40500
   simGetVisionSensorRes(camera_handle, image_size);
@@ -313,8 +317,10 @@ void CoppeliaSimRobot::set_vision_class(const std::string &name, uint8_t kind) {
   const std::string fname = "/" + name;
   for (int i = 0;; i++) {
     int root = simGetObject(fname.c_str(), i, -1, 1);
-    if (root == -1) break;
-    if (root == root_handle) continue;
+    if (root == -1)
+      break;
+    if (root == root_handle)
+      continue;
     vertices_for_root[root] = get_vertices(root);
     int count;
     int *hs = simGetObjectsInTree(root, sim_object_shape_type, 0, &count);
@@ -353,7 +359,7 @@ BoundingBox CoppeliaSimRobot::project_model(int handle, int camera_handle,
 static bool should_detect(const BoundingBox &actual, const BoundingBox &model,
                           float e, float min_width, float min_height) {
   spdlog::info("should_detect {} {} | {} {} {}", actual, model, e, min_width,
-  min_height);
+               min_height);
   return ((actual.width + e) > model.width * min_width) &&
          ((actual.height + e) > model.height * min_height);
 }
@@ -547,14 +553,16 @@ DetectedObjects CoppeliaSimRobot::read_detected_objects() const {
 void CoppeliaSimRobot::init_vision() {
   if (vision_handle > 0) {
     simFloat value;
-    simGetObjectFloatParam(vision_handle, sim_visionfloatparam_perspective_angle, &value);
+    simGetObjectFloatParam(vision_handle,
+                           sim_visionfloatparam_perspective_angle, &value);
     tan_fov_2 = tan(value * 0.5);
     set_vision_class("RoboMaster", DetectedObjects::Type::ROBOT);
     set_vision_class("Bill", DetectedObjects::Type::PERSON);
   }
 }
 
-void CoppeliaSimRobot::configure_vision(float min_width, float min_height, float tolerance) {
+void CoppeliaSimRobot::configure_vision(float min_width, float min_height,
+                                        float tolerance) {
   min_detection_width = std::max(min_width, 0.0f);
   min_detection_height = std::max(min_height, 0.0f);
   detection_tolerance = std::max(tolerance, 0.0f);
@@ -563,7 +571,8 @@ void CoppeliaSimRobot::configure_vision(float min_width, float min_height, float
 hit_event_t CoppeliaSimRobot::read_hit_events() const { return {}; }
 
 float CoppeliaSimRobot::read_tof(size_t index) const {
-  if (!tof_handles.count(index)) return 0.0f;
+  if (!tof_handles.count(index))
+    return 0.0f;
   int h = tof_handles.at(index);
   simFloat p[4];
   int r = simCheckProximitySensor(h, sim_handle_all, p);

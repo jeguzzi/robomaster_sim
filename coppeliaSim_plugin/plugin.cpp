@@ -63,7 +63,6 @@ static const char vision_name[] = "Machine_vision_sensor";
 static const char blaster_light_name[] = "blaster_light";
 static const char gripper_name[] = "gripper_link_respondable";
 static const char gyro_name[] = "GyroSensor";
-static const char imu_name[] = "GyroSensor_reference";
 static const char accelerometer_name[] = "Accelerometer";
 
 #if SIM_PROGRAM_VERSION_NB < 40300
@@ -188,12 +187,18 @@ static int add_robot(int cs_handle, std::string serial_number,
 
   spdlog::info("Gripper signals {} {}", gripper_state, gripper_target);
 
-  int imu_handle = get_handle(imu_name, cs_handle);
-  int gyro_handle = get_handle(gyro_name, cs_handle);
-  std::string gyro_signal = "gyro#" + std::to_string(gyro_handle);
-  int accelerometer_handle = get_handle(accelerometer_name, cs_handle);
-  std::string accelerometer_signal =
+  const int gyro_handle = get_handle(gyro_name, cs_handle);
+  const int accelerometer_handle = get_handle(accelerometer_name, cs_handle);
+#if MODEL_VERSION > 1
+  const std::string gyro_signal = "signal.value";
+  const std::string accelerometer_signal = "signal.value";
+  const int imu_handle = get_handle("reference", gyro_handle);
+#else
+  const std::string gyro_signal = "gyro#" + std::to_string(gyro_handle);
+  const std::string accelerometer_signal =
       "accelerometer#" + std::to_string(accelerometer_handle);
+  const int imu_handle = get_handle("GyroSensor_reference", cs_handle);
+#endif
 
   _robots.emplace(handle,
                   std::make_unique<CoppeliaSimRobot>(
@@ -201,7 +206,8 @@ static int add_robot(int cs_handle, std::string serial_number,
                       camera_handle, vision_handle, servo_motors, gimbal_motors,
                       gimbal_led_handles, blaster_light_handle, enable_gripper,
                       gripper_state, gripper_target, imu_handle,
-                      accelerometer_signal, gyro_signal));
+                      accelerometer_handle, accelerometer_signal, gyro_handle,
+                      gyro_signal));
   // _interfaces[handle] = std::make_shared<rm::RoboMaster>(&io_context,
   // _robots[handle].get());
   if (remote_api_network.length()) {
@@ -234,7 +240,7 @@ std::string action_name(int action_handle) {
 }
 
 class Plugin : public sim::Plugin {
- public:
+public:
 #if SIM_PROGRAM_VERSION_NB < 40600
   void onModuleHandle(char *customData) {
 #else
@@ -392,24 +398,24 @@ class Plugin : public sim::Plugin {
       auto state =
           _robots[in->handle]->get_action_state(action_name(in->action));
       switch (state) {
-        case Action::State::failed:
-          out->status = "failed";
-          break;
-        case Action::State::rejected:
-          out->status = "rejected";
-          break;
-        case Action::State::running:
-          out->status = "running";
-          break;
-        case Action::State::succeed:
-          out->status = "succeed";
-          break;
-        case Action::State::undefined:
-          out->status = "undefined";
-          break;
-        case Action::State::started:
-          out->status = "started";
-          break;
+      case Action::State::failed:
+        out->status = "failed";
+        break;
+      case Action::State::rejected:
+        out->status = "rejected";
+        break;
+      case Action::State::running:
+        out->status = "running";
+        break;
+      case Action::State::succeed:
+        out->status = "succeed";
+        break;
+      case Action::State::undefined:
+        out->status = "undefined";
+        break;
+      case Action::State::started:
+        out->status = "started";
+        break;
       }
     }
   }
