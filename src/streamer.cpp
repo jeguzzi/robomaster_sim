@@ -86,7 +86,7 @@ TCPVideoStreamer::TCPVideoStreamer(boost::asio::io_context *io_context, Robot *r
                                    std::string ip, unsigned _bitrate)
     : VideoStreamer(robot, _bitrate)
     , acceptor(*io_context, ip.size()
-                                ? ba::ip::tcp::endpoint(ba::ip::address::from_string(ip), PORT)
+                                ? ba::ip::tcp::endpoint(ba::ip::make_address(ip), PORT)
                                 : ba::ip::tcp::endpoint(ba::ip::tcp::v4(), PORT))
     , tcp_socket(*io_context) {
   spdlog::info("Creating a TCP video streamer on {} @ {} bps",
@@ -114,7 +114,7 @@ UDPVideoStreamer::UDPVideoStreamer(boost::asio::io_context *io_context, Robot *r
                                    std::string ip, unsigned _bitrate)
     : VideoStreamer(robot, _bitrate)
     , udp_socket(*io_context,
-                 ip.size() ? ba::ip::udp::endpoint(ba::ip::address::from_string(ip), UDP_PORT)
+                 ip.size() ? ba::ip::udp::endpoint(ba::ip::make_address(ip), UDP_PORT)
                            : ba::ip::udp::endpoint(ba::ip::udp::v4(), UDP_PORT)) {
   spdlog::info("Creating an UDP video streamer on {} @ {} bps", 
                STREAM(udp_socket.local_endpoint()), bitrate);

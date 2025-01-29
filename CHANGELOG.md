@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2] - 2025-01-29
+
+Tested to support CoppeliaSim up to v4.9.
+
+### Fixed
+
+- Replaced `boost::asio::ip::address::from_string` with `boost::asio::ip::make_address` to support current version of boost.
+
 ## [1.1] - 2024-01-12
 
 ### Added

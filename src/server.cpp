@@ -17,7 +17,7 @@ Server::Server(boost::asio::io_context *_io_context, Robot *_robot, std::string 
                unsigned short port)
     : io_context(_io_context)
     , robot(_robot)
-    , socket_(*io_context, ip.size() ? udp::endpoint(ba::ip::address::from_string(ip), port)
+    , socket_(*io_context, ip.size() ? udp::endpoint(ba::ip::make_address(ip), port)
                                      : udp::endpoint(udp::v4(), port))
     , callbacks() {}
 

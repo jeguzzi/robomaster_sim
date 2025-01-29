@@ -7,7 +7,7 @@
 
 Discovery::Discovery(boost::asio::io_context *io_context, std::string serial_number, std::string ip,
                      unsigned prefix_len, float period_, const std::string app_id)
-    : socket(*io_context, ip.size() ? udp::endpoint(ba::ip::address::from_string(ip), PORT)
+    : socket(*io_context, ip.size() ? udp::endpoint(ba::ip::make_address(ip), PORT)
                                     : udp::endpoint(udp::v4(), PORT))
     , period(period_)
     , active(false) {
