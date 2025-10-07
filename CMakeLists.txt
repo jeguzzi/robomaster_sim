@@ -17,7 +17,7 @@ ENDIF()
 option(USE_OPENCV "use OpenCV for vision" OFF)
 
 # -pedantic
-find_package(Boost REQUIRED COMPONENTS system thread)
+find_package(Boost REQUIRED COMPONENTS date_time thread OPTIONAL_COMPONENTS system)
 find_package(spdlog REQUIRED )
 # find_package(libav REQUIRED avcodec REQUIRED)
 

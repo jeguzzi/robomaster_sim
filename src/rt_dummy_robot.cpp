@@ -1,6 +1,7 @@
 #include "spdlog/spdlog.h"
 
 #include "rt_dummy_robot.hpp"
+#include <boost/asio/deadline_timer.hpp>
 
 void RealTimeDummyRobot::cb() {
   // spdlog::info("[Dummy] do_step");
