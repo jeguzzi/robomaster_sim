@@ -273,9 +273,9 @@ Gripper::Status CoppeliaSimRobot::read_gripper_state() const {
   }
   int value;
 #if SIM_PROGRAM_VERSION_NB >= 40800 
-  simGetIntProperty(gripper_handle, gripper_target_signal.data(), &value);
+  simGetIntProperty(gripper_handle, gripper_state_signal.data(), &value);
 #elif SIM_PROGRAM_VERSION_NB >= 40300
-  simGetInt32Signal(gripper_target_signal.data(), &value);
+  simGetInt32Signal(gripper_state_signal.data(), &value);
 #else
   simGetIntegerSignal(gripper_state_signal.data(), &value);
 #endif
