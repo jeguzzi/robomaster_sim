@@ -250,12 +250,16 @@ float CoppeliaSimRobot::read_servo_speed(size_t index) const {
   return speed;
 }
 
+
+
 void CoppeliaSimRobot::forward_target_gripper(Gripper::Status state,
                                               float power) {
   if (gripper_target_signal.empty()) {
     spdlog::warn("Gripper not available");
   }
-#if SIM_PROGRAM_VERSION_NB >= 40300
+#if SIM_PROGRAM_VERSION_NB >= 40800
+  simSetIntProperty(gripper_handle, gripper_target_signal.data(), static_cast<int>(state));
+#elif SIM_PROGRAM_VERSION_NB >= 40300
   simSetInt32Signal(gripper_target_signal.data(), static_cast<int>(state));
 #else
   simSetIntegerSignal(gripper_target_signal.data(), static_cast<int>(state));
@@ -268,7 +272,9 @@ Gripper::Status CoppeliaSimRobot::read_gripper_state() const {
     return Gripper::Status::pause;
   }
   int value;
-#if SIM_PROGRAM_VERSION_NB >= 40300
+#if SIM_PROGRAM_VERSION_NB >= 40800 
+  simGetIntProperty(gripper_handle, gripper_target_signal.data(), &value);
+#elif SIM_PROGRAM_VERSION_NB >= 40300
   simGetInt32Signal(gripper_target_signal.data(), &value);
 #else
   simGetIntegerSignal(gripper_state_signal.data(), &value);

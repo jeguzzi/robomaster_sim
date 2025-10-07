@@ -168,6 +168,9 @@ static int add_robot(int cs_handle, std::string serial_number,
   }
 
   GimbalLEDValues<std::vector<int>> gimbal_led_handles;
+  int gripper_handle = -1;
+  std::string gripper_state = "";
+  std::string gripper_target = "";
   if (enable_gimbal) {
     for (size_t i = 0; i < gimbal_led_handles.size; i++) {
       for (size_t j = 0; j < 8; j++) {
@@ -180,12 +183,17 @@ static int add_robot(int cs_handle, std::string serial_number,
       }
     }
   }
-  int gripper_handle = get_handle(gripper_name, cs_handle);
-  std::string gripper_state = "gripper#" + std::to_string(gripper_handle);
-  std::string gripper_target =
-      "target_gripper#" + std::to_string(gripper_handle);
-
-  spdlog::info("Gripper signals {} {}", gripper_state, gripper_target);
+  if (enable_gripper) {
+    gripper_handle = get_handle(gripper_name, cs_handle);
+#if SIM_PROGRAM_VERSION_NB >= 40800
+    gripper_state = "signal.state";
+    gripper_target = "signal.target";
+#else
+    gripper_state = "gripper#" + std::to_string(gripper_handle);
+    gripper_target = "target_gripper#" + std::to_string(gripper_handle);
+#endif
+    spdlog::info("Gripper using signals {} {}", gripper_state, gripper_target);
+  }
 
   const int gyro_handle = get_handle(gyro_name, cs_handle);
   const int accelerometer_handle = get_handle(accelerometer_name, cs_handle);
@@ -204,7 +212,7 @@ static int add_robot(int cs_handle, std::string serial_number,
                   std::make_unique<CoppeliaSimRobot>(
                       cs_handle, wheel_handles, chassis_led_handles, enable_arm,
                       camera_handle, vision_handle, servo_motors, gimbal_motors,
-                      gimbal_led_handles, blaster_light_handle, enable_gripper,
+                      gimbal_led_handles, blaster_light_handle, gripper_handle,
                       gripper_state, gripper_target, imu_handle,
                       accelerometer_handle, accelerometer_signal, gyro_handle,
                       gyro_signal));

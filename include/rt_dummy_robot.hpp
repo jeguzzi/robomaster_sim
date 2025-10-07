@@ -5,6 +5,7 @@
 
 #include "dummy_robot.hpp"
 #include <boost/asio.hpp>
+#include <boost/asio/deadline_timer.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 class RealTimeDummyRobot : public DummyRobot {
