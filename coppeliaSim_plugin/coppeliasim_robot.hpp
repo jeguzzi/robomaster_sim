@@ -23,12 +23,12 @@ public:
                    ServoValues<int> _servo_motor,
                    GimbalValues<int> _gimbal_motor,
                    GimbalLEDValues<std::vector<int>> _gimbal_led_handles,
-                   int _blaster_light_handle, bool _enable_gripper,
+                   int _blaster_light_handle, int _gripper_handle,
                    std::string _gripper_state_signal,
                    std::string _gripper_target_signal, int _imu_handle,
                    int _accelerometer_handle, std::string _accelerometer_signal,
                    int _gyro_handle, std::string _gyro_signal)
-      : Robot(_enable_arm, _enable_gripper,
+      : Robot(_enable_arm, _gripper_handle > 0,
               {_servo_motor[0] > 0, _servo_motor[1] > 0, _servo_motor[2] > 0},
               (_gimbal_motor.yaw > 0 && _gimbal_motor.pitch > 0),
               _camera_handle > 0, false),
@@ -37,6 +37,7 @@ public:
         gimbal_led_handles(_gimbal_led_handles),
         blaster_light_handle(_blaster_light_handle),
         camera_handle(_camera_handle), vision_handle(_vision_handle),
+        gripper_handle(_gripper_handle),
         servo_handles({{0, _servo_motor[0]},
                        {1, _servo_motor[1]},
                        {2, _servo_motor[2]},
@@ -96,6 +97,7 @@ private:
   std::map<unsigned, int> tof_handles;
   int camera_handle;
   int vision_handle;
+  int gripper_handle;
   std::string gripper_state_signal;
   std::string gripper_target_signal;
   int imu_handle;
