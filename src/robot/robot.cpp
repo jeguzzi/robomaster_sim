@@ -67,6 +67,15 @@ void Robot::control_chassis() {
   }
 }
 
+void Robot::forward_servos_mode() {
+  for (auto const &[i, servo] : connected_servos) {
+    if (!servo->enabled.current) {
+      continue;
+    }
+    forward_servo_mode(i, servo->mode.current, servo->mode.current == Servo::Mode::SPEED ? servo->max_speed : servo->max_speed_p);
+  }
+}
+
 void Robot::control_servos() {
 #ifdef CHECK_SERVO_LIMITS
   if (has_arm) {
@@ -81,7 +90,7 @@ void Robot::control_servos() {
       continue;
     }
     if (servo->mode.check()) {
-      forward_servo_mode(i, servo->mode.target);
+      forward_servo_mode(i, servo->mode.target, servo->mode.target == Servo::Mode::SPEED ? servo->max_speed : servo->max_speed_p);
     }
     if (servo->mode.target == Servo::SPEED) {
       float desired_speed = servo->desired_speed(last_time_step);

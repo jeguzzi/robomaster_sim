@@ -498,6 +498,14 @@ public:
     }
   }
 
+  void set_arm_servos_max_speed(set_arm_servos_max_speed_in *in, set_arm_servos_max_speed_out *out) {
+    if (_robots.count(in->handle)) {
+      auto & robot = _robots[in->handle];
+      robot->arm.set_motors_max_speed(deg2rad(in->value));
+      robot->forward_servos_mode();
+    }
+  }
+
   Gimbal::Frame gimbal_frame(std::string name) {
     if (name == "chassis") {
       return Gimbal::Frame::chassis;

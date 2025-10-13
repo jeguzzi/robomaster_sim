@@ -8,10 +8,11 @@ struct Servo {
 
   // TODO(Jerome): min_angle/max_angle/max_speed are placeholders
   Servo(bool enabled = true, float min_angle = deg2rad(-1800), float max_angle = deg2rad(1800),
-        float max_speed = deg2rad(240))
+        float max_speed = deg2rad(240), float max_speed_p = deg2rad(100))
       : min_angle(min_angle)
       , max_angle(max_angle)
       , max_speed(max_speed)
+      , max_speed_p(max_speed_p)
       , control_speed(max_speed)
       , angle(0.0)
       , speed(0.0)
@@ -22,6 +23,7 @@ struct Servo {
   float min_angle;
   float max_angle;
   float max_speed;
+  float max_speed_p;
   float control_speed;
   ControllableValue<float> angle;
   ControllableValue<float> speed;

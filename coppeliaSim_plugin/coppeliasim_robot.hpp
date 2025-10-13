@@ -70,9 +70,10 @@ public:
   DetectedObjects read_detected_objects() const;
   void forward_target_servo_angle(size_t index, float angle);
   void forward_target_servo_speed(size_t index, float speed);
+
   float read_servo_angle(size_t index) const;
   float read_servo_speed(size_t index) const;
-  void forward_servo_mode(size_t index, Servo::Mode mode);
+  void forward_servo_mode(size_t index, Servo::Mode mode, float max_speed);
   void forward_servo_enabled(size_t index, bool value);
   void forward_target_gimbal_speed(const GimbalValues<float> &speed);
   void forward_target_gimbal_angle(const GimbalValues<float> &angle);

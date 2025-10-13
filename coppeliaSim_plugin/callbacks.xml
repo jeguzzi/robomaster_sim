@@ -509,6 +509,21 @@
         </return>
     </command>
 
+    <command name="set_arm_servos_max_speed">
+        <description>Set the maximal value of the arm servo speed (in deg/s) when controlling them in position mode</description>
+        <categories>
+          <category name="ep"/>
+        </categories>
+        <params>
+            <param name="handle" type="int">
+              <description>The RoboMaster controller handle</description>
+            </param>
+            <param name="value" type="float">
+                <description>The maximal angular speed [deg/s]</description>
+            </param>
+        </params>
+    </command>
+
     <command name="enable_camera">
         <description>Set the camera module state</description>
         <params>

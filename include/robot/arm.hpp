@@ -56,6 +56,10 @@ struct Arm {
     motors.right.angle.set(value.right, type);
   }
 
+  void set_motors_max_speed(float value) const {
+    motors.left.max_speed_p = motors.right.max_speed_p = std::max<float>(value, 0);
+  }
+
   void update_position();
   void update_control(const Vector3 &target_position);
   Vector3 get_position() const { return position; }

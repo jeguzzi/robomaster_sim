@@ -65,7 +65,7 @@ class Robot {
   virtual void forward_target_servo_speed(size_t index, float speed) = 0;
   virtual float read_servo_angle(size_t index) const = 0;
   virtual float read_servo_speed(size_t index) const = 0;
-  virtual void forward_servo_mode(size_t index, Servo::Mode mode) = 0;
+  virtual void forward_servo_mode(size_t index, Servo::Mode mode, float max_speed) = 0;
   virtual void forward_servo_enabled(size_t index, bool value) = 0;
   virtual float read_tof(size_t index) const = 0;
   virtual void forward_blaster_led(float value) const = 0;
@@ -196,6 +196,8 @@ class Robot {
     }
     return Action::State::undefined;
   }
+
+  void forward_servos_mode();
 
  protected:
   bool has_arm;

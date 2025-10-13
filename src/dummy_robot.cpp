@@ -100,7 +100,7 @@ float DummyRobot::read_servo_speed(size_t index) const {
   return connected_servos.at(index)->speed.current;
 }
 
-void DummyRobot::forward_servo_mode(size_t index, Servo::Mode mode) {}
+void DummyRobot::forward_servo_mode(size_t index, Servo::Mode mode, float max_speed) {}
 
 void DummyRobot::forward_servo_enabled(size_t index, bool value) {}
 

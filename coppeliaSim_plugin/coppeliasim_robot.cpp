@@ -207,11 +207,16 @@ void CoppeliaSimRobot::forward_target_servo_angle(size_t index, float angle) {
   }
 }
 
-void CoppeliaSimRobot::forward_servo_mode(size_t index, Servo::Mode mode) {
+void CoppeliaSimRobot::forward_servo_mode(size_t index, Servo::Mode mode, float max_speed) {
   if (servo_handles.at(index) > 0) {
     if (mode == Servo::ANGLE) {
-      simSetObjectInt32Param(servo_handles.at(index),
+      const auto servo = servo_handles.at(index);
+      simSetObjectInt32Param(servo,
                              sim_jointintparam_ctrl_enabled, 1);
+#if SIM_PROGRAM_VERSION_NB >= 40800
+      const double vs[3] = {max_speed, 2 * M_PI, 2 * M_PI};
+      simSetFloatArrayProperty(servo, "maxVelAccelJerk", vs, 3);
+#endif
     } else {
       simSetObjectInt32Param(servo_handles.at(index),
                              sim_jointintparam_ctrl_enabled, 0);
