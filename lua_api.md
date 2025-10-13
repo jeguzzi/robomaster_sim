@@ -60,9 +60,10 @@
 | [simRobomaster.set_servo_target_speed](#set_servo_target_speed) |
 | [simRobomaster.set_servo_mode](#set_servo_mode)                 |
 | [simRobomaster.enable_servo](#enable_servo)                     |
-| [simRobomaster.wait_for_gripper](#wait_for_gripper)                     |
+| [simRobomaster.wait_for_gripper](#wait_for_gripper)             |
 | [simRobomaster.open_gripper](#open_gripper)                     |
-| [simRobomaster.close_gripper](#close_gripper) |
+| [simRobomaster.close_gripper](#close_gripper)                   |
+| [simRobomaster.set_arm_servos_max_speed](#set_arm_servos_max_speed) |
 
 #### CS_Twist2D
 
@@ -420,6 +421,15 @@ int handle = simRobomaster.move_arm(int handle, float x, float z, bool absolute)
 *return*
   - **handle** The handle of the action
 
+#### set_arm_servos_max_speed
+Set the maximal value of the arm servo speed (in deg/s) when controlling them in position mode
+```C++
+simRobomaster.set_arm_servos_max_speed(int handle, float value)
+```
+
+*parameters*
+  - **handle** The RoboMaster controller handle
+  - **value** The maximal angular speed [deg/s]
 
 #### enable_camera
 Set the camera module state
