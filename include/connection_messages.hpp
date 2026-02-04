@@ -9,6 +9,7 @@
 #include "spdlog/spdlog.h"
 
 #include "protocol.hpp"
+// #include "connection.hpp"
 
 struct SetSdkConnection : Proto<0x3f, 0xd4> {
   struct Request : RequestT {
@@ -46,11 +47,13 @@ struct SetSdkConnection : Proto<0x3f, 0xd4> {
     using ResponseT::ResponseT;
   };
 
-  static bool answer(const Request &request, Response &response, Robot *robot) {
-    response.ip[0] = 0;
-    response.ip[1] = 0;
-    response.ip[2] = 0;
-    response.ip[3] = 0;
+  static bool answer(const Request &request, Response &response, Robot *robot, Connection * conn) {
+    const auto address = conn->sender_endpoint().address();
+    const auto ip_bytes = address.to_v4().to_bytes();
+    response.ip[0] = ip_bytes[0];
+    response.ip[1] = ip_bytes[1];
+    response.ip[2] = ip_bytes[2];
+    response.ip[3] = ip_bytes[3];
     // response.ip[0] = 127;
     // response.ip[1] = 0;
     // response.ip[2] = 0;
