@@ -34,7 +34,7 @@ $ brew install spdlog boost cmake ffmpeg
 
 #### Windows
 
-On Linux, we require a C++-20 compiler.
+On Windows, we require a C++-20 compiler.
 
 *To be completed*.
 
