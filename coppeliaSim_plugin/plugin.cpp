@@ -286,6 +286,9 @@ public:
   void onSimulationAboutToEnd() {
     // delete crobot;
     // std::cout << "Should close RM simulation[s] gracefully" << std::endl;
+    for (auto &[_, robot] : _robots) {
+      robot->clear_leds();
+    }
     _interfaces.clear();
     _robots.clear();
     next_robot_handle = 0;

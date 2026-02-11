@@ -133,6 +133,12 @@ void Robot::control_leds() {
   }
 }
 
+void Robot::clear_leds() {
+  set_led_effect({}, 0xff, 0xff, ActiveLED::LedEffect::off, 1.0, 1.0, false);
+  set_blaster_led(0, false);
+  control_leds();
+}
+
 void Robot::do_step(float time_step) {
   time_ += time_step;
   last_time_step = time_step;

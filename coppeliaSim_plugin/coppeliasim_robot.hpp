@@ -52,6 +52,7 @@ public:
         min_detection_width(0.5), min_detection_height(0.5),
         detection_tolerance(0.0) {
     init_vision();
+    clear_leds();
   }
 
   // void update_led_colors(LEDColors &);
@@ -83,7 +84,6 @@ public:
   float read_tof(size_t index) const;
   void set_vision_class(const std::string &name, uint8_t kind);
   void configure_vision(float min_width, float min_height, float tolerance);
-  void init_vision();
 
   // void has_read_accelerometer(float x, float y, float z);
   // void has_read_gyro(float x, float y, float z);
@@ -122,6 +122,8 @@ private:
                                int height, uint8_t mask) const;
   BoundingBox project_model(int handle, int camera_handle,
                             float image_ratio) const;
+  void init_vision();
+  void init_leds();
 };
 
 #endif // COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_

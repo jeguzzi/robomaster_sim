@@ -92,6 +92,7 @@ class Robot {
   void read_chassis();
   void control_chassis();
   void control_leds();
+  void clear_leds();
   void control_servos();
   void control_gimbal();
   virtual void do_step(float time_step);
