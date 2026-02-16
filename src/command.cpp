@@ -134,9 +134,9 @@ void Commands::reset_subscriber_node(uint8_t node_id) {
 
 void Commands::set_enable_sdk(bool value) {
   if (value) {
-    spdlog::info("[Commands] enabled the SDK");
+    spdlog::info("[Commands] enabled SDK");
   } else {
-    spdlog::info("[Commands] disabled the SDK");
+    spdlog::info("[Commands] disabled SDK");
     armor_hit_event = nullptr;
     ir_hit_event = nullptr;
     vision_event = nullptr;

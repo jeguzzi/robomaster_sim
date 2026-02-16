@@ -47,6 +47,8 @@ class Robot {
   explicit Robot(bool has_arm = false, bool has_gripper = false, ServoValues<bool> has_servo = {},
                  bool has_gimbal = false, bool has_camera = false, bool has_tof = false);
 
+  ~Robot();
+
   virtual WheelSpeeds read_wheel_speeds() const = 0;
   virtual void forward_target_wheel_speeds(const WheelSpeeds &) = 0;
   virtual WheelValues<float> read_wheel_angles() const = 0;

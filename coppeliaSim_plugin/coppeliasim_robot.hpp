@@ -53,6 +53,7 @@ public:
         detection_tolerance(0.0) {
     init_vision();
     clear_leds();
+    chassis.stop();
   }
 
   // void update_led_colors(LEDColors &);
@@ -123,7 +124,6 @@ private:
   BoundingBox project_model(int handle, int camera_handle,
                             float image_ratio) const;
   void init_vision();
-  void init_leds();
 };
 
 #endif // COPPELIASIM_PLUGIN_COPPELIASIM_ROBOT_HPP_

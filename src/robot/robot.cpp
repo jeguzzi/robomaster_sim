@@ -48,7 +48,11 @@ Robot::Robot(bool _has_arm, bool _has_gripper, ServoValues<bool> _has_servo, boo
     modules += "camera ";
   if (has_tof)
     modules += "ToF ";
+
   spdlog::info("Initialized a robot with these optional modules: {}", modules);
+}
+
+Robot::~Robot() {
 }
 
 void Robot::read_chassis() {
@@ -250,10 +254,13 @@ void Robot::set_enable_sdk(bool value) {
   if (sdk_enabled == value)
     return;
   sdk_enabled = value;
-  if (value)
+  if (value) {
     spdlog::info("[Robot] enabled SDK");
-  else
+  }
+  else {
     spdlog::info("[Robot] disabled SDK");
+    chassis.stop();
+  }
 }
 
 bool Robot::start_streaming(unsigned width, unsigned height) {
