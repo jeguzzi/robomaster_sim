@@ -38,7 +38,7 @@ std::vector<uint8_t> Server::answer_request(const uint8_t *buffer, size_t length
 }
 
 void Server::has_received_bytes(const uint8_t *raw_request, size_t length) {
-  spdlog::debug("Received {} bytes: {:n}", length,
+  spdlog::debug("Received {} bytes from {}:{}: {:n}", length, sender_endpoint_.address().to_string(), sender_endpoint_.port(),
                 spdlog::to_hex(std::vector<uint8_t>(raw_request, raw_request + length)));
   const std::vector<uint8_t> raw_response = answer_request(raw_request, length);
   if (!raw_response.size()) {
@@ -59,10 +59,10 @@ void Server::do_receive() {
                              });
 }
 
-void Server::send(const std::vector<uint8_t> &data) {
+void Server::send(const std::vector<uint8_t> &data, bool to_client) {
   if (data.empty())
     return;
-  socket_.async_send_to(boost::asio::buffer(data.data(), data.size()), sender_endpoint_,
+  socket_.async_send_to(boost::asio::buffer(data.data(), data.size()), to_client ? client_endpoint_ : sender_endpoint_,
                         [](boost::system::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
 }
 

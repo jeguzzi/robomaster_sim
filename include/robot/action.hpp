@@ -18,6 +18,7 @@ struct Action {
     started = 3,
     undefined = 4,
     rejected = 5,
+    stopped = 6,
   };
   explicit Action(Robot *robot)
       : robot(robot)
@@ -29,8 +30,18 @@ struct Action {
     callback(time_step);
   }
   virtual ~Action() {}
-  bool done() { return state == Action::State::failed || state == Action::State::succeed; }
+  bool done() { return state == Action::State::failed || state == Action::State::succeed || state == Action::State::stopped;}
   void set_callback(Callback value) { callback = value; }
+
+  void stop() {
+    if (!done()) {
+      state = Action::State::stopped;
+      remaining_duration = 0;
+      cancel();
+    }
+  }
+
+  virtual void cancel() {}
 
   Robot *robot;
   State state;
@@ -50,6 +61,7 @@ template <> struct fmt::formatter<Action::State>: formatter<std::string_view> {
     case Action::State::started: name = "started"; break;
     case Action::State::undefined: name = "undefined"; break;
     case Action::State::rejected: name = "rejected"; break;
+    case Action::State::stopped: name = "stopped"; break;
   }
   return formatter<string_view>::format(name, ctx);    
   }
@@ -69,7 +81,8 @@ struct MoveAction : Action {
       , angular_speed(_angular_speed) {
     predicted_duration = time_to_goal(goal_pose, linear_speed, angular_speed);
   }
-  virtual void do_step(float time_step);
+  void do_step(float time_step) override;
+  void cancel() override;
   Pose2D goal;
   Pose2D goal_odom;
   Pose2D current;
@@ -83,7 +96,8 @@ struct MoveArmAction : Action {
       , goal_position({x, 0, z})
       , absolute(_absolute) {}
 
-  virtual void do_step(float time_step);
+  void do_step(float time_step) override;
+  void cancel() override;
   Vector3 goal_position;
   bool absolute;
   // Vector3 current_position;
@@ -99,7 +113,7 @@ struct PlaySoundAction : Action {
     predicted_duration = duration;
     remaining_duration = 0.0;
   }
-  virtual void do_step(float time_step);
+  void do_step(float time_step) override;
   uint32_t sound_id;
   uint8_t play_times;
 };
@@ -111,7 +125,8 @@ struct MoveServoAction : Action {
       , servo_id(servo_id)
       , target_angle(target_angle)
       , time_left(MAX_DURATION) {}
-  virtual void do_step(float time_step);
+  void do_step(float time_step) override;
+  void cancel() override;
   size_t servo_id;
   float target_angle;
   float current_angle;
@@ -126,7 +141,8 @@ struct MoveGimbalAction : Action {
       , speed({.yaw = yaw_speed, .pitch = pitch_speed})
       , frame({.yaw = yaw_frame, .pitch = pitch_frame}) {}
 
-  virtual void do_step(float time_step);
+  void do_step(float time_step) override;
+  void cancel() override;
   GimbalValues<float> target;
   GimbalValues<float> current;
   GimbalValues<float> speed;

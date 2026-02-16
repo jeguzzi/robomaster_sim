@@ -23,7 +23,7 @@ template <typename T> struct ActionSDK {
     if (action->done() || deadline <= 0) {
       deadline += 1.0f / frequency;
       update_msg();
-      cmd->send(push_msg->encode_msg(T::set, T::cmd));
+      cmd->send(push_msg->encode_msg(T::set, T::cmd), true);
     }
   }
 

@@ -32,13 +32,17 @@ class Server {
          unsigned short port = 30030);
   ~Server() {}
   void start();
-  void send(const std::vector<uint8_t> &data);
+  void send(const std::vector<uint8_t> &data, bool to_client=false);
 
   boost::asio::io_context *get_io_context() { return io_context; }
 
   udp::endpoint sender_endpoint() { return sender_endpoint_; }
 
   udp::endpoint local_endpoint() { return socket_.local_endpoint(); }
+
+  void update_client_endpoint() {
+    client_endpoint_ = sender_endpoint_;
+  }
 
  protected:
   boost::asio::io_context *io_context;
@@ -58,9 +62,14 @@ class Server {
     };
   }
 
+  virtual const udp::endpoint & client_endpoint() {
+    return sender_endpoint_;
+  }
+
  private:
   udp::socket socket_;
   udp::endpoint sender_endpoint_;
+  udp::endpoint client_endpoint_;
   uint8_t data_[kMaxLength];
   std::map<int, Callback> callbacks;
   std::vector<uint8_t> answer_request(const uint8_t *buffer, size_t length);

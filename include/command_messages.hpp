@@ -23,6 +23,7 @@ uint8_t accept_code(Action::State state) {
   case Action::State::running:
   case Action::State::started:
     return 0;
+  case Action::State::stopped:
   case Action::State::succeed:
     return 2;
   case Action::failed:

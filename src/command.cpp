@@ -112,13 +112,25 @@ Commands::~Commands() {}
 
 void Commands::add_subscriber_node(uint8_t node_id) {
   spdlog::info("[Commands] add subscriber {}", node_id);
-  if (enable_armor_hits)
+
+  robot->stop_actions();
+  vision_event = nullptr;
+  publishers.clear();
+
+  if (enable_armor_hits) {
     armor_hit_event = std::make_unique<ArmorHitEvent>(this, robot, node_id);
-  if (enable_ir_hits)
+  } else {
+    armor_hit_event = nullptr;
+  }
+  if (enable_ir_hits) {
     ir_hit_event = std::make_unique<IRHitEvent>(this, robot, node_id);
+  } else {
+    ir_hit_event = nullptr;
+  }
   // Disabled
   // uart_event = std::make_unique<UARTEvent>(this, robot);
   last_heartbeat = _time;
+  update_client_endpoint();
   connected = true;
 }
 
@@ -195,6 +207,7 @@ void Commands::set_vision_request(uint8_t sender, uint8_t request, uint16_t mask
 void Commands::unconnect() {
   spdlog::debug("[Commands] unconnect");
   robot->stop_streaming();
+  robot->stop_actions();
   get_video_streamer()->stop();
   armor_hit_event = nullptr;
   ir_hit_event = nullptr;

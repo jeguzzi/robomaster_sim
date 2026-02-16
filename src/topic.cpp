@@ -33,7 +33,7 @@ void Topic::publish() {
   response.subject_data = subject_data();
   auto data = response.encode_msg(PushPeriodMsg::set, PushPeriodMsg::cmd);
   spdlog::debug("Push {} bytes: {:n}", data.size(), spdlog::to_hex(data));
-  server->send(data);
+  server->send(data, true);
 }
 
 std::vector<uint8_t> Topic::subject_data() {

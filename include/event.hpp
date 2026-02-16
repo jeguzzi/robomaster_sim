@@ -25,7 +25,7 @@ template <typename B> struct Event {
     for (auto &msg : update_msg()) {
       auto data = msg.encode_msg(B::set, B::cmd);
       spdlog::debug("Push Event Msg {} bytes: {:n}", data.size(), spdlog::to_hex(data));
-      cmd->send(data);
+      cmd->send(data, true);
     }
   }
   virtual std::vector<typename B::Response> update_msg() = 0;

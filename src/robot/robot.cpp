@@ -4,27 +4,22 @@
 
 #include "robot/robot.hpp"
 
-// TODO(Jerome) [later] expose methods in lua to start an action (and enquire state)
+// TODO(Jerome) [later] expose methods in lua to start an action (and enquire
+// state)
 
 #define CHECK_SERVO_LIMITS
 
-Robot::Robot(bool _has_arm, bool _has_gripper, ServoValues<bool> _has_servo, bool _has_gimbal,
-             bool _has_camera, bool _has_tof)
+Robot::Robot(bool _has_arm, bool _has_gripper, ServoValues<bool> _has_servo,
+             bool _has_gimbal, bool _has_camera, bool _has_tof)
 
-    : servos({Servo(_has_servo[0]), Servo(_has_servo[1]), Servo(_has_servo[2])})
-    , arm(servos[0], servos[1])
-    , has_arm(_has_arm && _has_servo[0] && _has_servo[1])
-    , has_gripper(_has_gripper)
-    , has_servo(_has_servo)
-    , has_gimbal(_has_gimbal)
-    , has_camera(_has_camera)
-    , has_tof(_has_tof)
-    , connected_servos()
-    , mode(Mode::FREE)
-    , sdk_enabled(false)
-    , time_(0.0f)
-    , callbacks()
-    , actions() {
+    : servos(
+          {Servo(_has_servo[0]), Servo(_has_servo[1]), Servo(_has_servo[2])}),
+      arm(servos[0], servos[1]),
+      has_arm(_has_arm && _has_servo[0] && _has_servo[1]),
+      has_gripper(_has_gripper), has_servo(_has_servo), has_gimbal(_has_gimbal),
+      has_camera(_has_camera), has_tof(_has_tof), connected_servos(),
+      mode(Mode::FREE), sdk_enabled(false), time_(0.0f), callbacks(),
+      actions() {
   for (size_t i = 0; i < has_servo.size(); i++) {
     if (has_servo[i])
       connected_servos[i] = &servos[i];
@@ -52,8 +47,7 @@ Robot::Robot(bool _has_arm, bool _has_gripper, ServoValues<bool> _has_servo, boo
   spdlog::info("Initialized a robot with these optional modules: {}", modules);
 }
 
-Robot::~Robot() {
-}
+Robot::~Robot() {}
 
 void Robot::read_chassis() {
   chassis.wheel_speeds.current = read_wheel_speeds();
@@ -76,7 +70,10 @@ void Robot::forward_servos_mode() {
     if (!servo->enabled.current) {
       continue;
     }
-    forward_servo_mode(i, servo->mode.current, servo->mode.current == Servo::Mode::SPEED ? servo->max_speed : servo->max_speed_p);
+    forward_servo_mode(i, servo->mode.current,
+                       servo->mode.current == Servo::Mode::SPEED
+                           ? servo->max_speed
+                           : servo->max_speed_p);
   }
 }
 
@@ -94,7 +91,10 @@ void Robot::control_servos() {
       continue;
     }
     if (servo->mode.check()) {
-      forward_servo_mode(i, servo->mode.target, servo->mode.target == Servo::Mode::SPEED ? servo->max_speed : servo->max_speed_p);
+      forward_servo_mode(i, servo->mode.target,
+                         servo->mode.target == Servo::Mode::SPEED
+                             ? servo->max_speed
+                             : servo->max_speed_p);
     }
     if (servo->mode.target == Servo::SPEED) {
       float desired_speed = servo->desired_speed(last_time_step);
@@ -105,7 +105,8 @@ void Robot::control_servos() {
       }
     } else {
       if (servo->angle.check()) {
-        spdlog::debug("Servo {}, set target angle to {}", i, servo->angle.target);
+        spdlog::debug("Servo {}, set target angle to {}", i,
+                      servo->angle.target);
         forward_target_servo_angle(i, servo->angle.target);
       }
     }
@@ -126,7 +127,8 @@ void Robot::control_leds() {
     for (size_t i = 0; i < gimbal_leds.size; i++) {
       for (size_t j = 0; j < gimbal_leds[i].number; j++) {
         if (gimbal_leds[i].check(j)) {
-          spdlog::debug("gimbal led {} {} -> {}", i, j, gimbal_leds[i].get_color(j));
+          spdlog::debug("gimbal led {} {} -> {}", i, j,
+                        gimbal_leds[i].get_color(j));
           forward_gimbal_led(i, j, gimbal_leds[i].get_color(j));
         }
       }
@@ -152,7 +154,7 @@ void Robot::do_step(float time_step) {
   read_ir_events();
   if (has_tof) {
     size_t index = 0;
-    for (auto & tof_reading : tof.readings) {
+    for (auto &tof_reading : tof.readings) {
       if (tof_reading.active) {
         tof_reading.distance = read_tof(index);
       }
@@ -170,12 +172,14 @@ void Robot::do_step(float time_step) {
     if (camera.streaming) {
       spdlog::debug("[Robot] capture new camera frame");
       camera.image = read_camera_image();
-      // std::cout << int(image[0]) << " " << int(image[1]) << " " << int(image[2]) << " (" <<
-      // image.size() <<")\n"; auto image = std::vector<unsigned char>(640 * 360 * 3, 0); auto image
-      // = _image; static unsigned seq = 0; seq++; std::string name =
-      // "/Users/Jerome/Dev/My/robomaster_simulation/build/images/image" + std::to_string(seq) +
-      // ".dat"; std::ofstream fout(name.c_str(), std::ios::out | std::ios::binary);
-      // fout.write((char
+      // std::cout << int(image[0]) << " " << int(image[1]) << " " <<
+      // int(image[2]) << " (" << image.size() <<")\n"; auto image =
+      // std::vector<unsigned char>(640 * 360 * 3, 0); auto image = _image;
+      // static unsigned seq = 0; seq++; std::string name =
+      // "/Users/Jerome/Dev/My/robomaster_simulation/build/images/image" +
+      // std::to_string(seq) +
+      // ".dat"; std::ofstream fout(name.c_str(), std::ios::out |
+      // std::ios::binary); fout.write((char
       // *)image.data(), image.size()); fout.close();
     }
   }
@@ -224,10 +228,11 @@ void Robot::do_step(float time_step) {
 }
 
 void Robot::set_led_effect(Color color, LedMask mask, CompositeLedMask led_mask,
-                           ActiveLED::LedEffect effect, float period_on, float period_off,
-                           bool loop) {
-  spdlog::info("[Robot] set led effect: color {}, mask {}, led_mask {}, effect {}", color, mask,
-               led_mask, effect);
+                           ActiveLED::LedEffect effect, float period_on,
+                           float period_off, bool loop) {
+  spdlog::debug(
+      "[Robot] set led effect: color {}, mask {}, led_mask {}, effect {}",
+      color, mask, led_mask, effect);
   if (mask & ARMOR_BOTTOM_BACK)
     chassis_leds.rear.update(color, effect, period_on, period_off, loop);
   if (mask & ARMOR_BOTTOM_FRONT)
@@ -237,9 +242,11 @@ void Robot::set_led_effect(Color color, LedMask mask, CompositeLedMask led_mask,
   if (mask & ARMOR_BOTTOM_RIGHT)
     chassis_leds.right.update(color, effect, period_on, period_off, loop);
   if (mask & ARMOR_TOP_LEFT)
-    gimbal_leds.top_left.update(color, effect, period_on, period_off, loop, led_mask);
+    gimbal_leds.top_left.update(color, effect, period_on, period_off, loop,
+                                led_mask);
   if (mask & ARMOR_TOP_RIGHT)
-    gimbal_leds.top_right.update(color, effect, period_on, period_off, loop, led_mask);
+    gimbal_leds.top_right.update(color, effect, period_on, period_off, loop,
+                                 led_mask);
 }
 
 void Robot::set_mode(Mode _mode) {
@@ -256,8 +263,7 @@ void Robot::set_enable_sdk(bool value) {
   sdk_enabled = value;
   if (value) {
     spdlog::info("[Robot] enabled SDK");
-  }
-  else {
+  } else {
     spdlog::info("[Robot] disabled SDK");
     chassis.stop();
   }
@@ -270,7 +276,8 @@ bool Robot::start_streaming(unsigned width, unsigned height) {
   }
   camera.fps = 1.0f / last_time_step;
   if (!forward_camera_resolution(width, height)) {
-    spdlog::warn("[Robot] Camera resolution {} x {} not supported", width, height);
+    spdlog::warn("[Robot] Camera resolution {} x {} not supported", width,
+                 height);
     return false;
   }
   camera.width = width;
@@ -285,8 +292,17 @@ bool Robot::stop_streaming() {
   return true;
 }
 
-Action::State Robot::move_base(const Pose2D &pose, float linear_speed, float angular_speed) {
-  auto a = std::make_unique<MoveAction>(this, pose, linear_speed, angular_speed);
+void Robot::stop_actions() {
+  for (auto &[_, action] : actions) {
+    action->stop();
+  }
+  actions.clear();
+}
+
+Action::State Robot::move_base(const Pose2D &pose, float linear_speed,
+                               float angular_speed) {
+  auto a =
+      std::make_unique<MoveAction>(this, pose, linear_speed, angular_speed);
   return submit_action(std::move(a));
 }
 
@@ -305,11 +321,13 @@ Action::State Robot::move_servo(size_t id, float target_angle) {
   return submit_action(std::move(a));
 }
 
-Action::State Robot::move_gimbal(float target_yaw, float target_pitch, float yaw_speed,
-                                 float pitch_speed, Gimbal::Frame yaw_frame,
+Action::State Robot::move_gimbal(float target_yaw, float target_pitch,
+                                 float yaw_speed, float pitch_speed,
+                                 Gimbal::Frame yaw_frame,
                                  Gimbal::Frame pitch_frame) {
-  auto a = std::make_unique<MoveGimbalAction>(this, target_yaw, target_pitch, yaw_speed,
-                                              pitch_speed, yaw_frame, pitch_frame);
+  auto a = std::make_unique<MoveGimbalAction>(this, target_yaw, target_pitch,
+                                              yaw_speed, pitch_speed, yaw_frame,
+                                              pitch_frame);
   return submit_action(std::move(a));
 }
 

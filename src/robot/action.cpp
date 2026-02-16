@@ -36,6 +36,10 @@ void MoveAction::do_step(float time_step) {
   }
 }
 
+void MoveAction::cancel() {
+  robot->chassis.stop();
+}
+
 // auto data = do_step(time_step);
 // if(data.size()) {
 //   spdlog::debug("Push action {} bytes: {:n}", data.size(), spdlog::to_hex(data));
@@ -70,6 +74,10 @@ void MoveArmAction::do_step(float time_step) {
                     remaining_duration, predicted_duration);
     }
   }
+}
+
+void MoveArmAction::cancel() {
+  robot->arm.update_control(robot->arm.get_position());
 }
 
 void PlaySoundAction::do_step(float time_step) {
@@ -111,6 +119,11 @@ void MoveServoAction::do_step(float time_step) {
   time_left -= time_step;
 }
 
+void MoveServoAction::cancel() {
+  Servo *servo = &robot->servos[servo_id];
+  servo->angle.desired = servo->angle.current;
+}
+
 void MoveGimbalAction::do_step(float time_step) {
   Gimbal &gimbal = robot->gimbal;
   current = gimbal.attitude(Gimbal::Frame::fixed);
@@ -138,4 +151,9 @@ void MoveGimbalAction::do_step(float time_step) {
                     remaining_duration, predicted_duration, current, gimbal.target_attitude);
     }
   }
+}
+
+void MoveGimbalAction::cancel() { 
+  Gimbal &gimbal = robot->gimbal;
+  gimbal.reset_target_speeds();
 }

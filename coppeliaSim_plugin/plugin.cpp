@@ -409,6 +409,9 @@ public:
       auto state =
           _robots[in->handle]->get_action_state(action_name(in->action));
       switch (state) {
+      case Action::State::stopped:
+        out->status = "stopped";
+        break;
       case Action::State::failed:
         out->status = "failed";
         break;

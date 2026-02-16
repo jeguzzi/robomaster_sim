@@ -202,6 +202,8 @@ class Robot {
 
   void forward_servos_mode();
 
+  void stop_actions();
+
  protected:
   bool has_arm;
   bool has_gripper;
