@@ -51,10 +51,10 @@ jobs:
       - name: build (unix)
         if: runner.os != 'Windows'
         run: |
-          cmake -S . -B build --preset vcpkg
+          cmake -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=OFF
           cmake --build build --config Release --parallel 4
       - name: build (windows)
         if: runner.os == 'Windows'
         run: |
-          cmake.exe -S . -B build --preset vcpkg
+          cmake.exe -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=OFF
           cmake.exe --build build --config Release --parallel 4
