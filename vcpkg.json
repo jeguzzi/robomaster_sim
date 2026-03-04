@@ -1,0 +1,24 @@
+{
+  "dependencies": [
+    "boost-asio",
+    "boost-assign",
+    "boost-date-time",
+    "boost-format",
+    "boost-thread",
+    {
+      "name": "ffmpeg",
+      "features": [
+        "avcodec",
+        "avdevice",
+        "avformat",
+        "x264"
+      ]
+    },
+    {
+      "name": "spdlog",
+      "features": [
+        "fmt"
+      ]
+    }
+  ]
+}
