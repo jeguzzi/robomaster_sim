@@ -60,7 +60,6 @@ Not supported.
 #### VCPKG
 
 [Install vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell).
-
 Then set `VCPKG_ROOT` to the path of the cloned vcpkg repository and add it to the `PATH`.
 
 **Linux and macOs**
@@ -77,7 +76,7 @@ $ set PATH=%VCPKG_ROOT%;%PATH%
 
 ### CoppeliaSim
 
-To compile and then use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). At the moment, we support CoppeliaSim from v4.0 to v4.10 [latest]. Download the one of the supported version and export the location where you place it:
+To compile and use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). At the moment, we support CoppeliaSim from v4.0 to v4.10 [latest]. Download the one of the supported version and export the location where you place it:
 
 **Linux and macOs**
 ```bash
