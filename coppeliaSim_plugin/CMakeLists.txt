@@ -48,11 +48,19 @@ set(_PLUGIN_NAME
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external)
 
-execute_process(
-  COMMAND
-    bash -c
-    "sed s/PLUGIN_NAME/${_PLUGIN_NAME_XML}/g ${CMAKE_CURRENT_SOURCE_DIR}/callbacks.xml > callbacks.xml"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+if(WIN32)
+  execute_process(
+    COMMAND
+      powershell -Command
+      "(gc ${CMAKE_CURRENT_SOURCE_DIR}/callbacks.xml) -replace 'PLUGIN_NAME', '${_PLUGIN_NAME_XML}' | Out-File -encoding ASCII callbacks.xml"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+else()
+  execute_process(
+    COMMAND
+      bash -c
+      "sed s/PLUGIN_NAME/${_PLUGIN_NAME_XML}/g ${CMAKE_CURRENT_SOURCE_DIR}/callbacks.xml > callbacks.xml"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 coppeliasim_generate_stubs(
   ${CMAKE_CURRENT_BINARY_DIR}/generated XML_FILE

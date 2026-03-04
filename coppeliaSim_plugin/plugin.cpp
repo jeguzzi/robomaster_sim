@@ -1,10 +1,11 @@
+#include "robomaster.hpp"
+
 #include "plugin.h"
 
 #include <cstdlib>
 
 #include "config.h"
 #include "coppeliasim_robot.hpp"
-#include "robomaster.hpp"
 #include "simPlusPlus/Plugin.h"
 #include "spdlog/spdlog.h"
 #include "stubs.h"
