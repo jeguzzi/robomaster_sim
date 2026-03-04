@@ -11,58 +11,103 @@ You can use the [official Python client API](https://github.com/dji-sdk/RoboMast
 
 ## Installation
 
+### Build tools
+
+Install [cmake](https://cmake.org), git, and a C++-17 compiler.
+
+**Linux (Ubuntu)**:
+
+```bash
+$ sudo apt update && sudo apt cmake gcc git
+```
+
+**macOs**:
+If you don't have them already, install 
+- the XCode command line tools: `$ xcode-select --install`
+- and [homebrew](https://brew.sh).
+
+Then `$ brew install cmake git`
+
+**Windows**:
+If you don't have them already, install [Visual Studio](https://visualstudio.microsoft.com), cmake and git.
+
+> [!IMPORTANT]
+> Subsequent Windows build commands should be executed in a “Native Tools Command Prompt for VS” console with admin privileges.
+
 ### Dependencies
 
-- [spdlog](https://github.com/gabime/spdlog) (for logging)
-- [libavcodec, libavformat, libavutil, libavdevice](https://www.ffmpeg.org) (for compressing videos to H264)
-- [boost-system and boost-thread](https://www.boost.org) (for asio)
-- [cmake](https://cmake.org) (to build)
+- [spdlog](https://github.com/gabime/spdlog) *built with fmt support* (for logging)
+- [libavcodec, libavformat, libavutil, libavdevice](https://www.ffmpeg.org) *built with libx264 support* (for compressing videos to H264),
+- [boost-system, boost-thread, boost-asio, boost-assign, boost-format](https://www.boost.org) (for asio)
 
-#### Linux (Ubuntu)
+You can either install pre-compiled dependencies or use [vcpkg](https://vcpkg.io) to compile them on-the-fly.  
 
-On Linux, we require a C++-17 compiler.
+#### Pre-compiled 
+
+**Linux (Ubuntu)**:
 ```bash
-$ sudo apt update && sudo apt install libspdlog-dev libboost-system-dev libboost-thread-dev cmake libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx264-dev
+$ sudo apt update && sudo apt install libspdlog-dev libboost-system-dev libboost-thread-dev libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx264-dev
 ```
 
-#### MacOs
-
-On MacOs, we require a C++-17 compiler. First install [homebrew](https://brew.sh) if you don't have it already.
+**macOs**:
 ```bash
-$ brew install spdlog boost cmake ffmpeg
+$ brew install spdlog boost ffmpeg
 ```
 
-#### Windows
+**Windows**:
+Not supported.
 
-On Windows, we require a C++-20 compiler.
+#### VCPKG
 
-*To be completed*.
+[Install vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell).
+
+Then set `VCPKG_ROOT` to the path of the cloned vcpkg repository and add it to the `PATH`.
+
+**Linux and macOs**
+```bash
+$ export VCPKG_ROOT=<vcpkg path>
+$ export PATH=$VCPKG_ROOT:$PATH
+```
+
+**Windows**
+```cmd
+$ set VCPKG_ROOT=<vcpkg path>
+$ set PATH=%VCPKG_ROOT%;%PATH%
+```
 
 ### CoppeliaSim
 
 To compile and then use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). At the moment, we support CoppeliaSim from v4.0 to v4.10 [latest]. Download the one of the supported version and export the location where you place it:
 
+**Linux and macOs**
 ```bash
-export COPPELIASIM_ROOT_DIR=<path to the folder containing the programming subfolder>
+$ export COPPELIASIM_ROOT_DIR=<path to the folder containing the programming subfolder>
 ```
-which on Linux is the root folder that you download, while on MacOs is `/Applications/coppeliaSim.app/Contents/Resources`, if you install the app to the default location.
+
+**Windows**
+```cmd
+$ set COPPELIASIM_ROOT_DIR=<path to the folder containing the programming subfolder>
+```
+
+which on Linux is the root folder that you download, while on macOs is `/Applications/coppeliaSim.app/Contents/Resources`, if you install the app to the default location.
 
 You also need to install Python>=3.8 and two common dependencies for CoppeliaSim plugins:
-- [xsltproc](http://xmlsoft.org/xslt/xsltproc.html). Linux: `sudo apt install xsltproc`. MacOs comes with `xsltproc` installed.
+- [xsltproc](http://xmlsoft.org/xslt/xsltproc.html). Linux: `sudo apt install xsltproc`. `xsltproc` is pre-installed on macOs.
 - [xmlschema](https://github.com/sissaschool/xmlschema) (optional): `python3 -m pip install xmlschema`
 
 ## Build
 
-#### Linux and MacOs
 ```bash
 $ cd <this repository>
-$ mkdir -p build
-$ cd build
-$ cmake -DCMAKE_BUILD_TYPE=Release ..
-$ make install
+$ cmake -B build [--preset vcpkg]
+$ cmake --build build --config Release -j4
+$ cmake --install build
 ```
 
 This will build all libraries, executables, plugins and will install the plugin and robot models to coppeliaSim.
+
+> [!IMPORTANT]
+> Specify `--preset vcpkg` to compile the dependencies using `vcpkg`.
 
 ## Running
 
