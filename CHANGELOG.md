@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3] - 2026-03-04
+
+- Tested to support CoppeliaSim up to v4.10.
+- Fixed IP in request for connection response.
+- Fixed client updates (coeherently with real robot): now only the (latest) client will receive updates. This prevents alternating between clients, which happened each time we received a message (e.g., an heartbeat).
+- Added option to compile dependencies with VCPKG.
+- Added servo maximal speed in position mode.
+- Added support for newer versions of Boost.
+- Added github workflows.
+- Changed to stop chassis when client closes.
+- Changed to clear LEDs when simulation starts/stops.
+- Changed to stop actions when client closes.
+- Updated models to newer CoppeliaSim API.
+
+
 ## [1.2] - 2025-01-29
 
 Tested to support CoppeliaSim up to v4.9.
