@@ -91,7 +91,10 @@ $ set COPPELIASIM_ROOT_DIR=<path to the folder containing the programming subfol
 which on Linux is the root folder that you download, while on macOs is `/Applications/coppeliaSim.app/Contents/Resources`, if you install the app to the default location.
 
 You also need to install Python>=3.8 and two common dependencies for CoppeliaSim plugins:
-- [xsltproc](http://xmlsoft.org/xslt/xsltproc.html). Linux: `sudo apt install xsltproc`. `xsltproc` is pre-installed on macOs.
+- [xsltproc](http://xmlsoft.org/xslt/xsltproc.html). 
+  - Linux: `sudo apt install xsltproc`. 
+  - macOs: pre-installed
+  - Windows: `choco install -y xsltproc`
 - [xmlschema](https://github.com/sissaschool/xmlschema) (optional): `python3 -m pip install xmlschema`
 
 ## Build
