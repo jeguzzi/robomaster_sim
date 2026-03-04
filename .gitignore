@@ -43,3 +43,6 @@ linux_build
 xcode
 build*
 __pycache__
+test*
+dev
+.DS_Store
