@@ -2,7 +2,7 @@ name: Build
 on:
   workflow_dispatch:
 jobs:
-  wheel:
+  build:
     strategy:
       matrix:
         config:
