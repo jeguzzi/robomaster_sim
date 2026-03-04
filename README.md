@@ -102,7 +102,7 @@ You also need to install Python>=3.8 and two common dependencies for CoppeliaSim
 ```bash
 $ cd <this repository>
 $ cmake -B build [--preset vcpkg]
-$ cmake --build build --config Release -j4
+$ cmake --build build --config Release --parallel 4
 $ cmake --install build
 ```
 
