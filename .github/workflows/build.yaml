@@ -1,0 +1,32 @@
+name: Build
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  wheel:
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-22.04
+          - os: ubuntu-22.04-arm
+          - os: macos-15-intel
+          - os: macos-latest
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'Linux'
+        name: install apt deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libspdlog-dev libboost-system-dev libboost-thread-dev libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libx264-dev
+      - if: runner.os == 'macOS'
+        name: install brew deps
+        run: |
+          brew install spdlog boost ffmpeg
+      - name: build
+        run: |
+          cmake -S . -B build
+          cmake --build build --config Release --parallel 4

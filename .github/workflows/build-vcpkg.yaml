@@ -1,0 +1,60 @@
+name: Build with VCPKG
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+jobs:
+  wheel:
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-22.04
+            vcpkg_triplet: x64-linux-release
+          - os: ubuntu-22.04-arm
+            vcpkg_triplet: arm64-linux-release
+          - os: macos-15-intel
+            vcpkg_triplet: x64-osx-release
+          - os: macos-latest
+            vcpkg_triplet: arm64-osx-release
+          - os: windows-latest
+            vcpkg_triplet: x64-windows-static-release
+          - os: windows-11-arm
+            vcpkg_triplet: arm64-windows-static-release
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: runner.os == 'Linux'
+        name: install apt deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install nasm -y
+      - if: runner.os == 'macOS'
+        name: install brew deps
+        run: |
+          brew install nasm
+      - if: runner.os == 'Windows'
+        name: install choco deps
+        run: |
+          choco install pkgconfiglite -y
+      - name: build vcpkg deps
+        uses: johnwason/vcpkg-action@v7
+        id: vcpkg
+        with:
+          triplet: ${{ matrix.config.vcpkg_triplet }}
+          revision: master
+          token: ${{ github.token }}
+          manifest-dir: ${{ github.workspace }}
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: build (unix)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build --preset vcpkg
+          cmake --build build --config Release --parallel 4
+      - name: build (windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake.exe -S . -B build --preset vcpkg
+          cmake.exe --build build --config Release --parallel 4
