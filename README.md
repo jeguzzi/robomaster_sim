@@ -11,7 +11,51 @@ You can use the [official Python client API](https://github.com/dji-sdk/RoboMast
 
 ## Installation
 
-### Build tools
+### CoppeliaSim
+
+To use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). At the moment, we support CoppeliaSim from v4.0 to v4.10 [latest]. Download one of the supported version.
+
+> [!IMPORTANT]
+> If you are going to install the pre-compiled CoppeliaSim plugin released on GitHub (see below), you need to install the version of CoppeliaSim it was built against and that is part of the file name.
+
+### Released CoppeliaSim plugin
+
+1. Download the [released](https://github.com/jeguzzi/robomaster_sim/releases) `tar.gz` archives. The archives are named like
+```
+simRobomaster-<PLUGIN VERSION>-CoppeliaSim-<COPPELIASIM VERSION>-<OS name>.tar.gz
+```
+Pick the one that is compatible with the operating system, the architecture, and the version of CoppeliaSim.
+
+> [!NOTE]
+> Darwin is another name for macOs.
+
+2. Unpack it inside the CoppeliaSim file tree
+
+```bash
+tar -vxf simRobomaster[...].tar.gz -C <CoppeliaSim path> --strip-components=1
+```
+
+where `<CoppeliaSim path>` is the location where `CoppeliaSim` is installed. For example, it could be similar to
+
+**Linux**:
+```
+tar -vxf simRobomaster-1.3-CoppeliaSim-4.10-Linux.tar.gz -C ~/CoppeliaSim_Edu_V4_10_0_Ubuntu24_04 --strip-components=1
+```
+
+**macOs**:
+```
+tar -vxf simRobomaster-1.3-CoppeliaSim-4.10-Darwin.tar.gz -C /Applications/coppeliaSim.app --strip-components=1
+```
+
+**Windows**:
+```
+tar -vxf simRobomaster-1.3-CoppeliaSim-4.10-Windows.tar.gz -C  "C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu" --strip-components=1
+```
+
+### Build from source
+
+
+#### Build tools
 
 Install [cmake](https://cmake.org), git, and a C++-17 compiler.
 
@@ -34,7 +78,7 @@ If you don't have them already, install [Visual Studio](https://visualstudio.mic
 > [!IMPORTANT]
 > Subsequent Windows build commands should be executed in a “Native Tools Command Prompt for VS” console with admin privileges.
 
-### Dependencies
+#### Dependencies
 
 - [spdlog](https://github.com/gabime/spdlog) *built with fmt support* (for logging)
 - [libavcodec, libavformat, libavutil, libavdevice](https://www.ffmpeg.org) *built with libx264 support* (for compressing videos to H264),
@@ -42,7 +86,7 @@ If you don't have them already, install [Visual Studio](https://visualstudio.mic
 
 You can either install pre-compiled dependencies or use [vcpkg](https://vcpkg.io) to compile them on-the-fly.  
 
-#### Pre-compiled 
+##### Pre-compiled dependencies
 
 **Linux (Ubuntu)**:
 ```bash
@@ -57,7 +101,7 @@ $ brew install spdlog boost ffmpeg
 **Windows**:
 Not supported.
 
-#### VCPKG
+##### VCPKG dependencies
 
 [Install vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell).
 Then set `VCPKG_ROOT` to the path of the cloned vcpkg repository and add it to the `PATH`.
@@ -76,7 +120,7 @@ $ set PATH=%VCPKG_ROOT%;%PATH%
 
 ### CoppeliaSim
 
-To compile and use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarobotics.com). At the moment, we support CoppeliaSim from v4.0 to v4.10 [latest]. Download the one of the supported version and export the location where you place it:
+Export the location of CoppeliaSim:
 
 **Linux and macOs**
 ```bash
@@ -97,7 +141,7 @@ You also need to install Python>=3.8 and two common dependencies for CoppeliaSim
   - Windows: `choco install -y xsltproc`
 - [xmlschema](https://github.com/sissaschool/xmlschema) (optional): `python3 -m pip install xmlschema`
 
-## Build
+### Build
 
 ```bash
 $ cd <this repository>
