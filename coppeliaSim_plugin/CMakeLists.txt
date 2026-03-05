@@ -21,14 +21,30 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules
 
 find_package(CoppeliaSim 4 REQUIRED)
 
+option(ARCHIVE "Create a TAR.GZ archive using CPACK" OFF)
+
+if(ARCHIVE)
+  if(APPLE)
+    set(COPPELIASIM_LUA_DIR Contents/Resources/lua)
+    set(COPPELIASIM_MODELS_DIR Contents/Resources/models)
+    set(COPPELIASIM_MANUAL_DIR Contents/Resources/manual)
+    set(COPPELIASIM_PLUGINS_DIR Contents/MacOS)
+  else()
+    set(COPPELIASIM_LUA_DIR lua)
+    set(COPPELIASIM_MODELS_DIR models)
+    set(COPPELIASIM_MANUAL_DIR manual)
+    set(COPPELIASIM_PLUGINS_DIR .)
+  endif()
+endif()
+
 if(${COPPELIASIM_VERSION} VERSION_GREATER_EQUAL 4.8)
   set(MODEL_VERSION 2)
 else()
   set(MODEL_VERSION 1)
 endif()
 
-set(MODEL_FOLDER $ENV{COPPELIASIM_ROOT_DIR}/models/robots/mobile)
-set(MODEL_SENSOR_FOLDER $ENV{COPPELIASIM_ROOT_DIR}/models/components/sensors)
+set(MODEL_FOLDER ${COPPELIASIM_MODELS_DIR}/robots/mobile)
+set(MODEL_SENSOR_FOLDER ${COPPELIASIM_MODELS_DIR}/components/sensors)
 
 if(${COPPELIASIM_VERSION} VERSION_GREATER_EQUAL 4.6)
   set(_PLUGIN_NAME simRobomaster)
@@ -80,3 +96,13 @@ install(FILES ../models/v${MODEL_VERSION}/RoboMasterDistanceSensor.ttm
 
 target_compile_definitions(${_PLUGIN_NAME}
                            PRIVATE MODEL_VERSION=${MODEL_VERSION})
+
+if(ARCHIVE)
+  set(CPACK_GENERATOR TGZ)
+  set(CPACK_PACKAGE_NAME "simRobomaster")
+  set(CPACK_OUTPUT_FILE_PREFIX "archives")
+  set(CPACK_PACKAGE_FILE_NAME
+      ${CPACK_PACKAGE_NAME}-${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}-CoppeliaSim-${COPPELIASIM_VERSION_MAJOR}.${COPPELIASIM_VERSION_MINOR}-${CMAKE_SYSTEM_NAME}
+  )
+  include(CPack)
+endif()

@@ -1,0 +1,120 @@
+name: Build and Release CoppeliaSim plugins
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+      - '!*-*'
+permissions:
+  contents: write
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+jobs:
+  build:
+    strategy:
+      matrix:
+        config:
+          - os: macos-latest
+            vcpkg_triplet: arm64-osx-release
+            coppeliasim_subdir: Contents/Resources
+          - os: ubuntu-22.04
+            vcpkg_triplet: x64-linux-release
+            coppeliasim_subdir: ''
+          - os: windows-latest
+            vcpkg_triplet: x64-windows-static-release
+            coppeliasim_subdir: ''
+    runs-on: ${{ matrix.config.os }}
+    env:
+      COPPELIASIM_ROOT_DIR: ${{ github.workspace }}/coppeliaSim/${{ matrix.config.coppeliasim_subdir }}
+    steps:
+      - uses: actions/checkout@v6
+      - run: |
+          mkdir -p ${{ env.COPPELIASIM_ROOT_DIR }}/programming  
+      - if: runner.os == 'macOS'
+        run: |
+          mkdir -p coppeliaSim/Contents/MacOS
+          mkdir -p coppeliaSim/Contents/Frameworks
+      - uses: actions/checkout@v6
+        with:
+          repository: 'CoppeliaRobotics/include'
+          path: ${{ env.COPPELIASIM_ROOT_DIR }}/programming/include
+          ref: coppeliasim-v4.10.0-rev0
+      - if: runner.os == 'Linux'
+        name: install apt deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install nasm xsltproc -y
+      - if: runner.os == 'macOS'
+        name: install brew deps
+        run: |
+          brew install nasm
+      - if: runner.os == 'Windows'
+        name: install choco deps
+        run: |
+          choco install pkgconfiglite xsltproc -y
+      - name: build vcpkg deps
+        uses: johnwason/vcpkg-action@v7
+        id: vcpkg
+        with:
+          triplet: ${{ matrix.config.vcpkg_triplet }}
+          revision: master
+          token: ${{ github.token }}
+          manifest-dir: ${{ github.workspace }}
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: build (unix)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=ON -DARCHIVE=ON
+          cmake --build build --config Release --parallel 4 --target package
+      - name: build (windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake.exe -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=ON -DARCHIVE=ON
+          cmake.exe --build build --config Release --parallel 4 --target package
+      - name: archive package
+        uses: actions/upload-artifact@v4
+        with:
+          name: archives-${{ runner.os }}-${{ runner.arch }}
+          path: build/archives
+          if-no-files-found: error
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+    name: >-
+      Sign the archives with Sigstore
+      and upload them to GitHub Release.
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write  # IMPORTANT: mandatory for sigstore
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: archives-*
+          path: archives
+          merge-multiple: true
+          github-token: ${{ secrets.GH_PAT }}
+      - name: Sign the archives with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: >-
+            ./archives/*.tar.gz
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create
+          '${{ github.ref_name }}'
+          --repo '${{ github.repository }}'
+          --notes ""
+      - name: Upload archives and signatures to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload
+          '${{ github.ref_name }}' archives/**
+          --repo '${{ github.repository }}'

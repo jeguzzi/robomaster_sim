@@ -8,7 +8,6 @@ project(
 if(WIN32)
   set(CMAKE_CXX_STANDARD 20)
   add_compile_options(-fPIC -Wall -D_USE_MATH_DEFINES)
-
 else()
   set(CMAKE_CXX_STANDARD 17)
   add_compile_options(
@@ -26,7 +25,7 @@ option(USE_OPENCV "use OpenCV for vision" OFF)
 option(BUILD_COPPELIASIM_PLUGIN "build the CoppeliaSim plugin" ON)
 
 set(CMAKE_BUILD_TYPE Release)
-set(VCPKG_BUILD_TYPE Release)
+set(VCPKG_BUILD_TYPE release)
 
 find_package(PkgConfig REQUIRED)
 if(POLICY CMP0167)
@@ -109,6 +108,10 @@ if(NOT
   include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+  target_link_libraries(robomaster PRIVATE "-Wl,-Bsymbolic")
+endif()
+
 add_executable(test src/test.cpp)
 
 add_executable(test_encoder src/test_encoder.cpp src/encoder.cpp)
@@ -162,6 +165,5 @@ if(BUILD_COPPELIASIM_PLUGIN)
                "-Wno-delete-non-virtual-dtor"
                "-Wno-unused-result")
     endif()
-
   endif()
 endif()
