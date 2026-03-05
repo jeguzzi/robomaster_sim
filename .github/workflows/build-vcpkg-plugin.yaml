@@ -18,6 +18,9 @@ jobs:
           - os: macos-latest
             vcpkg_triplet: arm64-osx-release
             coppeliasim_subdir: Contents/Resources
+          - os: macos-15-intel
+            vcpkg_triplet: x64-osx-release
+            coppeliasim_subdir: Contents/Resources
           - os: ubuntu-22.04
             vcpkg_triplet: x64-linux-release
             coppeliasim_subdir: ''

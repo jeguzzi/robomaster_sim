@@ -22,7 +22,7 @@ To use the CoppeliaSim plugin you need ... [CoppeliaSim](https://www.coppeliarob
 
 1. Download the [released](https://github.com/jeguzzi/robomaster_sim/releases) `tar.gz` archives. The archives are named like
 ```
-simRobomaster-<PLUGIN VERSION>-CoppeliaSim-<COPPELIASIM VERSION>-<OS name>.tar.gz
+simRobomaster-<PLUGIN VERSION>-CoppeliaSim-<COPPELIASIM VERSION>-<OS name>-<OS Architecture>.tar.gz
 ```
 Pick the one that is compatible with the operating system, the architecture, and the version of CoppeliaSim.
 
@@ -38,18 +38,18 @@ tar -vxf simRobomaster[...].tar.gz -C <CoppeliaSim path> --strip-components=1
 where `<CoppeliaSim path>` is the location where `CoppeliaSim` is installed. For example, it could be similar to
 
 **Linux**:
-```
-tar -vxf simRobomaster-1.3-CoppeliaSim-4.10-Linux.tar.gz -C ~/CoppeliaSim_Edu_V4_10_0_Ubuntu24_04 --strip-components=1
+```bash
+tar -vxf simRobomaster-1.4-CoppeliaSim-4.10-Linux-x86_64.tar.gz -C ~/CoppeliaSim_Edu_V4_10_0_Ubuntu24_04 --strip-components=1
 ```
 
 **macOs**:
-```
-tar -vxf simRobomaster-1.3-CoppeliaSim-4.10-Darwin.tar.gz -C /Applications/coppeliaSim.app --strip-components=1
+```bash
+tar -vxf simRobomaster-1.4-CoppeliaSim-4.10-Darwin-arm64.tar.gz -C /Applications/coppeliaSim.app --strip-components=1
 ```
 
 **Windows**:
-```
-tar -vxf simRobomaster-1.3-CoppeliaSim-4.10-Windows.tar.gz -C  "C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu" --strip-components=1
+```cmd
+tar -vxf simRobomaster-1.4-CoppeliaSim-4.10-Windows-AMD64.tar.gz -C  "C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu" --strip-components=1
 ```
 
 ### Build from source
