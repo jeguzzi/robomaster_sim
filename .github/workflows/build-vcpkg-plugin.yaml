@@ -68,12 +68,12 @@ jobs:
       - name: build (unix)
         if: runner.os != 'Windows'
         run: |
-          cmake -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=ON -DARCHIVE=ON -CMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=${{ matrix.config.vcpkg_triplet }}
+          cmake -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=ON -DARCHIVE=ON -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=${{ matrix.config.vcpkg_triplet }}
           cmake --build build --config Release --parallel 4 --target package
       - name: build (windows)
         if: runner.os == 'Windows'
         run: |
-          cmake.exe -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=ON -DARCHIVE=ON -CMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=${{ matrix.config.vcpkg_triplet }}
+          cmake.exe -S . -B build --preset vcpkg -DBUILD_COPPELIASIM_PLUGIN=ON -DARCHIVE=ON -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=${{ matrix.config.vcpkg_triplet }}
           cmake.exe --build build --config Release --parallel 4 --target package
       - name: archive package
         uses: actions/upload-artifact@v4
