@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.1...3.19)
 
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
+
 project(
   robomaster_simulation
   VERSION 1.4
@@ -28,9 +35,6 @@ set(CMAKE_BUILD_TYPE Release)
 set(VCPKG_BUILD_TYPE release)
 
 find_package(PkgConfig REQUIRED)
-if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)
-endif()
 find_package(Boost REQUIRED)
 find_package(
   Boost REQUIRED
