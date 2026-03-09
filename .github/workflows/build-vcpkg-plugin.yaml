@@ -24,6 +24,9 @@ jobs:
           - os: ubuntu-22.04
             vcpkg_triplet: x64-linux-release
             coppeliasim_subdir: ''
+          - os: ubuntu-22.04-arm
+            vcpkg_triplet: arm64-linux-release
+            coppeliasim_subdir: ''
           - os: windows-latest
             vcpkg_triplet: x64-windows-static-release
             coppeliasim_subdir: ''
