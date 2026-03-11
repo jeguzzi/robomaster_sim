@@ -125,7 +125,7 @@ std::vector<uint8_t> ResponseT::encode_msg(uint8_t set, uint8_t id) {
   for (size_t i = 0; i < payload.size(); i++) {
     buffer[11 + i] = payload[i];
   }
-  uint16_t crc_m = crc16_calc(buffer.data(), len - 2);
+  uint16_t crc_m = crc16_calc(buffer.data(), static_cast<unsigned>(len - 2));
   write<uint16_t>(buffer, len - 2, crc_m);
   return buffer;
 }

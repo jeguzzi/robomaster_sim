@@ -22,6 +22,7 @@ else()
     -Wall
     -Wextra
     -Werror
+    # -Wconversion
     -Wno-unused-parameter
     -Wno-deprecated-declarations
     -Wno-missing-field-initializers

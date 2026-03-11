@@ -95,8 +95,8 @@ private:
   ChassisLEDValues<int> chassis_led_handles;
   GimbalLEDValues<std::vector<int>> gimbal_led_handles;
   int blaster_light_handle;
-  const std::map<unsigned, int> servo_handles;
-  std::map<unsigned, int> tof_handles;
+  const std::map<size_t, int> servo_handles;
+  std::map<size_t, int> tof_handles;
   int camera_handle;
   int vision_handle;
   int gripper_handle;

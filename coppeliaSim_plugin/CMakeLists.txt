@@ -97,6 +97,19 @@ install(FILES ../models/v${MODEL_VERSION}/RoboMasterDistanceSensor.ttm
 target_compile_definitions(${_PLUGIN_NAME}
                            PRIVATE MODEL_VERSION=${MODEL_VERSION})
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(DISABLE_WARNINGS "-w")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(DISABLE_WARNINGS "-Wno-everything")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  set(DISABLE_WARNINGS "/w")
+endif()
+
+set_source_files_properties(
+  generated/stubs.cpp "${COPPELIASIM_INCLUDE_DIR}/simPlusPlus/Plugin.cpp"
+  "${COPPELIASIM_INCLUDE_DIR}/simPlusPlus/Lib.cpp"
+  PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS}")
+
 if(ARCHIVE)
   set(CPACK_GENERATOR TGZ)
   set(CPACK_PACKAGE_NAME "simRobomaster")

@@ -212,7 +212,7 @@ class Robot {
   bool has_camera;
   bool has_tof;
   float last_time_step;
-  std::map<unsigned, Servo *> connected_servos;
+  std::map<size_t, Servo *> connected_servos;
 
  private:
   Mode mode;

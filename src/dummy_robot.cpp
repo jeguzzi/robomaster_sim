@@ -18,7 +18,7 @@ void DummyRobot::do_step(float time_step) {
   chassis.wheel_speeds.current = chassis.wheel_speeds.target;
   chassis.wheel_angles = chassis.wheel_angles + chassis.wheel_speeds.current * last_time_step;
 
-  std::map<unsigned, float> angles;
+  std::map<size_t, float> angles;
   for (auto const &[i, servo] : connected_servos) {
     angles[i] = servo->angle.current;
     servo->angle.current = std::clamp(servo->angle.current + servo->speed.target * time_step,

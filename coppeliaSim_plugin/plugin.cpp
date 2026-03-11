@@ -98,7 +98,7 @@ static std::string get_ip(std::string network, unsigned *prefix_len) {
   size_t pos = network.find_first_of('/');
   std::string ip = network.substr(0, pos);
   if (pos != std::string::npos) {
-    *prefix_len = std::stoul(network.substr(pos + 1));
+    *prefix_len = static_cast<unsigned>(std::stoul(network.substr(pos + 1)));
   } else {
     *prefix_len = 0;
   }
